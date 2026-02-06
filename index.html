@@ -1,0 +1,997 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare Pro - Cuidado Integral de Mascotas</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <!-- Loader -->
+  <div id="app-loader" class="loader-overlay">
+    <div class="loader-content">
+      <i class="fas fa-paw loader-icon"></i>
+      <p>Cargando PetCare Pro...</p>
+    </div>
+  </div>
+
+  <!-- Header -->
+  <header class="app-header">
+    <div class="header-left">
+      <button id="menu-toggle" class="btn-icon" aria-label="Abrir menú">
+        <i class="fas fa-bars"></i>
+      </button>
+      <div class="logo">
+        <i class="fas fa-paw"></i>
+        <span>PetCare Pro</span>
+      </div>
+    </div>
+    <div class="header-right">
+      <button id="theme-toggle" class="btn-icon" aria-label="Cambiar tema">
+        <i class="fas fa-moon"></i>
+      </button>
+      <div id="active-pet-badge" class="active-pet-badge hidden">
+        <img id="header-pet-photo" src="" alt="" class="pet-avatar-small">
+        <span id="header-pet-name"></span>
+      </div>
+    </div>
+  </header>
+
+  <!-- Sidebar Navigation -->
+  <nav id="sidebar" class="sidebar" aria-label="Navegación principal">
+    <div class="sidebar-header">
+      <h3>Menú</h3>
+      <button id="sidebar-close" class="btn-icon" aria-label="Cerrar menú">
+        <i class="fas fa-times"></i>
+      </button>
+    </div>
+    <ul class="nav-list">
+      <li><a href="#" class="nav-link active" data-section="dashboard"><i class="fas fa-home"></i> Dashboard</a></li>
+      <li><a href="#" class="nav-link" data-section="mascotas"><i class="fas fa-paw"></i> Mis Mascotas</a></li>
+      <li><a href="#" class="nav-link" data-section="examenes"><i class="fas fa-file-medical"></i> Exámenes Médicos</a></li>
+      <li><a href="#" class="nav-link" data-section="nutricion"><i class="fas fa-utensils"></i> Plan Nutricional</a></li>
+      <li><a href="#" class="nav-link" data-section="seguimiento"><i class="fas fa-chart-line"></i> Seguimiento Diario</a></li>
+      <li><a href="#" class="nav-link" data-section="recordatorios"><i class="fas fa-bell"></i> Recordatorios</a></li>
+      <li><a href="#" class="nav-link" data-section="calendario"><i class="fas fa-calendar-alt"></i> Calendario Vet</a></li>
+      <li><a href="#" class="nav-link" data-section="referencias"><i class="fas fa-book-medical"></i> Referencias</a></li>
+      <li><a href="#" class="nav-link" data-section="ajustes"><i class="fas fa-cog"></i> Ajustes</a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <small>PetCare Pro v1.0</small>
+    </div>
+  </nav>
+
+  <!-- Overlay para sidebar móvil -->
+  <div id="sidebar-overlay" class="sidebar-overlay"></div>
+
+  <!-- Contenido Principal -->
+  <main class="main-content">
+    <!-- Disclaimer -->
+    <div id="disclaimer-banner" class="disclaimer-banner">
+      <div class="disclaimer-content">
+        <i class="fas fa-info-circle"></i>
+        <p>
+          <strong>Aviso importante:</strong> Esta aplicación proporciona recomendaciones nutricionales generales basadas en guías veterinarias establecidas.
+          <strong>NO reemplaza la consulta con un veterinario profesional.</strong> Los planes nutricionales son orientativos.
+          Ante cualquier cambio en la salud de tu mascota, síntomas preocupantes, o dudas sobre resultados de exámenes médicos, consulta inmediatamente con tu veterinario.
+        </p>
+        <button id="dismiss-disclaimer" class="btn-icon" aria-label="Cerrar aviso"><i class="fas fa-times"></i></button>
+      </div>
+    </div>
+
+    <!-- ==================== DASHBOARD ==================== -->
+    <section id="section-dashboard" class="section active">
+      <h2 class="section-title"><i class="fas fa-home"></i> Dashboard</h2>
+
+      <div id="no-pets-message" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <h3>¡Bienvenido a PetCare Pro!</h3>
+        <p>Registra tu primera mascota para comenzar</p>
+        <button class="btn btn-primary" onclick="navegarA('mascotas')">
+          <i class="fas fa-plus"></i> Registrar Mascota
+        </button>
+      </div>
+
+      <div id="dashboard-content" class="hidden">
+        <!-- Tarjeta de mascota activa -->
+        <div class="dashboard-grid">
+          <div class="card card-pet-active">
+            <div class="card-header">
+              <h3><i class="fas fa-star"></i> Mascota Activa</h3>
+            </div>
+            <div class="card-body pet-active-info">
+              <img id="dash-pet-photo" src="" alt="" class="pet-avatar-large">
+              <div class="pet-active-details">
+                <h4 id="dash-pet-name"></h4>
+                <p id="dash-pet-info"></p>
+                <p id="dash-pet-weight"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Consejo del día -->
+          <div class="card card-tip">
+            <div class="card-header">
+              <h3><i class="fas fa-lightbulb"></i> Consejo del Día</h3>
+            </div>
+            <div class="card-body">
+              <p id="daily-tip"><i class="fas fa-spinner fa-spin"></i> Cargando...</p>
+            </div>
+          </div>
+
+          <!-- Resumen nutricional -->
+          <div class="card card-nutrition-summary">
+            <div class="card-header">
+              <h3><i class="fas fa-utensils"></i> Resumen Nutricional Hoy</h3>
+            </div>
+            <div class="card-body">
+              <div class="nutrition-bars">
+                <div class="nutrition-bar-item">
+                  <span class="nutrition-label">Calorías</span>
+                  <div class="progress-bar"><div id="dash-cal-bar" class="progress-fill"></div></div>
+                  <span id="dash-cal-text" class="nutrition-value">0 / 0 kcal</span>
+                </div>
+                <div class="nutrition-bar-item">
+                  <span class="nutrition-label">Hidratación</span>
+                  <div class="progress-bar"><div id="dash-water-bar" class="progress-fill water"></div></div>
+                  <span id="dash-water-text" class="nutrition-value">0 / 0 ml</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Próximos recordatorios -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-bell"></i> Próximos Recordatorios</h3>
+            </div>
+            <div class="card-body">
+              <ul id="dash-reminders" class="reminder-list">
+                <li class="empty-list">No hay recordatorios pendientes</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Últimos exámenes -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-file-medical"></i> Últimos Exámenes</h3>
+            </div>
+            <div class="card-body">
+              <ul id="dash-exams" class="exam-list-mini">
+                <li class="empty-list">No hay exámenes registrados</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Gráfico peso -->
+          <div class="card card-weight-chart">
+            <div class="card-header">
+              <h3><i class="fas fa-weight"></i> Tendencia de Peso</h3>
+            </div>
+            <div class="card-body">
+              <canvas id="dash-weight-chart"></canvas>
+              <p id="dash-weight-trend" class="weight-trend"></p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Acceso rápido -->
+        <div class="quick-actions">
+          <button class="btn btn-outline" onclick="navegarA('seguimiento')" title="Registrar comida">
+            <i class="fas fa-plus-circle"></i> Registrar Comida
+          </button>
+          <button class="btn btn-outline" onclick="navegarA('examenes')" title="Nuevo examen">
+            <i class="fas fa-file-medical"></i> Nuevo Examen
+          </button>
+          <button class="btn btn-outline" onclick="navegarA('calendario')" title="Calendario">
+            <i class="fas fa-calendar"></i> Calendario
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MIS MASCOTAS ==================== -->
+    <section id="section-mascotas" class="section">
+      <h2 class="section-title"><i class="fas fa-paw"></i> Mis Mascotas</h2>
+
+      <!-- Lista de mascotas -->
+      <div id="pets-grid" class="pets-grid"></div>
+
+      <div id="max-pets-warning" class="alert alert-warning hidden">
+        <i class="fas fa-exclamation-triangle"></i> Has alcanzado el máximo de 5 mascotas.
+      </div>
+
+      <!-- Botón agregar -->
+      <button id="btn-add-pet" class="btn btn-primary" onclick="mostrarFormularioMascota()">
+        <i class="fas fa-plus"></i> Registrar Nueva Mascota
+      </button>
+
+      <!-- Formulario de mascota -->
+      <div id="pet-form-container" class="card form-card hidden">
+        <div class="card-header">
+          <h3 id="pet-form-title"><i class="fas fa-paw"></i> Registrar Mascota</h3>
+          <button class="btn-icon" onclick="cerrarFormularioMascota()" aria-label="Cerrar formulario"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="card-body">
+          <form id="pet-form" novalidate>
+            <input type="hidden" id="pet-edit-id">
+            <div class="form-grid">
+              <div class="form-group">
+                <label for="pet-name"><i class="fas fa-tag"></i> Nombre *</label>
+                <input type="text" id="pet-name" required maxlength="30" placeholder="Nombre de tu mascota">
+                <span class="form-error">El nombre es obligatorio</span>
+              </div>
+              <div class="form-group">
+                <label for="pet-photo"><i class="fas fa-camera"></i> Foto (URL)</label>
+                <input type="url" id="pet-photo" placeholder="https://ejemplo.com/foto.jpg">
+              </div>
+              <div class="form-group">
+                <label for="pet-species"><i class="fas fa-dog"></i> Especie *</label>
+                <select id="pet-species" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="perro">Perro</option>
+                  <option value="gato">Gato</option>
+                </select>
+                <span class="form-error">Selecciona la especie</span>
+              </div>
+              <div class="form-group">
+                <label for="pet-breed"><i class="fas fa-dna"></i> Raza *</label>
+                <select id="pet-breed" required disabled>
+                  <option value="">Primero selecciona especie</option>
+                </select>
+                <span class="form-error">Selecciona la raza</span>
+              </div>
+              <div class="form-group form-group-inline">
+                <div>
+                  <label for="pet-age-years"><i class="fas fa-birthday-cake"></i> Edad (años) *</label>
+                  <input type="number" id="pet-age-years" min="0" max="25" required placeholder="0">
+                  <span class="form-error">Ingresa los años</span>
+                </div>
+                <div>
+                  <label for="pet-age-months">Meses</label>
+                  <input type="number" id="pet-age-months" min="0" max="11" placeholder="0" value="0">
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="pet-weight"><i class="fas fa-weight"></i> Peso (kg) *</label>
+                <input type="number" id="pet-weight" min="0.1" max="100" step="0.1" required placeholder="Ej: 12.5">
+                <span class="form-error">Ingresa el peso</span>
+              </div>
+              <div class="form-group">
+                <label for="pet-gender"><i class="fas fa-venus-mars"></i> Género *</label>
+                <select id="pet-gender" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="macho">Macho</option>
+                  <option value="hembra">Hembra</option>
+                  <option value="castrado">Castrado</option>
+                  <option value="esterilizada">Esterilizada</option>
+                </select>
+                <span class="form-error">Selecciona el género</span>
+              </div>
+              <div class="form-group full-width">
+                <label><i class="fas fa-balance-scale"></i> Condición Corporal *</label>
+                <div class="body-condition-selector">
+                  <label class="condition-option">
+                    <input type="radio" name="pet-condition" value="1" required>
+                    <div class="condition-card">
+                      <i class="fas fa-angle-double-down"></i>
+                      <span>Muy delgado</span>
+                    </div>
+                  </label>
+                  <label class="condition-option">
+                    <input type="radio" name="pet-condition" value="2">
+                    <div class="condition-card">
+                      <i class="fas fa-angle-down"></i>
+                      <span>Delgado</span>
+                    </div>
+                  </label>
+                  <label class="condition-option">
+                    <input type="radio" name="pet-condition" value="3">
+                    <div class="condition-card">
+                      <i class="fas fa-check-circle"></i>
+                      <span>Ideal</span>
+                    </div>
+                  </label>
+                  <label class="condition-option">
+                    <input type="radio" name="pet-condition" value="4">
+                    <div class="condition-card">
+                      <i class="fas fa-angle-up"></i>
+                      <span>Sobrepeso</span>
+                    </div>
+                  </label>
+                  <label class="condition-option">
+                    <input type="radio" name="pet-condition" value="5">
+                    <div class="condition-card">
+                      <i class="fas fa-angle-double-up"></i>
+                      <span>Obeso</span>
+                    </div>
+                  </label>
+                </div>
+                <span class="form-error">Selecciona la condición corporal</span>
+              </div>
+              <div class="form-group">
+                <label for="pet-activity"><i class="fas fa-running"></i> Nivel de Actividad *</label>
+                <select id="pet-activity" required>
+                  <option value="">Seleccionar...</option>
+                  <option value="sedentario">Sedentario</option>
+                  <option value="moderado">Moderado</option>
+                  <option value="activo">Activo</option>
+                  <option value="muy_activo">Muy activo</option>
+                </select>
+                <span class="form-error">Selecciona el nivel de actividad</span>
+              </div>
+              <div class="form-group">
+                <label for="pet-city"><i class="fas fa-map-marker-alt"></i> Ciudad</label>
+                <input type="text" id="pet-city" placeholder="Ciudad" maxlength="50">
+              </div>
+              <div class="form-group">
+                <label for="pet-country">País</label>
+                <input type="text" id="pet-country" placeholder="País" maxlength="50">
+              </div>
+              <div class="form-group full-width">
+                <label for="pet-conditions"><i class="fas fa-notes-medical"></i> Condiciones de salud existentes</label>
+                <textarea id="pet-conditions" rows="2" placeholder="Describe cualquier condición de salud..."></textarea>
+              </div>
+              <div class="form-group full-width">
+                <label><i class="fas fa-allergies"></i> Alergias alimentarias conocidas</label>
+                <div class="checkbox-group">
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="pollo"> Pollo</label>
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="res"> Res</label>
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="pescado"> Pescado</label>
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="lacteos"> Lácteos</label>
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="granos"> Granos</label>
+                  <label class="checkbox-label"><input type="checkbox" name="pet-allergy" value="otra"> Otra</label>
+                </div>
+              </div>
+            </div>
+            <div class="form-actions">
+              <button type="button" class="btn btn-secondary" onclick="cerrarFormularioMascota()">Cancelar</button>
+              <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Mascota</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== EXÁMENES MÉDICOS ==================== -->
+    <section id="section-examenes" class="section">
+      <h2 class="section-title"><i class="fas fa-file-medical"></i> Exámenes Médicos</h2>
+
+      <div id="exam-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+
+      <div id="exam-content" class="hidden">
+        <!-- Alerta de exámenes -->
+        <div id="exam-alert" class="alert alert-warning hidden">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span id="exam-alert-text"></span>
+        </div>
+
+        <button class="btn btn-primary" onclick="mostrarFormularioExamen()">
+          <i class="fas fa-plus"></i> Registrar Examen
+        </button>
+
+        <!-- Formulario examen -->
+        <div id="exam-form-container" class="card form-card hidden" style="margin-top:1rem">
+          <div class="card-header">
+            <h3><i class="fas fa-file-medical"></i> Nuevo Examen Médico</h3>
+            <button class="btn-icon" onclick="cerrarFormularioExamen()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="card-body">
+            <form id="exam-form" novalidate>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="exam-date">Fecha del examen *</label>
+                  <input type="date" id="exam-date" required>
+                </div>
+                <div class="form-group">
+                  <label for="exam-type">Tipo de examen *</label>
+                  <select id="exam-type" required>
+                    <option value="">Seleccionar...</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="exam-vet">Veterinario</label>
+                  <input type="text" id="exam-vet" placeholder="Dr(a). ..." maxlength="60">
+                </div>
+                <div class="form-group full-width">
+                  <label for="exam-results">Resultados principales *</label>
+                  <textarea id="exam-results" rows="3" required placeholder="Describe los resultados..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="exam-hemoglobina">Hemoglobina (g/dL)</label>
+                  <input type="number" id="exam-hemoglobina" step="0.1" min="0" placeholder="Opcional">
+                </div>
+                <div class="form-group">
+                  <label for="exam-glucosa">Glucosa (mg/dL)</label>
+                  <input type="number" id="exam-glucosa" step="0.1" min="0" placeholder="Opcional">
+                </div>
+                <div class="form-group">
+                  <label for="exam-creatinina">Creatinina (mg/dL)</label>
+                  <input type="number" id="exam-creatinina" step="0.1" min="0" placeholder="Opcional">
+                </div>
+                <div class="form-group">
+                  <label for="exam-alt">ALT (U/L)</label>
+                  <input type="number" id="exam-alt" step="0.1" min="0" placeholder="Opcional">
+                </div>
+                <div class="form-group">
+                  <label for="exam-proteinas">Proteínas totales (g/dL)</label>
+                  <input type="number" id="exam-proteinas" step="0.1" min="0" placeholder="Opcional">
+                </div>
+                <div class="form-group full-width">
+                  <label for="exam-observations">Observaciones del veterinario</label>
+                  <textarea id="exam-observations" rows="2" placeholder="Observaciones adicionales..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="exam-file">URL del archivo</label>
+                  <input type="url" id="exam-file" placeholder="https://...">
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="exam-nutrition-adjust">
+                    <span>Este examen requiere ajuste nutricional</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarFormularioExamen()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar Examen</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Lista de exámenes -->
+        <div id="exam-list" class="exam-list" style="margin-top:1rem"></div>
+      </div>
+    </section>
+
+    <!-- ==================== PLAN NUTRICIONAL ==================== -->
+    <section id="section-nutricion" class="section">
+      <h2 class="section-title"><i class="fas fa-utensils"></i> Plan Nutricional</h2>
+
+      <div id="nutri-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+
+      <div id="nutri-content" class="hidden">
+        <!-- Alerta ajuste nutricional -->
+        <div id="nutri-exam-alert" class="alert alert-warning hidden">
+          <i class="fas fa-exclamation-triangle"></i>
+          <span>Hay exámenes que requieren ajuste nutricional. Consulta con tu veterinario para modificar el plan.</span>
+        </div>
+
+        <div class="dashboard-grid">
+          <!-- Requerimientos calóricos -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-fire"></i> Requerimientos Calóricos</h3></div>
+            <div class="card-body">
+              <div class="calorie-display">
+                <div class="calorie-big" id="nutri-calories">0</div>
+                <span>kcal / día</span>
+              </div>
+              <div id="nutri-calorie-details" class="nutri-details"></div>
+            </div>
+          </div>
+
+          <!-- Macronutrientes -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-chart-pie"></i> Macronutrientes</h3></div>
+            <div class="card-body">
+              <canvas id="macro-chart" height="200"></canvas>
+              <div id="nutri-macros" class="macro-details"></div>
+            </div>
+          </div>
+
+          <!-- Cantidad diaria -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-balance-scale"></i> Cantidad Diaria</h3></div>
+            <div class="card-body">
+              <div id="nutri-daily-amount" class="daily-amount-info"></div>
+            </div>
+          </div>
+
+          <!-- Frecuencia -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-clock"></i> Frecuencia de Alimentación</h3></div>
+            <div class="card-body">
+              <div id="nutri-frequency" class="frequency-info"></div>
+            </div>
+          </div>
+
+          <!-- Marcas recomendadas -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-shopping-basket"></i> Alimentos Recomendados</h3></div>
+            <div class="card-body">
+              <ul id="nutri-brands" class="brands-list"></ul>
+            </div>
+          </div>
+
+          <!-- Advertencias por raza -->
+          <div class="card" id="nutri-warnings-card">
+            <div class="card-header"><h3><i class="fas fa-exclamation-circle"></i> Advertencias de Raza</h3></div>
+            <div class="card-body">
+              <ul id="nutri-warnings" class="warnings-list"></ul>
+            </div>
+          </div>
+        </div>
+
+        <!-- Calculadora rápida de porciones -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-calculator"></i> Calculadora Rápida de Porciones</h3></div>
+          <div class="card-body">
+            <div class="portion-calc">
+              <div class="form-group">
+                <label for="portion-food-type">Tipo de alimento</label>
+                <select id="portion-food-type">
+                  <option value="350">Croquetas estándar (~350 kcal/100g)</option>
+                  <option value="380">Croquetas premium (~380 kcal/100g)</option>
+                  <option value="300">Croquetas light (~300 kcal/100g)</option>
+                  <option value="85">Alimento húmedo (~85 kcal/100g)</option>
+                </select>
+              </div>
+              <div class="portion-result">
+                <p>Cantidad diaria: <strong id="portion-grams">0 g</strong></p>
+                <p>Equivale a: <strong id="portion-cups">0 tazas</strong> (aprox.)</p>
+                <p>Por comida (<span id="portion-meals">2</span> tomas): <strong id="portion-per-meal">0 g</strong></p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== SEGUIMIENTO DIARIO ==================== -->
+    <section id="section-seguimiento" class="section">
+      <h2 class="section-title"><i class="fas fa-chart-line"></i> Seguimiento Diario</h2>
+
+      <div id="track-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+
+      <div id="track-content" class="hidden">
+        <div class="dashboard-grid">
+          <!-- Registro de comida -->
+          <div class="card">
+            <div class="card-header">
+              <h3><i class="fas fa-drumstick-bite"></i> Registrar Comida</h3>
+            </div>
+            <div class="card-body">
+              <form id="meal-form" novalidate>
+                <div class="form-group">
+                  <label for="meal-time">Hora</label>
+                  <input type="time" id="meal-time" required>
+                </div>
+                <div class="form-group">
+                  <label for="meal-food-type">Tipo de alimento</label>
+                  <select id="meal-food-type" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="meal-brand">Marca</label>
+                  <input type="text" id="meal-brand" placeholder="Marca del alimento" maxlength="50">
+                </div>
+                <div class="form-group">
+                  <label for="meal-grams">Cantidad (gramos) *</label>
+                  <input type="number" id="meal-grams" min="1" max="2000" required placeholder="Ej: 150">
+                </div>
+                <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Agregar</button>
+              </form>
+            </div>
+          </div>
+
+          <!-- Resumen calórico del día -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-fire"></i> Calorías del Día</h3></div>
+            <div class="card-body">
+              <div class="calorie-summary">
+                <div class="calorie-consumed">
+                  <span class="big-number" id="track-cal-consumed">0</span>
+                  <span>consumidas</span>
+                </div>
+                <div class="calorie-divider">/</div>
+                <div class="calorie-target">
+                  <span class="big-number" id="track-cal-target">0</span>
+                  <span>recomendadas</span>
+                </div>
+              </div>
+              <div class="progress-bar large">
+                <div id="track-cal-progress" class="progress-fill"></div>
+              </div>
+              <p id="track-cal-status" class="cal-status"></p>
+            </div>
+          </div>
+
+          <!-- Comidas del día -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-list"></i> Comidas de Hoy</h3></div>
+            <div class="card-body">
+              <ul id="today-meals" class="meal-list">
+                <li class="empty-list">No hay comidas registradas hoy</li>
+              </ul>
+            </div>
+          </div>
+
+          <!-- Hidratación -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-tint"></i> Hidratación</h3></div>
+            <div class="card-body">
+              <form id="water-form" class="inline-form">
+                <div class="form-group">
+                  <label for="water-ml">Agua (ml)</label>
+                  <input type="number" id="water-ml" min="10" max="5000" placeholder="ml" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-plus"></i></button>
+              </form>
+              <div class="hydration-info">
+                <div class="progress-bar large">
+                  <div id="track-water-progress" class="progress-fill water"></div>
+                </div>
+                <p id="track-water-status"></p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Registro de peso -->
+          <div class="card">
+            <div class="card-header"><h3><i class="fas fa-weight"></i> Registro de Peso</h3></div>
+            <div class="card-body">
+              <form id="weight-form" class="inline-form">
+                <div class="form-group">
+                  <label for="weight-kg">Peso (kg)</label>
+                  <input type="number" id="weight-kg" min="0.1" max="100" step="0.1" placeholder="kg" required>
+                </div>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i></button>
+              </form>
+              <div class="weight-comparison" id="weight-comparison"></div>
+            </div>
+          </div>
+
+          <!-- Gráfico semanal calorías -->
+          <div class="card full-width">
+            <div class="card-header"><h3><i class="fas fa-chart-bar"></i> Cumplimiento Calórico (7 días)</h3></div>
+            <div class="card-body">
+              <canvas id="weekly-cal-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Gráfico peso -->
+          <div class="card full-width">
+            <div class="card-header"><h3><i class="fas fa-chart-line"></i> Evolución de Peso (3 meses)</h3></div>
+            <div class="card-body">
+              <canvas id="weight-history-chart"></canvas>
+            </div>
+          </div>
+
+          <!-- Historial 7 días -->
+          <div class="card full-width">
+            <div class="card-header"><h3><i class="fas fa-history"></i> Historial (Últimos 7 días)</h3></div>
+            <div class="card-body">
+              <div id="meal-history" class="meal-history"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== RECORDATORIOS ==================== -->
+    <section id="section-recordatorios" class="section">
+      <h2 class="section-title"><i class="fas fa-bell"></i> Alertas y Recordatorios</h2>
+
+      <div id="remind-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+
+      <div id="remind-content" class="hidden">
+        <button class="btn btn-primary" onclick="mostrarFormularioRecordatorio()">
+          <i class="fas fa-plus"></i> Nuevo Recordatorio
+        </button>
+
+        <!-- Formulario recordatorio -->
+        <div id="reminder-form-container" class="card form-card hidden" style="margin-top:1rem">
+          <div class="card-header">
+            <h3><i class="fas fa-bell"></i> Nuevo Recordatorio</h3>
+            <button class="btn-icon" onclick="cerrarFormularioRecordatorio()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="card-body">
+            <form id="reminder-form" novalidate>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="reminder-type">Tipo *</label>
+                  <select id="reminder-type" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="alimentacion">Alimentación</option>
+                    <option value="pesaje">Pesaje semanal</option>
+                    <option value="hidratacion">Hidratación</option>
+                    <option value="veterinario">Visita veterinaria</option>
+                    <option value="medicamento">Medicamento</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="reminder-time">Hora *</label>
+                  <input type="time" id="reminder-time" required>
+                </div>
+                <div class="form-group">
+                  <label for="reminder-repeat">Repetir</label>
+                  <select id="reminder-repeat">
+                    <option value="diario">Diario</option>
+                    <option value="semanal">Semanal</option>
+                    <option value="mensual">Mensual</option>
+                    <option value="unico">Una sola vez</option>
+                  </select>
+                </div>
+                <div class="form-group full-width">
+                  <label for="reminder-note">Nota</label>
+                  <input type="text" id="reminder-note" placeholder="Descripción del recordatorio" maxlength="100">
+                </div>
+                <div class="form-group">
+                  <label class="checkbox-label">
+                    <input type="checkbox" id="reminder-alarm">
+                    <span>Alarma sonora</span>
+                  </label>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarFormularioRecordatorio()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Recordatorios de hoy -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-calendar-day"></i> Recordatorios de Hoy</h3></div>
+          <div class="card-body">
+            <ul id="today-reminders" class="reminder-list"></ul>
+          </div>
+        </div>
+
+        <!-- Todos los recordatorios -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-list"></i> Todos los Recordatorios</h3></div>
+          <div class="card-body">
+            <ul id="all-reminders" class="reminder-list"></ul>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== CALENDARIO VETERINARIO ==================== -->
+    <section id="section-calendario" class="section">
+      <h2 class="section-title"><i class="fas fa-calendar-alt"></i> Calendario Veterinario</h2>
+
+      <div id="cal-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+
+      <div id="cal-content" class="hidden">
+        <!-- Plan de vacunación -->
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-syringe"></i> Plan de Vacunación</h3></div>
+          <div class="card-body">
+            <div id="vaccination-plan" class="timeline"></div>
+          </div>
+        </div>
+
+        <!-- Desparasitación -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-bug"></i> Desparasitación</h3></div>
+          <div class="card-body">
+            <div id="deworming-plan" class="deworming-info"></div>
+          </div>
+        </div>
+
+        <!-- Chequeos de rutina -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-stethoscope"></i> Chequeos de Rutina</h3></div>
+          <div class="card-body">
+            <div id="checkup-plan" class="checkup-info"></div>
+          </div>
+        </div>
+
+        <!-- Registrar visita -->
+        <button class="btn btn-primary" style="margin-top:1rem" onclick="mostrarFormularioVisita()">
+          <i class="fas fa-plus"></i> Registrar Visita Veterinaria
+        </button>
+
+        <!-- Formulario visita -->
+        <div id="visit-form-container" class="card form-card hidden" style="margin-top:1rem">
+          <div class="card-header">
+            <h3><i class="fas fa-clinic-medical"></i> Registrar Visita</h3>
+            <button class="btn-icon" onclick="cerrarFormularioVisita()" aria-label="Cerrar"><i class="fas fa-times"></i></button>
+          </div>
+          <div class="card-body">
+            <form id="visit-form" novalidate>
+              <div class="form-grid">
+                <div class="form-group">
+                  <label for="visit-date">Fecha *</label>
+                  <input type="date" id="visit-date" required>
+                </div>
+                <div class="form-group">
+                  <label for="visit-type">Tipo de visita *</label>
+                  <select id="visit-type" required>
+                    <option value="">Seleccionar...</option>
+                    <option value="vacunacion">Vacunación</option>
+                    <option value="desparasitacion">Desparasitación</option>
+                    <option value="chequeo">Chequeo de rutina</option>
+                    <option value="emergencia">Emergencia</option>
+                    <option value="cirugia">Cirugía</option>
+                    <option value="dental">Limpieza dental</option>
+                    <option value="otro">Otro</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="visit-vet">Veterinario</label>
+                  <input type="text" id="visit-vet" placeholder="Dr(a). ..." maxlength="60">
+                </div>
+                <div class="form-group">
+                  <label for="visit-clinic">Clínica</label>
+                  <input type="text" id="visit-clinic" placeholder="Nombre de la clínica" maxlength="60">
+                </div>
+                <div class="form-group full-width">
+                  <label for="visit-notes">Notas</label>
+                  <textarea id="visit-notes" rows="3" placeholder="Detalles de la visita..."></textarea>
+                </div>
+                <div class="form-group">
+                  <label for="visit-next">Próxima cita</label>
+                  <input type="date" id="visit-next">
+                </div>
+                <div class="form-group">
+                  <label for="visit-exam-link">Vincular con examen</label>
+                  <select id="visit-exam-link">
+                    <option value="">Sin vincular</option>
+                  </select>
+                </div>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="btn btn-secondary" onclick="cerrarFormularioVisita()">Cancelar</button>
+                <button type="submit" class="btn btn-primary"><i class="fas fa-save"></i> Guardar</button>
+              </div>
+            </form>
+          </div>
+        </div>
+
+        <!-- Historial de visitas y timeline -->
+        <div class="card" style="margin-top:1rem">
+          <div class="card-header"><h3><i class="fas fa-history"></i> Historial de Visitas y Exámenes</h3></div>
+          <div class="card-body">
+            <div id="visits-timeline" class="timeline"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== REFERENCIAS ==================== -->
+    <section id="section-referencias" class="section">
+      <h2 class="section-title"><i class="fas fa-book-medical"></i> Referencias Médicas</h2>
+
+      <!-- Valores de referencia -->
+      <div class="card">
+        <div class="card-header"><h3><i class="fas fa-vials"></i> Valores de Referencia - Exámenes</h3></div>
+        <div class="card-body">
+          <div class="tabs">
+            <button class="tab-btn active" data-tab="ref-perro">Perros</button>
+            <button class="tab-btn" data-tab="ref-gato">Gatos</button>
+          </div>
+          <div id="ref-perro" class="tab-content active">
+            <table class="ref-table">
+              <thead><tr><th>Parámetro</th><th>Valor Mínimo</th><th>Valor Máximo</th><th>Unidad</th></tr></thead>
+              <tbody id="ref-table-perro"></tbody>
+            </table>
+          </div>
+          <div id="ref-gato" class="tab-content">
+            <table class="ref-table">
+              <thead><tr><th>Parámetro</th><th>Valor Mínimo</th><th>Valor Máximo</th><th>Unidad</th></tr></thead>
+              <tbody id="ref-table-gato"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      <!-- Glosario -->
+      <div class="card" style="margin-top:1rem">
+        <div class="card-header"><h3><i class="fas fa-book"></i> Glosario Veterinario</h3></div>
+        <div class="card-body">
+          <div class="form-group">
+            <input type="text" id="glossary-search" placeholder="Buscar término..." class="search-input">
+          </div>
+          <dl id="glossary-list" class="glossary"></dl>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== AJUSTES ==================== -->
+    <section id="section-ajustes" class="section">
+      <h2 class="section-title"><i class="fas fa-cog"></i> Ajustes</h2>
+
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-database"></i> Datos</h3></div>
+          <div class="card-body">
+            <div class="settings-actions">
+              <button class="btn btn-primary btn-block" onclick="exportarDatos()">
+                <i class="fas fa-download"></i> Exportar Datos (JSON)
+              </button>
+              <div class="form-group" style="margin-top:1rem">
+                <label for="import-file" class="btn btn-outline btn-block" style="text-align:center;cursor:pointer">
+                  <i class="fas fa-upload"></i> Importar Datos (JSON)
+                </label>
+                <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDatos(event)">
+              </div>
+              <button class="btn btn-danger btn-block" style="margin-top:1rem" onclick="limpiarTodo()">
+                <i class="fas fa-trash-alt"></i> Limpiar Todos los Datos
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-palette"></i> Apariencia</h3></div>
+          <div class="card-body">
+            <div class="setting-item">
+              <span>Modo oscuro</span>
+              <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- Botón flotante -->
+  <button id="fab" class="fab" aria-label="Acciones rápidas" onclick="toggleFab()">
+    <i class="fas fa-plus"></i>
+  </button>
+  <div id="fab-menu" class="fab-menu hidden">
+    <button class="fab-option" onclick="fabAccion('comida')" title="Registrar comida">
+      <i class="fas fa-drumstick-bite"></i> <span>Comida</span>
+    </button>
+    <button class="fab-option" onclick="fabAccion('agua')" title="Registrar agua">
+      <i class="fas fa-tint"></i> <span>Agua</span>
+    </button>
+    <button class="fab-option" onclick="fabAccion('peso')" title="Registrar peso">
+      <i class="fas fa-weight"></i> <span>Peso</span>
+    </button>
+    <button class="fab-option" onclick="fabAccion('mascota')" title="Nueva mascota">
+      <i class="fas fa-paw"></i> <span>Mascota</span>
+    </button>
+  </div>
+
+  <!-- Toast de notificaciones -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- Modal de confirmación -->
+  <div id="confirm-modal" class="modal hidden">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title">Confirmar</h3>
+      </div>
+      <div class="modal-body">
+        <p id="modal-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button class="btn btn-secondary" onclick="cerrarModal()">Cancelar</button>
+        <button id="modal-confirm-btn" class="btn btn-danger">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>
