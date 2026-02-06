@@ -978,6 +978,187 @@ body {
   justify-content: center;
 }
 
+/* ==================== DROP ZONE (File Upload) ==================== */
+.drop-zone {
+  border: 2px dashed var(--border-color);
+  border-radius: var(--border-radius);
+  padding: 1.5rem;
+  text-align: center;
+  transition: all var(--transition);
+  background: var(--bg-primary);
+  cursor: pointer;
+  min-height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.drop-zone.drop-zone-sm { min-height: 80px; padding: 1rem; }
+.drop-zone.drag-over {
+  border-color: var(--primary);
+  background: rgba(74,144,226,0.08);
+}
+.drop-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--text-secondary);
+}
+.drop-placeholder i { font-size: 2rem; color: var(--text-light); }
+.drop-placeholder p { font-size: 0.85rem; margin: 0; }
+.drop-placeholder small { font-size: 0.75rem; color: var(--text-light); }
+.photo-preview {
+  position: relative;
+  display: inline-block;
+}
+.photo-preview img {
+  width: 120px;
+  height: 120px;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--primary);
+}
+.remove-photo {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  background: var(--danger) !important;
+  color: white !important;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 50%;
+  font-size: 0.7rem;
+}
+.pdf-preview {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.5rem;
+}
+.pdf-preview span { font-size: 0.85rem; color: var(--text-primary); }
+.upload-progress {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  align-items: center;
+}
+.upload-progress span { font-size: 0.8rem; color: var(--text-secondary); }
+.pdf-analysis { margin-top: 0.75rem; }
+
+/* ==================== VET MAP ==================== */
+.vet-map-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+.vet-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+}
+.vet-filters select {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-input);
+  color: var(--text-primary);
+  font-family: inherit;
+  min-height: 44px;
+}
+.vet-map-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+.vet-map {
+  height: 400px;
+  border-radius: var(--border-radius);
+  overflow: hidden;
+  border: 1px solid var(--border-color);
+  background: var(--bg-card);
+}
+.map-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: var(--text-light);
+  gap: 0.75rem;
+}
+.map-placeholder i { font-size: 3rem; }
+.map-placeholder p { font-size: 0.9rem; }
+.vet-list {
+  max-height: 400px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+.vet-card {
+  background: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  cursor: pointer;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+.vet-card:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
+.vet-card h4 { font-size: 0.95rem; margin-bottom: 0.25rem; }
+.vet-card .vet-address { font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.35rem; }
+.vet-card .vet-rating { display: flex; align-items: center; gap: 0.35rem; margin-bottom: 0.35rem; }
+.vet-card .vet-rating .stars { color: #FFC107; font-size: 0.8rem; }
+.vet-card .vet-rating span { font-size: 0.8rem; color: var(--text-secondary); }
+.vet-card .vet-actions { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.vet-card .vet-distance { font-size: 0.8rem; color: var(--primary); font-weight: 500; }
+.vet-fav-list { list-style: none; }
+.vet-fav-list li {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border-color);
+  font-size: 0.9rem;
+}
+.vet-fav-list li:last-child { border-bottom: none; }
+
+/* ==================== TOOLTIP TRIGGER ==================== */
+.tooltip-trigger {
+  color: var(--primary) !important;
+  font-size: 0.85rem !important;
+  padding: 0.25rem !important;
+  min-width: 30px !important;
+  min-height: 30px !important;
+}
+.tooltip-trigger:hover { background: rgba(74,144,226,0.1) !important; }
+
+/* ==================== BREED INFO CARD ==================== */
+.card-breed-info {
+  border-left: 4px solid var(--primary);
+  animation: slideDown 0.3s ease;
+}
+@keyframes slideDown {
+  from { opacity: 0; max-height: 0; }
+  to { opacity: 1; max-height: 500px; }
+}
+
+/* ==================== USER NAME BADGE ==================== */
+.user-name-badge {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* ==================== HIDDEN UTILITY ==================== */
 .hidden { display: none !important; }
 
@@ -990,6 +1171,11 @@ body {
   .pets-grid { grid-template-columns: 1fr 1fr; }
   .settings-grid { grid-template-columns: 1fr 1fr; }
   .card.full-width { grid-column: 1 / -1; }
+}
+
+/* Tablet - vet map */
+@media (min-width: 768px) {
+  .vet-map-layout { grid-template-columns: 1.5fr 1fr; }
 }
 
 /* Desktop */

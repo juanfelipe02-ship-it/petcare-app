@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare Pro - Crear Cuenta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .auth-page {
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: linear-gradient(135deg, #7ED321 0%, #4A90E2 50%, #2C3E50 100%);
+      padding: 1rem;
+    }
+    .auth-container {
+      background: var(--bg-card);
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      width: 100%;
+      max-width: 420px;
+      overflow: hidden;
+    }
+    .auth-header {
+      background: linear-gradient(135deg, #7ED321, #4A90E2);
+      color: white;
+      padding: 2rem;
+      text-align: center;
+    }
+    .auth-header .logo-large {
+      font-size: 3rem;
+      margin-bottom: 0.5rem;
+    }
+    .auth-header h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.25rem;
+    }
+    .auth-header p {
+      font-size: 0.9rem;
+      opacity: 0.9;
+    }
+    .auth-body {
+      padding: 2rem;
+    }
+    .auth-body .form-group {
+      margin-bottom: 1.25rem;
+    }
+    .auth-body .form-group label {
+      font-size: 0.9rem;
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      display: block;
+    }
+    .auth-body .form-group input {
+      width: 100%;
+      padding: 0.75rem 1rem 0.75rem 2.75rem;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: border-color 0.3s, box-shadow 0.3s;
+      background: var(--bg-input);
+      color: var(--text-primary);
+    }
+    .auth-body .form-group input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 4px rgba(74,144,226,0.15);
+      outline: none;
+    }
+    .input-wrapper {
+      position: relative;
+    }
+    .input-wrapper i {
+      position: absolute;
+      left: 1rem;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-light);
+      font-size: 1rem;
+    }
+    .auth-error {
+      background: rgba(208,2,27,0.1);
+      color: var(--danger);
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      font-size: 0.85rem;
+      display: none;
+      margin-bottom: 1rem;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .auth-error.visible { display: flex; }
+    .btn-auth {
+      width: 100%;
+      padding: 0.85rem;
+      background: #7ED321;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      min-height: 50px;
+    }
+    .btn-auth:hover { background: #5CA00E; transform: translateY(-1px); box-shadow: 0 4px 12px rgba(126,211,33,0.4); }
+    .btn-auth:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .btn-auth .spinner { display: none; }
+    .btn-auth.loading .spinner { display: inline-block; }
+    .btn-auth.loading .btn-text { display: none; }
+    .auth-links {
+      text-align: center;
+      margin-top: 1.5rem;
+      font-size: 0.9rem;
+    }
+    .auth-links a {
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+    }
+    .auth-links a:hover { text-decoration: underline; }
+    .password-strength {
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border-color);
+      margin-top: 0.5rem;
+      overflow: hidden;
+    }
+    .password-strength-bar {
+      height: 100%;
+      width: 0%;
+      transition: all 0.3s;
+      border-radius: 2px;
+    }
+    .password-hint {
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+      margin-top: 0.25rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="auth-page">
+    <div class="auth-container">
+      <div class="auth-header">
+        <div class="logo-large"><i class="fas fa-paw"></i></div>
+        <h1>Crear Cuenta</h1>
+        <p>Comienza a cuidar mejor a tu mascota</p>
+      </div>
+      <div class="auth-body">
+        <div id="auth-error" class="auth-error">
+          <i class="fas fa-exclamation-circle"></i>
+          <span id="error-text"></span>
+        </div>
+
+        <form id="signup-form" novalidate>
+          <div class="form-group">
+            <label>Nombre completo</label>
+            <div class="input-wrapper">
+              <input type="text" id="signup-name" placeholder="Tu nombre" required maxlength="50" autocomplete="name">
+              <i class="fas fa-user"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Correo electrónico</label>
+            <div class="input-wrapper">
+              <input type="email" id="signup-email" placeholder="tu@correo.com" required autocomplete="email">
+              <i class="fas fa-envelope"></i>
+            </div>
+          </div>
+          <div class="form-group">
+            <label>Contraseña</label>
+            <div class="input-wrapper">
+              <input type="password" id="signup-password" placeholder="Mínimo 6 caracteres" required minlength="6" autocomplete="new-password">
+              <i class="fas fa-lock"></i>
+            </div>
+            <div class="password-strength"><div id="strength-bar" class="password-strength-bar"></div></div>
+            <span id="password-hint" class="password-hint"></span>
+          </div>
+          <div class="form-group">
+            <label>Confirmar contraseña</label>
+            <div class="input-wrapper">
+              <input type="password" id="signup-confirm" placeholder="Repite tu contraseña" required autocomplete="new-password">
+              <i class="fas fa-lock"></i>
+            </div>
+          </div>
+          <button type="submit" class="btn-auth" id="signup-btn">
+            <span class="btn-text"><i class="fas fa-user-plus"></i> Crear Cuenta</span>
+            <i class="fas fa-spinner fa-spin spinner"></i>
+          </button>
+        </form>
+
+        <div class="auth-links">
+          <p>¿Ya tienes cuenta? <a href="login.html">Inicia sesión</a></p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+
+  <script>
+    // Verificar si ya está autenticado
+    auth.onAuthStateChanged(user => {
+      if (user) window.location.href = 'index.html';
+    });
+
+    // Indicador de fortaleza de contraseña
+    document.getElementById('signup-password').addEventListener('input', (e) => {
+      const password = e.target.value;
+      const bar = document.getElementById('strength-bar');
+      const hint = document.getElementById('password-hint');
+      let strength = 0;
+      let text = '';
+
+      if (password.length >= 6) strength++;
+      if (password.length >= 10) strength++;
+      if (/[A-Z]/.test(password)) strength++;
+      if (/[0-9]/.test(password)) strength++;
+      if (/[^A-Za-z0-9]/.test(password)) strength++;
+
+      const pct = (strength / 5) * 100;
+      bar.style.width = pct + '%';
+
+      if (strength <= 1) {
+        bar.style.background = '#D0021B';
+        text = 'Muy débil';
+      } else if (strength <= 2) {
+        bar.style.background = '#F5A623';
+        text = 'Débil';
+      } else if (strength <= 3) {
+        bar.style.background = '#F5A623';
+        text = 'Moderada';
+      } else if (strength <= 4) {
+        bar.style.background = '#7ED321';
+        text = 'Fuerte';
+      } else {
+        bar.style.background = '#5CA00E';
+        text = 'Muy fuerte';
+      }
+
+      hint.textContent = password.length > 0 ? text : '';
+    });
+
+    // Registro
+    document.getElementById('signup-form').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const btn = document.getElementById('signup-btn');
+      const errorDiv = document.getElementById('auth-error');
+      const nombre = document.getElementById('signup-name').value.trim();
+      const email = document.getElementById('signup-email').value.trim();
+      const password = document.getElementById('signup-password').value;
+      const confirm = document.getElementById('signup-confirm').value;
+
+      // Validaciones
+      if (!nombre || !email || !password || !confirm) {
+        document.getElementById('error-text').textContent = 'Completa todos los campos.';
+        errorDiv.classList.add('visible');
+        return;
+      }
+      if (password.length < 6) {
+        document.getElementById('error-text').textContent = 'La contraseña debe tener al menos 6 caracteres.';
+        errorDiv.classList.add('visible');
+        return;
+      }
+      if (password !== confirm) {
+        document.getElementById('error-text').textContent = 'Las contraseñas no coinciden.';
+        errorDiv.classList.add('visible');
+        return;
+      }
+
+      btn.classList.add('loading');
+      btn.disabled = true;
+      errorDiv.classList.remove('visible');
+
+      const result = await registrarUsuario(email, password, nombre);
+      if (result.success) {
+        window.location.href = 'index.html';
+      } else {
+        document.getElementById('error-text').textContent = result.error;
+        errorDiv.classList.add('visible');
+        btn.classList.remove('loading');
+        btn.disabled = false;
+      }
+    });
+  </script>
+</body>
+</html>

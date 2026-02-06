@@ -12,17 +12,75 @@ let estado = {
   pesos: {},          // { petId: [{ fecha, peso }] }
   recordatorios: {},  // { petId: [...] }
   visitas: {},        // { petId: [...] }
-  tema: 'light'
+  tema: 'light',
+  veterinariasFavoritas: []
 };
+
+let firestoreUnsubscribe = null;
+let currentPhotoFile = null;
+let currentPDFFile = null;
+let googleMap = null;
+let mapMarkers = [];
+let mapInfoWindow = null;
 
 // ==================== INICIALIZACIÓN ====================
 document.addEventListener('DOMContentLoaded', () => {
-  cargarDatos();
-  inicializarUI();
-  setTimeout(() => {
-    document.getElementById('app-loader').classList.add('hidden');
-  }, 600);
+  // Verificar autenticación
+  if (typeof auth !== 'undefined') {
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        window.location.href = 'login.html';
+        return;
+      }
+      // Mostrar nombre del usuario
+      const nameEl = document.getElementById('user-display-name');
+      if (nameEl) nameEl.textContent = user.displayName || user.email;
+
+      // Cargar datos desde Firestore
+      await cargarDatosDesdeFirestore();
+      inicializarUI();
+      setTimeout(() => {
+        document.getElementById('app-loader').classList.add('hidden');
+      }, 600);
+
+      // Escuchar cambios en tiempo real para sincronización entre dispositivos
+      firestoreUnsubscribe = escucharCambiosFirestore((data) => {
+        // Solo actualizar si los datos son más recientes
+        if (data && data.mascotas) {
+          estado = { ...estado, ...data };
+          renderizarMascotas();
+          actualizarDashboard();
+        }
+      });
+    });
+  } else {
+    // Sin Firebase, usar localStorage
+    cargarDatos();
+    inicializarUI();
+    setTimeout(() => {
+      document.getElementById('app-loader').classList.add('hidden');
+    }, 600);
+  }
 });
+
+async function cargarDatosDesdeFirestore() {
+  try {
+    const data = await cargarDatosFirestore();
+    if (data) {
+      estado = { ...estado, ...data };
+    } else {
+      // Migrar datos de localStorage a Firestore si existen
+      cargarDatos();
+      if (estado.mascotas.length > 0) {
+        await guardarDatosFirestore(estado);
+        localStorage.removeItem('petcare_data');
+      }
+    }
+  } catch(e) {
+    console.error('Error cargando desde Firestore:', e);
+    cargarDatos(); // Fallback a localStorage
+  }
+}
 
 function inicializarUI() {
   // Tema
@@ -51,6 +109,11 @@ function inicializarUI() {
   // Formularios
   document.getElementById('pet-form').addEventListener('submit', guardarMascota);
   document.getElementById('pet-species').addEventListener('change', actualizarRazas);
+  document.getElementById('pet-breed')?.addEventListener('change', (e) => {
+    if (e.target.value && typeof mostrarInfoRaza === 'function') {
+      mostrarInfoRaza(e.target.value);
+    }
+  });
   document.getElementById('exam-form').addEventListener('submit', guardarExamen);
   document.getElementById('meal-form').addEventListener('submit', registrarComida);
   document.getElementById('water-form').addEventListener('submit', registrarAgua);
@@ -119,6 +182,10 @@ function guardarDatos() {
     localStorage.setItem('petcare_data', JSON.stringify(estado));
   } catch(e) {
     mostrarToast('Error al guardar datos', 'error');
+  }
+  // También guardar en Firestore si está disponible
+  if (typeof guardarDatosFirestore === 'function' && typeof auth !== 'undefined' && auth.currentUser) {
+    guardarDatosFirestore(estado).catch(e => console.error('Error Firestore:', e));
   }
 }
 
@@ -217,6 +284,7 @@ function navegarA(seccion) {
     case 'seguimiento': renderizarSeguimiento(); break;
     case 'recordatorios': renderizarRecordatorios(); break;
     case 'calendario': renderizarCalendario(); break;
+    case 'veterinarias': renderizarFavoritos(); break;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -1663,4 +1731,430 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+// ==================== SUBIDA DE FOTOS ====================
+function handleDragOver(e) {
+  e.preventDefault();
+  e.currentTarget.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  e.currentTarget.classList.remove('drag-over');
+}
+
+function handlePhotoDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type.startsWith('image/')) {
+    processPhotoFile(file);
+  } else {
+    mostrarToast('Solo se aceptan imágenes (JPG, PNG, WebP)', 'warning');
+  }
+}
+
+function handlePhotoSelect(e) {
+  const file = e.target.files[0];
+  if (file) processPhotoFile(file);
+}
+
+function processPhotoFile(file) {
+  if (file.size > 5 * 1024 * 1024) {
+    mostrarToast('La imagen no debe superar 5MB', 'warning');
+    return;
+  }
+
+  currentPhotoFile = file;
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('photo-preview-img').src = e.target.result;
+    document.getElementById('photo-preview').classList.remove('hidden');
+    document.getElementById('photo-placeholder').classList.add('hidden');
+    // Guardar como data URL para uso sin Firebase Storage
+    document.getElementById('pet-photo').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePhotoPreview() {
+  currentPhotoFile = null;
+  document.getElementById('pet-photo').value = '';
+  document.getElementById('photo-preview').classList.add('hidden');
+  document.getElementById('photo-placeholder').classList.remove('hidden');
+  const fileInput = document.getElementById('pet-photo-file');
+  if (fileInput) fileInput.value = '';
+}
+
+// ==================== SUBIDA DE PDF ====================
+function handlePDFDrop(e) {
+  e.preventDefault();
+  e.currentTarget.classList.remove('drag-over');
+  const file = e.dataTransfer.files[0];
+  if (file && file.type === 'application/pdf') {
+    processPDFFile(file);
+  } else {
+    mostrarToast('Solo se aceptan archivos PDF', 'warning');
+  }
+}
+
+function handlePDFSelect(e) {
+  const file = e.target.files[0];
+  if (file) processPDFFile(file);
+}
+
+async function processPDFFile(file) {
+  currentPDFFile = file;
+  document.getElementById('pdf-file-name').textContent = file.name;
+  document.getElementById('pdf-preview').classList.remove('hidden');
+  document.getElementById('pdf-placeholder').classList.add('hidden');
+
+  // Intentar extraer valores del PDF
+  if (typeof pdfjsLib !== 'undefined') {
+    try {
+      mostrarToast('Analizando PDF...', 'info');
+      const result = await extraerValoresPDF(file);
+      const { valores } = result;
+
+      let valoresEncontrados = false;
+
+      if (valores.hemoglobina !== null) {
+        document.getElementById('exam-hemoglobina').value = valores.hemoglobina;
+        valoresEncontrados = true;
+      }
+      if (valores.glucosa !== null) {
+        document.getElementById('exam-glucosa').value = valores.glucosa;
+        valoresEncontrados = true;
+      }
+      if (valores.creatinina !== null) {
+        document.getElementById('exam-creatinina').value = valores.creatinina;
+        valoresEncontrados = true;
+      }
+      if (valores.alt !== null) {
+        document.getElementById('exam-alt').value = valores.alt;
+        valoresEncontrados = true;
+      }
+      if (valores.proteinas !== null) {
+        document.getElementById('exam-proteinas').value = valores.proteinas;
+        valoresEncontrados = true;
+      }
+
+      if (valoresEncontrados) {
+        document.getElementById('pdf-analysis').classList.remove('hidden');
+        mostrarToast('Valores detectados del PDF', 'success');
+      } else {
+        mostrarToast('No se detectaron valores automáticamente', 'info');
+      }
+    } catch (err) {
+      console.error('Error al analizar PDF:', err);
+      mostrarToast('No se pudo analizar el PDF', 'warning');
+    }
+  }
+
+  // Guardar como data URL para referencia
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    document.getElementById('exam-file').value = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function removePDFPreview() {
+  currentPDFFile = null;
+  document.getElementById('exam-file').value = '';
+  document.getElementById('pdf-preview').classList.add('hidden');
+  document.getElementById('pdf-placeholder').classList.remove('hidden');
+  document.getElementById('pdf-analysis').classList.add('hidden');
+  const fileInput = document.getElementById('exam-pdf-file');
+  if (fileInput) fileInput.value = '';
+}
+
+function verPDF(url) {
+  if (!url) return;
+  document.getElementById('pdf-viewer-frame').src = url;
+  document.getElementById('pdf-download-link').href = url;
+  document.getElementById('pdf-viewer-modal').classList.remove('hidden');
+}
+
+// ==================== GOOGLE MAPS - VETERINARIAS ====================
+function usarUbicacionActual() {
+  if (!navigator.geolocation) {
+    mostrarToast('Tu navegador no soporta geolocalización', 'warning');
+    return;
+  }
+  mostrarToast('Obteniendo ubicación...', 'info');
+  navigator.geolocation.getCurrentPosition(
+    (pos) => {
+      buscarVeterinariasEnCoordenadas(pos.coords.latitude, pos.coords.longitude);
+    },
+    (err) => {
+      mostrarToast('No se pudo obtener tu ubicación. Verifica los permisos.', 'error');
+    }
+  );
+}
+
+function buscarVeterinarias() {
+  const pet = obtenerMascotaActiva();
+  if (pet && pet.ciudad) {
+    // Geocodificar la ciudad de la mascota
+    if (typeof google === 'undefined' || !google.maps) {
+      mostrarToast('Google Maps no está disponible', 'error');
+      return;
+    }
+    const geocoder = new google.maps.Geocoder();
+    geocoder.geocode({ address: `${pet.ciudad}, ${pet.pais || ''}` }, (results, status) => {
+      if (status === 'OK' && results[0]) {
+        const loc = results[0].geometry.location;
+        buscarVeterinariasEnCoordenadas(loc.lat(), loc.lng());
+      } else {
+        mostrarToast('No se encontró la ubicación. Usa "Mi ubicación"', 'warning');
+      }
+    });
+  } else {
+    // Sin ciudad, usar geolocalización
+    usarUbicacionActual();
+  }
+}
+
+function buscarVeterinariasEnCoordenadas(lat, lng) {
+  if (typeof google === 'undefined' || !google.maps) {
+    mostrarToast('Google Maps no está disponible', 'error');
+    return;
+  }
+
+  const mapDiv = document.getElementById('vet-map');
+  mapDiv.innerHTML = '';
+
+  const location = new google.maps.LatLng(lat, lng);
+  const radio = parseInt(document.getElementById('vet-distance').value) || 5000;
+  const openNow = document.getElementById('vet-open-now').checked;
+
+  googleMap = new google.maps.Map(mapDiv, {
+    center: location,
+    zoom: 13,
+    styles: estado.tema === 'dark' ? darkMapStyles : []
+  });
+
+  // Marcador de ubicación del usuario
+  new google.maps.Marker({
+    position: location,
+    map: googleMap,
+    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#4A90E2', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
+    title: 'Tu ubicación'
+  });
+
+  mapInfoWindow = new google.maps.InfoWindow();
+
+  const service = new google.maps.places.PlacesService(googleMap);
+  const request = {
+    location,
+    radius: radio,
+    type: 'veterinary_care',
+    ...(openNow ? { openNow: true } : {})
+  };
+
+  service.nearbySearch(request, (results, status) => {
+    if (status === google.maps.places.PlacesServiceStatus.OK) {
+      // Limpiar marcadores anteriores
+      mapMarkers.forEach(m => m.setMap(null));
+      mapMarkers = [];
+
+      // Ordenar por distancia
+      results.sort((a, b) => {
+        const distA = calcularDistancia(lat, lng, a.geometry.location.lat(), a.geometry.location.lng());
+        const distB = calcularDistancia(lat, lng, b.geometry.location.lat(), b.geometry.location.lng());
+        return distA - distB;
+      });
+
+      results.forEach((place, idx) => {
+        const marker = new google.maps.Marker({
+          position: place.geometry.location,
+          map: googleMap,
+          title: place.name,
+          label: { text: String(idx + 1), color: '#fff', fontSize: '11px' },
+          icon: { path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6, fillColor: '#D0021B', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1 }
+        });
+
+        marker.addListener('click', () => {
+          const dist = calcularDistancia(lat, lng, place.geometry.location.lat(), place.geometry.location.lng());
+          const stars = place.rating ? '★'.repeat(Math.round(place.rating)) + '☆'.repeat(5 - Math.round(place.rating)) : 'Sin calificación';
+          mapInfoWindow.setContent(`
+            <div style="max-width:250px;font-family:Roboto,sans-serif">
+              <h4 style="margin:0 0 4px;font-size:14px">${escapeHtml(place.name)}</h4>
+              <p style="margin:0 0 4px;font-size:12px;color:#666">${escapeHtml(place.vicinity || '')}</p>
+              <p style="margin:0 0 4px;font-size:12px;color:#FFC107">${stars} ${place.rating ? '(' + place.rating + ')' : ''}</p>
+              <p style="margin:0 0 8px;font-size:12px;color:#4A90E2;font-weight:500">${dist.toFixed(1)} km</p>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${place.geometry.location.lat()},${place.geometry.location.lng()}" target="_blank" style="font-size:12px;color:#4A90E2;text-decoration:none">
+                <i class="fas fa-directions"></i> Cómo llegar
+              </a>
+            </div>
+          `);
+          mapInfoWindow.open(googleMap, marker);
+        });
+
+        mapMarkers.push(marker);
+      });
+
+      renderizarListaVeterinarias(results, lat, lng);
+      mostrarToast(`${results.length} veterinarias encontradas`, 'success');
+    } else {
+      mostrarToast('No se encontraron veterinarias en esta área', 'info');
+    }
+  });
+}
+
+function renderizarListaVeterinarias(places, userLat, userLng) {
+  const list = document.getElementById('vet-list');
+  const favs = estado.veterinariasFavoritas || [];
+
+  list.innerHTML = places.map((place, idx) => {
+    const dist = calcularDistancia(userLat, userLng, place.geometry.location.lat(), place.geometry.location.lng());
+    const isFav = favs.some(f => f.placeId === place.place_id);
+    const stars = place.rating ? '★'.repeat(Math.round(place.rating)) + '☆'.repeat(5 - Math.round(place.rating)) : '';
+
+    return `
+      <div class="vet-card" onclick="googleMap.panTo({lat:${place.geometry.location.lat()},lng:${place.geometry.location.lng()}});googleMap.setZoom(16)">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <h4>${idx + 1}. ${escapeHtml(place.name)}</h4>
+          <button class="btn-icon btn-sm" onclick="event.stopPropagation();toggleFavorito('${place.place_id}','${escapeHtml(place.name).replace(/'/g, "\\'")}','${escapeHtml(place.vicinity || '').replace(/'/g, "\\'")}')" title="${isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
+            <i class="fas fa-heart" style="color:${isFav ? 'var(--danger)' : 'var(--text-light)'}"></i>
+          </button>
+        </div>
+        <p class="vet-address"><i class="fas fa-map-pin"></i> ${escapeHtml(place.vicinity || '')}</p>
+        ${stars ? `<div class="vet-rating"><span class="stars">${stars}</span><span>${place.rating}</span></div>` : ''}
+        <span class="vet-distance"><i class="fas fa-route"></i> ${dist.toFixed(1)} km</span>
+        <div class="vet-actions">
+          <a href="https://www.google.com/maps/dir/?api=1&destination=${place.geometry.location.lat()},${place.geometry.location.lng()}" target="_blank" class="btn btn-sm btn-outline" onclick="event.stopPropagation()">
+            <i class="fas fa-directions"></i> Cómo llegar
+          </a>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function toggleFavorito(placeId, nombre, direccion) {
+  if (!estado.veterinariasFavoritas) estado.veterinariasFavoritas = [];
+  const idx = estado.veterinariasFavoritas.findIndex(f => f.placeId === placeId);
+  if (idx !== -1) {
+    estado.veterinariasFavoritas.splice(idx, 1);
+    mostrarToast('Eliminada de favoritos', 'info');
+  } else {
+    estado.veterinariasFavoritas.push({ placeId, nombre, direccion });
+    mostrarToast('Agregada a favoritos', 'success');
+  }
+  guardarDatos();
+  renderizarFavoritos();
+}
+
+function renderizarFavoritos() {
+  const list = document.getElementById('vet-favorites');
+  const favs = estado.veterinariasFavoritas || [];
+
+  if (favs.length === 0) {
+    list.innerHTML = '<li class="empty-list">No tienes veterinarias favoritas</li>';
+    return;
+  }
+
+  list.innerHTML = favs.map(f => `
+    <li>
+      <div>
+        <strong>${escapeHtml(f.nombre)}</strong><br>
+        <small style="color:var(--text-secondary)">${escapeHtml(f.direccion)}</small>
+      </div>
+      <button class="btn-icon btn-sm" onclick="toggleFavorito('${f.placeId}','','')" title="Quitar"><i class="fas fa-heart" style="color:var(--danger)"></i></button>
+    </li>
+  `).join('');
+}
+
+function calcularDistancia(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+            Math.sin(dLon/2) * Math.sin(dLon/2);
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// Estilos oscuros para Google Maps
+const darkMapStyles = [
+  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
+  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
+  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] }
+];
+
+// ==================== EXPLICACIONES NUTRICIONALES ====================
+function mostrarExplicacion(tipo) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+
+  const modal = document.getElementById('explanation-modal');
+  const body = document.getElementById('explanation-body');
+  const calorias = calcularCaloriasDiarias(pet);
+  const rer = 70 * Math.pow(pet.peso, 0.75);
+  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const info = INFO_RAZA_DETALLADA[pet.raza];
+
+  let html = '';
+
+  if (tipo === 'calorias') {
+    html = `
+      <h4>Cálculo de calorías para ${escapeHtml(pet.nombre)}</h4>
+      <p style="color:var(--text-secondary);line-height:1.8">
+        <strong>1. RER (Requerimiento Energético en Reposo):</strong><br>
+        Fórmula: 70 x (${pet.peso} kg)^0.75 = <strong>${Math.round(rer)} kcal</strong><br>
+        <em>El exponente 0.75 refleja que el metabolismo no escala linealmente con el peso.</em><br><br>
+        <strong>2. Factor de actividad (${capitalizarPrimera(pet.actividad.replace('_',' '))}):</strong> x${FACTORES_ACTIVIDAD[pet.actividad]}<br>
+        ${edadMeses < 12 ? '<strong>3. Ajuste cachorro:</strong> +25% (crecimiento)<br>' : ''}
+        ${edadMeses > 84 ? '<strong>3. Ajuste senior:</strong> -10% (metabolismo más lento)<br>' : ''}
+        ${(pet.genero === 'castrado' || pet.genero === 'esterilizada') ? '<strong>Ajuste castrado/a:</strong> -10%<br>' : ''}
+        ${parseInt(pet.condicion) >= 4 ? '<strong>Ajuste sobrepeso:</strong> -20%<br>' : ''}
+        <br>
+        <strong>Total recomendado: ${Math.round(calorias)} kcal/día</strong>
+      </p>
+      ${info ? `<div style="margin-top:1rem;padding:0.75rem;background:rgba(74,144,226,0.08);border-radius:8px;font-size:0.85rem"><strong>Nota para ${pet.raza}:</strong> ${info.nutricionEspecifica.nota}</div>` : ''}
+    `;
+  } else if (tipo === 'macros') {
+    const macros = MACRONUTRIENTES[pet.especie];
+    html = `
+      <h4>Macronutrientes para ${pet.especie === 'perro' ? 'perros' : 'gatos'}</h4>
+      <p style="color:var(--text-secondary);line-height:1.8">
+        ${pet.especie === 'gato'
+          ? 'Los gatos son <strong>carnívoros obligados</strong>. Necesitan más proteína y grasa que los perros, y mucho menos carbohidratos.'
+          : 'Los perros son <strong>carnívoros facultativos</strong>. Pueden digerir carbohidratos gracias a genes desarrollados durante la domesticación.'}
+        <br><br>
+        <strong>Proteína (${macros.proteina.min}-${macros.proteina.max}%):</strong> Esencial para músculos, órganos y sistema inmune.<br>
+        <strong>Grasa (${macros.grasa.min}-${macros.grasa.max}%):</strong> Energía concentrada (9 kcal/g), vitaminas liposolubles, ácidos grasos esenciales.<br>
+        <strong>Carbohidratos (${macros.carbohidratos.min}-${macros.carbohidratos.max}%):</strong> ${pet.especie === 'gato' ? 'Mínimos, los gatos tienen capacidad limitada de procesarlos.' : 'Energía sostenida y fibra dietaria.'}
+      </p>
+      ${info ? `<div style="margin-top:1rem;padding:0.75rem;background:rgba(245,166,35,0.08);border-radius:8px;font-size:0.85rem"><strong>Específico para ${pet.raza}:</strong><br>Proteína: ${info.nutricionEspecifica.proteina.min}-${info.nutricionEspecifica.proteina.max}% | Grasa: ${info.nutricionEspecifica.grasa.min}-${info.nutricionEspecifica.grasa.max}%</div>` : ''}
+    `;
+  }
+
+  body.innerHTML = html;
+  modal.classList.remove('hidden');
+}
+
+// ==================== INFO DE RAZA EN NUTRICIÓN ====================
+function mostrarInfoRaza(raza) {
+  const info = INFO_RAZA_DETALLADA[raza];
+  const card = document.getElementById('breed-info-popup');
+  if (!info) {
+    card.classList.add('hidden');
+    return;
+  }
+
+  card.classList.remove('hidden');
+  document.getElementById('breed-info-title').textContent = `¿Sabías que los ${raza}...?`;
+  document.getElementById('breed-info-body').innerHTML = `
+    <p style="font-size:0.9rem;color:var(--text-secondary);margin-bottom:0.75rem">${info.datosCuriosos}</p>
+    <p style="font-size:0.85rem;color:var(--text-secondary)"><strong>Predisposiciones:</strong> ${info.predisposiciones.join(', ')}</p>
+    <p style="font-size:0.85rem;color:var(--text-secondary)"><strong>Suplementos recomendados:</strong> ${info.suplementos.join(', ')}</p>
+    <a href="educacion-nutricional.html" target="_blank" class="btn btn-sm btn-outline" style="margin-top:0.75rem">
+      <i class="fas fa-graduation-cap"></i> Ver guía completa
+    </a>
+  `;
 }

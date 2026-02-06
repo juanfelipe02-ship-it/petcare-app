@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare Pro - Educación Nutricional</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    .edu-page { max-width: 960px; margin: 0 auto; padding: 1.5rem; }
+    .edu-header {
+      text-align: center;
+      padding: 2.5rem 1rem;
+      background: linear-gradient(135deg, #4A90E2, #7ED321);
+      border-radius: var(--border-radius);
+      color: white;
+      margin-bottom: 2rem;
+    }
+    .edu-header h1 { font-size: 2rem; margin-bottom: 0.5rem; }
+    .edu-header p { font-size: 1rem; opacity: 0.9; max-width: 600px; margin: 0 auto; }
+    .back-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: var(--primary);
+      text-decoration: none;
+      font-weight: 500;
+      margin-bottom: 1.5rem;
+      font-size: 0.95rem;
+    }
+    .back-link:hover { text-decoration: underline; }
+    .edu-nav {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.5rem;
+      margin-bottom: 2rem;
+      position: sticky;
+      top: 0;
+      background: var(--bg-primary);
+      padding: 0.75rem 0;
+      z-index: 10;
+    }
+    .edu-nav a {
+      padding: 0.5rem 1rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 20px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 0.85rem;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+    .edu-nav a:hover, .edu-nav a.active { background: var(--primary); color: white; border-color: var(--primary); }
+    .edu-section { margin-bottom: 3rem; scroll-margin-top: 80px; }
+    .edu-section h2 {
+      font-size: 1.5rem;
+      color: var(--primary);
+      margin-bottom: 1rem;
+      padding-bottom: 0.5rem;
+      border-bottom: 2px solid var(--primary);
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+    .edu-section h3 {
+      font-size: 1.15rem;
+      margin: 1.5rem 0 0.75rem;
+      color: var(--text-primary);
+    }
+    .edu-section h4 {
+      font-size: 1rem;
+      margin: 1rem 0 0.5rem;
+      color: var(--primary);
+    }
+    .edu-text { font-size: 0.95rem; line-height: 1.8; color: var(--text-secondary); margin-bottom: 1rem; }
+    .edu-text strong { color: var(--text-primary); }
+    .formula-box {
+      background: rgba(74,144,226,0.08);
+      border-left: 4px solid var(--primary);
+      padding: 1.25rem;
+      border-radius: 0 var(--border-radius-sm) var(--border-radius-sm) 0;
+      margin: 1rem 0;
+      font-size: 0.95rem;
+    }
+    .formula-box code {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--primary);
+      display: block;
+      margin: 0.5rem 0;
+    }
+    .breed-info-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      box-shadow: var(--shadow-sm);
+    }
+    .breed-info-box h4 { margin-top: 0; }
+    .breed-info-box ul { padding-left: 1.25rem; line-height: 2; font-size: 0.9rem; color: var(--text-secondary); }
+    .macro-box {
+      background: var(--bg-card);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      margin: 0.75rem 0;
+      border-left: 4px solid var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+    .macro-box.protein { border-left-color: #4A90E2; }
+    .macro-box.fat { border-left-color: #F5A623; }
+    .macro-box.carb { border-left-color: #7ED321; }
+    .macro-box h4 { margin-top: 0; }
+    .factor-grid {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 0.75rem;
+      margin: 1rem 0;
+    }
+    .factor-card {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      gap: 1rem;
+      align-items: flex-start;
+    }
+    .factor-card .factor-mult {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: var(--primary);
+      min-width: 50px;
+      text-align: center;
+    }
+    .factor-card .factor-desc h4 { margin: 0 0 0.25rem; font-size: 0.95rem; }
+    .factor-card .factor-desc p { font-size: 0.85rem; color: var(--text-secondary); margin: 0; }
+    .myth-card {
+      background: var(--bg-card);
+      border-radius: var(--border-radius);
+      padding: 1.25rem;
+      margin: 1rem 0;
+      box-shadow: var(--shadow-sm);
+      border-left: 4px solid var(--danger);
+    }
+    .myth-card .myth-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(208,2,27,0.1);
+      color: var(--danger);
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+    }
+    .myth-card .reality-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: rgba(126,211,33,0.1);
+      color: var(--success-dark);
+      padding: 0.25rem 0.75rem;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      font-weight: 600;
+      margin: 0.75rem 0 0.5rem;
+    }
+    .myth-card p { font-size: 0.9rem; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+    .myth-card .myth-text { font-weight: 600; color: var(--text-primary); font-size: 1rem; }
+    .ref-card {
+      background: var(--bg-card);
+      border-radius: var(--border-radius-sm);
+      padding: 1rem;
+      margin: 0.75rem 0;
+      box-shadow: var(--shadow-sm);
+      border-left: 3px solid var(--primary);
+    }
+    .ref-card h4 { font-size: 0.9rem; margin: 0 0 0.25rem; }
+    .ref-card h4 a { color: var(--primary); text-decoration: none; }
+    .ref-card h4 a:hover { text-decoration: underline; }
+    .ref-card p { font-size: 0.8rem; color: var(--text-secondary); margin: 0; }
+    .calc-section {
+      background: var(--bg-card);
+      border-radius: var(--border-radius);
+      padding: 1.5rem;
+      box-shadow: var(--shadow-md);
+      margin: 1.5rem 0;
+    }
+    .calc-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+    .calc-result {
+      text-align: center;
+      padding: 1.5rem;
+      background: rgba(74,144,226,0.05);
+      border-radius: var(--border-radius);
+      margin-top: 1rem;
+    }
+    .calc-result .big-cal { font-size: 3rem; font-weight: 700; color: var(--primary); }
+    .compare-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 1rem 0;
+      font-size: 0.85rem;
+    }
+    .compare-table th, .compare-table td {
+      padding: 0.75rem;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .compare-table th { font-weight: 600; color: var(--text-secondary); text-transform: uppercase; font-size: 0.8rem; }
+    .timeline-chart-container { margin: 1.5rem 0; }
+    @media(min-width:600px) {
+      .factor-grid { grid-template-columns: 1fr 1fr; }
+      .calc-grid { grid-template-columns: 1fr 1fr; }
+    }
+    @media(min-width:768px) {
+      .edu-header h1 { font-size: 2.5rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="edu-page">
+    <a href="index.html" class="back-link"><i class="fas fa-arrow-left"></i> Volver a PetCare Pro</a>
+
+    <div class="edu-header">
+      <i class="fas fa-graduation-cap" style="font-size:2.5rem;margin-bottom:0.5rem"></i>
+      <h1>Educación Nutricional</h1>
+      <p>La ciencia detrás de las recomendaciones nutricionales para tu mascota</p>
+    </div>
+
+    <nav class="edu-nav">
+      <a href="#rer" class="active">RER y Calorías</a>
+      <a href="#factores">Factores</a>
+      <a href="#perros">Perros</a>
+      <a href="#gatos">Gatos</a>
+      <a href="#calculadora">Calculadora</a>
+      <a href="#comparador">Comparador</a>
+      <a href="#timeline">Timeline</a>
+      <a href="#mitos">Mitos</a>
+      <a href="#referencias">Referencias</a>
+    </nav>
+
+    <!-- ==================== RER ==================== -->
+    <section id="rer" class="edu-section">
+      <h2><i class="fas fa-fire"></i> Requerimiento Energético en Reposo (RER)</h2>
+      <p class="edu-text">
+        El cálculo de calorías para mascotas no es simplemente multiplicar el peso por un número fijo.
+        Los animales tienen un metabolismo que escala de forma <strong>no lineal</strong> con su peso corporal.
+        Esto se conoce como la <strong>ley de Kleiber</strong>, descubierta en 1932.
+      </p>
+      <div class="formula-box">
+        <strong>Fórmula del RER (Requerimiento Energético en Reposo):</strong>
+        <code>RER = 70 x (peso en kg)^0.75</code>
+        <p>El exponente 0.75 refleja que el metabolismo no es proporcional al peso. Un perro de 40 kg NO necesita el doble de calorías que uno de 20 kg.</p>
+      </div>
+      <p class="edu-text">
+        <strong>¿Por qué 0.75?</strong> Este exponente se llama "exponente metabólico alométrico". Refleja que los animales más grandes
+        tienen una menor tasa metabólica por kilogramo de peso. Esto se debe a que la relación superficie/volumen
+        disminuye con el tamaño, y la pérdida de calor (que impulsa el metabolismo) ocurre a través de la superficie.
+      </p>
+      <p class="edu-text">
+        <strong>Ejemplo práctico:</strong> Un perro de 10 kg necesita un RER de ~400 kcal (70 x 10^0.75 = 70 x 5.62 = 394 kcal).
+        Si fuera lineal (70 x 10), necesitaría 700 kcal, ¡un 77% más! Sobrealimentar así causaría obesidad rápidamente.
+      </p>
+      <div class="card" style="margin-top:1.5rem">
+        <div class="card-header"><h3><i class="fas fa-chart-area"></i> RER según peso corporal</h3></div>
+        <div class="card-body"><canvas id="rer-chart"></canvas></div>
+      </div>
+    </section>
+
+    <!-- ==================== FACTORES ==================== -->
+    <section id="factores" class="edu-section">
+      <h2><i class="fas fa-sliders-h"></i> Factores Multiplicadores Explicados</h2>
+      <p class="edu-text">
+        El RER es solo la energía que necesita el cuerpo en reposo total. Para calcular las necesidades reales,
+        multiplicamos por un <strong>factor de actividad y condición</strong>:
+      </p>
+      <div class="formula-box">
+        <strong>Calorías diarias = RER x Factor de actividad x Ajustes</strong>
+        <code>MER = 70 x (peso)^0.75 x factor</code>
+      </div>
+      <div class="factor-grid">
+        <div class="factor-card">
+          <div class="factor-mult">x2.0</div>
+          <div class="factor-desc">
+            <h4>Cachorro en crecimiento</h4>
+            <p>Gastan energía en: crecimiento celular (40%), juego intenso (30%), termorregulación (20%), digestión (10%). Sus necesidades son el DOBLE de un adulto.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x1.8</div>
+          <div class="factor-desc">
+            <h4>Muy activo</h4>
+            <p>Perros de trabajo, deportistas, caminatas de 3+ horas diarias. Alta demanda muscular y energética constante.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x1.6</div>
+          <div class="factor-desc">
+            <h4>Activo</h4>
+            <p>Perros que caminan 2+ horas diarias, juegan fetch regularmente, corren con frecuencia. Ejercicio moderado-intenso.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x1.4</div>
+          <div class="factor-desc">
+            <h4>Moderado (Estándar)</h4>
+            <p>1-2 caminatas diarias de 30-60 minutos. Juego moderado. Es el factor más común para mascotas de hogar.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x1.2</div>
+          <div class="factor-desc">
+            <h4>Sedentario</h4>
+            <p>Menos de 30 minutos de actividad diaria. Gatos de interior. Perros en recuperación. Razas muy tranquilas.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x0.9</div>
+          <div class="factor-desc">
+            <h4>Senior (+7 años)</h4>
+            <p>Metabolismo 10% más lento después de 7 años. Menor masa muscular y actividad. Pero necesitan MÁS proteína para preservar músculo.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x0.9</div>
+          <div class="factor-desc">
+            <h4>Castrado / Esterilizada</h4>
+            <p>La reducción hormonal disminuye el metabolismo 10-15%. Tendencia al aumento de peso si no se ajustan calorías.</p>
+          </div>
+        </div>
+        <div class="factor-card">
+          <div class="factor-mult">x0.8</div>
+          <div class="factor-desc">
+            <h4>Sobrepeso (Plan de pérdida)</h4>
+            <p>Para pérdida gradual y segura de 1-2% de peso corporal por semana. NUNCA reducir más del 20%, podría causar deficiencias.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PERROS ==================== -->
+    <section id="perros" class="edu-section">
+      <h2><i class="fas fa-dog"></i> Nutrición Canina: La Ciencia Detrás</h2>
+      <p class="edu-text">
+        Los perros son <strong>carnívoros facultativos</strong>: pueden digerir tanto proteínas animales como carbohidratos vegetales.
+        A diferencia de los gatos, los perros han evolucionado junto a los humanos durante miles de años, desarrollando
+        genes adicionales para digerir almidón (gen AMY2B).
+      </p>
+
+      <h3>Distribución de Macronutrientes para Perros</h3>
+
+      <div class="macro-box protein">
+        <h4><i class="fas fa-drumstick-bite" style="color:#4A90E2"></i> Proteína (25-30%)</h4>
+        <p class="edu-text">
+          Los perros necesitan aminoácidos esenciales que solo se encuentran en proteína de calidad.
+          <strong>Razas grandes</strong> (Pastor Alemán, Gran Danés) necesitan 28-30% para mantener masa muscular y proteger articulaciones.
+          <strong>Razas pequeñas</strong> (Chihuahua, Yorkshire) con 25-27% es suficiente.
+          Fuentes ideales: pollo, pavo, pescado, huevo, carne magra de res.
+        </p>
+      </div>
+
+      <div class="macro-box fat">
+        <h4><i class="fas fa-bacon" style="color:#F5A623"></i> Grasa (15-20%)</h4>
+        <p class="edu-text">
+          Fuente concentrada de energía: 9 kcal/g vs 4 kcal/g de proteína. Necesaria para absorber vitaminas A, D, E, K.
+          <strong>Razas activas</strong> (Border Collie, Husky): 18-20%.
+          <strong>Razas propensas a obesidad</strong> (Labrador, Beagle): 12-15%.
+          Los ácidos grasos Omega-3 y Omega-6 son esenciales para piel y pelaje saludable.
+        </p>
+      </div>
+
+      <div class="macro-box carb">
+        <h4><i class="fas fa-bread-slice" style="color:#7ED321"></i> Carbohidratos (40-50%)</h4>
+        <p class="edu-text">
+          No son nutricionalmente esenciales pero proveen energía sostenida y fibra dietaria.
+          La fibra (3-5%) ayuda a la digestión y saciedad.
+          <strong>Razas con alta energía:</strong> 45-50% (granos enteros, avena, arroz integral).
+          <strong>Razas propensas a diabetes</strong> (Schnauzer, Poodle): preferir 35-40% y carbohidratos complejos.
+        </p>
+      </div>
+
+      <h3>Diferencias por Raza</h3>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-dog" style="color:var(--primary)"></i> Labrador Retriever</h4>
+        <ul>
+          <li><strong>Genética:</strong> Gen POMC mutado en 1 de cada 4 Labradores, eliminando la sensación de saciedad</li>
+          <li><strong>Recomendación:</strong> 12-15% grasa (no 20%), alto contenido de fibra (6-8%) para saciedad</li>
+          <li><strong>Calorías:</strong> 10-15% menos del estándar para prevenir obesidad</li>
+          <li><strong>Dato clave:</strong> NUNCA dejar comida libre. Siempre medir porciones con exactitud</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-dog" style="color:var(--primary)"></i> Bulldog Francés y Razas Braquicéfalas</h4>
+        <ul>
+          <li><strong>Dificultad respiratoria:</strong> Menos tolerancia al ejercicio, factor de actividad máximo x1.3</li>
+          <li><strong>Alto riesgo:</strong> El sobrepeso empeora dramáticamente la respiración</li>
+          <li><strong>Alimentación:</strong> Proteína de fácil digestión, porciones pequeñas y frecuentes</li>
+          <li><strong>Croquetas:</strong> Forma especial para mandíbula corta (planas, no redondas)</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-dog" style="color:var(--primary)"></i> Pastor Alemán</h4>
+        <ul>
+          <li><strong>Articulaciones:</strong> Propensos a displasia de cadera, necesitan glucosamina/condroitina</li>
+          <li><strong>Proteína:</strong> 28-30% para mantener músculo que soporte articulaciones</li>
+          <li><strong>Pecho profundo:</strong> Riesgo de torsión gástrica: SIEMPRE 2-3 comidas pequeñas, nunca 1 grande</li>
+          <li><strong>Esperar:</strong> 1 hora después de comer antes de ejercicio vigoroso</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-dog" style="color:var(--primary)"></i> Chihuahua y Razas Toy</h4>
+        <ul>
+          <li><strong>Metabolismo:</strong> 25% más rápido que razas grandes (40-50 kcal/kg vs 30 kcal/kg)</li>
+          <li><strong>Hipoglucemia:</strong> Deben comer 3-4 veces al día para evitar caídas de azúcar</li>
+          <li><strong>Porciones:</strong> Pequeñas pero frecuentes. Nunca más de 8 horas sin comer</li>
+          <li><strong>Croquetas:</strong> Tamaño miniatura para mandíbula pequeña</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== GATOS ==================== -->
+    <section id="gatos" class="edu-section">
+      <h2><i class="fas fa-cat"></i> Nutrición Felina: Carnívoros Obligados</h2>
+      <p class="edu-text">
+        Los gatos son fundamentalmente diferentes a los perros en sus necesidades nutricionales.
+        Son <strong>carnívoros obligados</strong>: DEBEN obtener nutrientes esenciales de carne animal.
+        No pueden sintetizar <strong>taurina</strong>, <strong>arginina</strong>, <strong>ácido araquidónico</strong> ni <strong>vitamina A activa</strong>
+        a partir de fuentes vegetales.
+      </p>
+      <p class="edu-text">
+        Su metabolismo de proteínas es <strong>5 veces más alto</strong> que el de los perros.
+        Su sistema digestivo es corto y está optimizado para digerir carne, no vegetales.
+        Por esto, una dieta vegetariana o vegana puede ser <strong>mortal</strong> para un gato.
+      </p>
+
+      <h3>Distribución de Macronutrientes para Gatos</h3>
+
+      <div class="macro-box protein">
+        <h4><i class="fas fa-drumstick-bite" style="color:#4A90E2"></i> Proteína (35-45%)</h4>
+        <p class="edu-text">
+          Mínimo 35% pero idealmente 40-45%. Los gatos usan proteína como fuente PRINCIPAL de energía.
+          <strong>Maine Coon, Ragdoll:</strong> 42-48% para mantener su gran masa muscular.
+          <strong>Gatitos:</strong> 40-42% para crecimiento. <strong>Seniors:</strong> mantener 38-40% para prevenir sarcopenia (pérdida de músculo).
+        </p>
+      </div>
+
+      <div class="macro-box fat">
+        <h4><i class="fas fa-bacon" style="color:#F5A623"></i> Grasa (20-25%)</h4>
+        <p class="edu-text">
+          Necesitan <strong>ácido araquidónico</strong> que solo se encuentra en grasa animal. DHA/EPA para salud cognitiva y renal.
+          <strong>Gatos de interior:</strong> 18-20%. <strong>Gatos activos/exterior:</strong> 22-25%.
+          La grasa también proporciona palatabilidad, importante en gatos selectivos.
+        </p>
+      </div>
+
+      <div class="macro-box carb">
+        <h4><i class="fas fa-bread-slice" style="color:#7ED321"></i> Carbohidratos (10-15% MÁXIMO)</h4>
+        <p class="edu-text">
+          Los gatos tienen <strong>capacidad limitada</strong> de procesar carbohidratos. No producen suficiente amilasa salival.
+          El exceso de carbohidratos lleva a <strong>obesidad y diabetes felina</strong>.
+          Las únicas fuentes aceptables: vegetales en pequeña cantidad, calabaza (fibra).
+        </p>
+      </div>
+
+      <h3>Diferencias por Raza de Gato</h3>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-cat" style="color:var(--primary)"></i> Persa</h4>
+        <ul>
+          <li><strong>Mandíbula:</strong> Braquicefálica, necesita croquetas de forma plana o almendrada</li>
+          <li><strong>Pelo largo:</strong> Omega-3 extra y fibra 5-8% para prevenir bolas de pelo</li>
+          <li><strong>Riñones:</strong> Propensos a enfermedad renal poliquística, proteína de alta calidad pero no excesiva (30-35%)</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-cat" style="color:var(--primary)"></i> Siamés / Oriental</h4>
+        <ul>
+          <li><strong>Metabolismo:</strong> Muy activo, necesitan 20-25% más calorías que el gato promedio</li>
+          <li><strong>Comportamiento:</strong> Muy vocal cuando tiene hambre, establecer horarios estrictos</li>
+          <li><strong>Proteína:</strong> Atlético y delgado naturalmente, 40-45% proteína</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-cat" style="color:var(--primary)"></i> Maine Coon / Ragdoll</h4>
+        <ul>
+          <li><strong>Crecimiento lento:</strong> 4-5 años para madurar, dieta de gatito hasta los 3 años</li>
+          <li><strong>Taurina:</strong> OBLIGATORIA extra (mínimo 500 mg/kg de alimento), previene cardiomiopatía</li>
+          <li><strong>Proteína:</strong> 42-48%, la más alta entre razas de gatos</li>
+          <li><strong>Articulaciones:</strong> Glucosamina desde cachorro por su gran tamaño</li>
+        </ul>
+      </div>
+
+      <div class="breed-info-box">
+        <h4><i class="fas fa-cat" style="color:var(--primary)"></i> Bengalí</h4>
+        <ul>
+          <li><strong>Ancestro salvaje:</strong> Gato leopardo asiático, prefiere dieta alta en proteína animal pura (45%)</li>
+          <li><strong>Actividad:</strong> Altamente activo, 25-30% más calorías que el promedio</li>
+          <li><strong>Digestión:</strong> Sistema digestivo sensible, proteína de una sola fuente animal</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- ==================== CALCULADORA ==================== -->
+    <section id="calculadora" class="edu-section">
+      <h2><i class="fas fa-calculator"></i> Calculadora Visual Interactiva</h2>
+      <div class="calc-section">
+        <div class="calc-grid">
+          <div class="form-group">
+            <label for="calc-species">Especie</label>
+            <select id="calc-species"><option value="perro">Perro</option><option value="gato">Gato</option></select>
+          </div>
+          <div class="form-group">
+            <label for="calc-breed">Raza</label>
+            <select id="calc-breed"></select>
+          </div>
+          <div class="form-group">
+            <label for="calc-weight">Peso (kg)</label>
+            <input type="number" id="calc-weight" min="0.5" max="100" step="0.1" value="10">
+          </div>
+          <div class="form-group">
+            <label for="calc-age">Edad (meses)</label>
+            <input type="number" id="calc-age" min="1" max="240" value="36">
+          </div>
+          <div class="form-group">
+            <label for="calc-activity">Actividad</label>
+            <select id="calc-activity">
+              <option value="1.2">Sedentario (x1.2)</option>
+              <option value="1.4" selected>Moderado (x1.4)</option>
+              <option value="1.6">Activo (x1.6)</option>
+              <option value="1.8">Muy activo (x1.8)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="calc-condition">Condición</label>
+            <select id="calc-condition">
+              <option value="normal">Normal</option>
+              <option value="cachorro">Cachorro (&lt;12 meses)</option>
+              <option value="senior">Senior (&gt;7 años)</option>
+              <option value="castrado">Castrado/Esterilizada</option>
+              <option value="sobrepeso">Sobrepeso</option>
+            </select>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:1rem" onclick="calcularEducativo()">
+          <i class="fas fa-calculator"></i> Calcular
+        </button>
+        <div class="calc-result" id="calc-result" style="display:none">
+          <div class="big-cal" id="calc-total-cal">0</div>
+          <p>kcal / día recomendadas</p>
+          <canvas id="calc-macro-chart" height="200" style="margin-top:1rem"></canvas>
+          <div id="calc-details" style="text-align:left;margin-top:1rem;font-size:0.9rem"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== COMPARADOR ==================== -->
+    <section id="comparador" class="edu-section">
+      <h2><i class="fas fa-exchange-alt"></i> Comparador de Razas</h2>
+      <p class="edu-text">Selecciona 2 o 3 razas para comparar sus necesidades nutricionales lado a lado.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:0.75rem;margin-bottom:1rem">
+        <div class="form-group" style="flex:1;min-width:150px">
+          <label for="cmp-breed1">Raza 1</label>
+          <select id="cmp-breed1" class="cmp-select"></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:150px">
+          <label for="cmp-breed2">Raza 2</label>
+          <select id="cmp-breed2" class="cmp-select"></select>
+        </div>
+        <div class="form-group" style="flex:1;min-width:150px">
+          <label for="cmp-breed3">Raza 3 (opcional)</label>
+          <select id="cmp-breed3" class="cmp-select"><option value="">Ninguna</option></select>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="compararRazas()"><i class="fas fa-exchange-alt"></i> Comparar</button>
+      <div id="compare-result" style="margin-top:1rem"></div>
+    </section>
+
+    <!-- ==================== TIMELINE ==================== -->
+    <section id="timeline" class="edu-section">
+      <h2><i class="fas fa-stream"></i> Timeline de Vida: Necesidades por Etapa</h2>
+      <p class="edu-text">Las necesidades nutricionales cambian dramáticamente a lo largo de la vida de tu mascota.</p>
+      <div style="display:flex;gap:0.75rem;margin-bottom:1rem">
+        <button class="btn btn-primary" onclick="renderTimelineChart('perro')"><i class="fas fa-dog"></i> Perro</button>
+        <button class="btn btn-outline" onclick="renderTimelineChart('gato')"><i class="fas fa-cat"></i> Gato</button>
+      </div>
+      <div class="timeline-chart-container">
+        <canvas id="timeline-chart"></canvas>
+      </div>
+      <div id="timeline-details" style="margin-top:1rem"></div>
+    </section>
+
+    <!-- ==================== MITOS ==================== -->
+    <section id="mitos" class="edu-section">
+      <h2><i class="fas fa-question-circle"></i> Mitos vs Realidad</h2>
+      <div id="myths-container"></div>
+    </section>
+
+    <!-- ==================== REFERENCIAS ==================== -->
+    <section id="referencias" class="edu-section">
+      <h2><i class="fas fa-book"></i> Referencias Científicas</h2>
+      <p class="edu-text">Toda la información en PetCare Pro está basada en las siguientes fuentes científicas y guías veterinarias establecidas:</p>
+      <div id="refs-container"></div>
+    </section>
+
+    <div style="text-align:center;padding:2rem;color:var(--text-secondary);font-size:0.85rem">
+      <p><i class="fas fa-paw"></i> PetCare Pro - Educación Nutricional</p>
+      <p>Esta información es educativa y no reemplaza la consulta veterinaria profesional.</p>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script>
+    // ==================== INICIALIZACIÓN ====================
+    document.addEventListener('DOMContentLoaded', () => {
+      renderRERChart();
+      populateBreedSelects();
+      renderMyths();
+      renderReferences();
+      renderTimelineChart('perro');
+
+      // Navegación activa
+      document.querySelectorAll('.edu-nav a').forEach(link => {
+        link.addEventListener('click', (e) => {
+          document.querySelectorAll('.edu-nav a').forEach(l => l.classList.remove('active'));
+          link.classList.add('active');
+        });
+      });
+    });
+
+    // ==================== GRÁFICO RER ====================
+    function renderRERChart() {
+      const ctx = document.getElementById('rer-chart');
+      const weights = [];
+      const rerValues = [];
+      const linearValues = [];
+      for (let w = 1; w <= 50; w++) {
+        weights.push(w);
+        rerValues.push(Math.round(70 * Math.pow(w, 0.75)));
+        linearValues.push(70 * w);
+      }
+      new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: weights.map(w => w + ' kg'),
+          datasets: [
+            { label: 'RER real (70 x peso^0.75)', data: rerValues, borderColor: '#4A90E2', backgroundColor: 'rgba(74,144,226,0.1)', fill: true, tension: 0.3, pointRadius: 0 },
+            { label: 'Si fuera lineal (70 x peso)', data: linearValues, borderColor: '#D0021B', borderDash: [5,5], fill: false, tension: 0, pointRadius: 0 }
+          ]
+        },
+        options: {
+          responsive: true,
+          plugins: { legend: { position: 'bottom' }, tooltip: { mode: 'index', intersect: false } },
+          scales: {
+            y: { title: { display: true, text: 'kcal / día' }, beginAtZero: true },
+            x: { title: { display: true, text: 'Peso corporal' }, ticks: { maxTicksLimit: 10 } }
+          }
+        }
+      });
+    }
+
+    // ==================== SELECTS DE RAZAS ====================
+    function populateBreedSelects() {
+      const allBreeds = [];
+      ['perro', 'gato'].forEach(sp => {
+        RAZAS[sp].forEach(r => {
+          if (r.nombre !== 'Otra' && r.nombre !== 'Mestizo') {
+            allBreeds.push({ nombre: r.nombre, especie: sp });
+          }
+        });
+      });
+
+      // Calculadora
+      const calcBreed = document.getElementById('calc-breed');
+      document.getElementById('calc-species').addEventListener('change', () => updateCalcBreeds());
+      updateCalcBreeds();
+
+      function updateCalcBreeds() {
+        const sp = document.getElementById('calc-species').value;
+        calcBreed.innerHTML = '';
+        RAZAS[sp].forEach(r => {
+          const opt = document.createElement('option');
+          opt.value = r.nombre;
+          opt.textContent = r.nombre;
+          calcBreed.appendChild(opt);
+        });
+      }
+
+      // Comparador
+      document.querySelectorAll('.cmp-select').forEach(sel => {
+        allBreeds.forEach(b => {
+          const opt = document.createElement('option');
+          opt.value = b.nombre;
+          opt.textContent = `${b.especie === 'perro' ? '🐕' : '🐈'} ${b.nombre}`;
+          sel.appendChild(opt);
+        });
+      });
+    }
+
+    // ==================== CALCULADORA ====================
+    let calcMacroChart = null;
+
+    function calcularEducativo() {
+      const peso = parseFloat(document.getElementById('calc-weight').value) || 10;
+      const edad = parseInt(document.getElementById('calc-age').value) || 36;
+      const factor = parseFloat(document.getElementById('calc-activity').value) || 1.4;
+      const condicion = document.getElementById('calc-condition').value;
+      const especie = document.getElementById('calc-species').value;
+      const raza = document.getElementById('calc-breed').value;
+
+      let rer = 70 * Math.pow(peso, 0.75);
+      let cal = rer * factor;
+
+      if (condicion === 'cachorro' || edad < 12) cal *= 1.25;
+      if (condicion === 'senior' || edad > 84) cal *= 0.9;
+      if (condicion === 'castrado') cal *= 0.9;
+      if (condicion === 'sobrepeso') cal *= 0.8;
+
+      document.getElementById('calc-result').style.display = 'block';
+      document.getElementById('calc-total-cal').textContent = Math.round(cal);
+
+      const macros = MACRONUTRIENTES[especie];
+      const protPct = (macros.proteina.min + macros.proteina.max) / 2;
+      const fatPct = (macros.grasa.min + macros.grasa.max) / 2;
+      const carbPct = (macros.carbohidratos.min + macros.carbohidratos.max) / 2;
+      const protG = Math.round((cal * protPct / 100) / 4);
+      const fatG = Math.round((cal * fatPct / 100) / 9);
+      const carbG = Math.round((cal * carbPct / 100) / 4);
+
+      // Gráfico
+      if (calcMacroChart) calcMacroChart.destroy();
+      calcMacroChart = new Chart(document.getElementById('calc-macro-chart'), {
+        type: 'doughnut',
+        data: {
+          labels: [`Proteína ${protPct}%`, `Grasa ${fatPct}%`, `Carbohidratos ${carbPct}%`],
+          datasets: [{ data: [protPct, fatPct, carbPct], backgroundColor: ['#4A90E2','#F5A623','#7ED321'], borderWidth: 0 }]
+        },
+        options: { responsive: true, plugins: { legend: { position: 'bottom' } } }
+      });
+
+      let details = `<p><strong>Desglose:</strong></p>`;
+      details += `<p>RER base: ${Math.round(rer)} kcal (70 x ${peso}^0.75)</p>`;
+      details += `<p>Factor actividad: x${factor}</p>`;
+      if (condicion !== 'normal') details += `<p>Ajuste ${condicion}: aplicado</p>`;
+      details += `<hr style="margin:0.5rem 0;border-color:var(--border-color)">`;
+      details += `<p>Proteína: ~${protG}g/día (${protPct}%)</p>`;
+      details += `<p>Grasa: ~${fatG}g/día (${fatPct}%)</p>`;
+      details += `<p>Carbohidratos: ~${carbG}g/día (${carbPct}%)</p>`;
+
+      const info = INFO_RAZA_DETALLADA[raza];
+      if (info) {
+        details += `<hr style="margin:0.5rem 0;border-color:var(--border-color)">`;
+        details += `<p><strong>Info ${raza}:</strong> ${info.nutricionEspecifica.nota}</p>`;
+      }
+
+      document.getElementById('calc-details').innerHTML = details;
+    }
+
+    // ==================== COMPARADOR ====================
+    function compararRazas() {
+      const b1 = document.getElementById('cmp-breed1').value;
+      const b2 = document.getElementById('cmp-breed2').value;
+      const b3 = document.getElementById('cmp-breed3').value;
+      const breeds = [b1, b2];
+      if (b3) breeds.push(b3);
+
+      let html = '<table class="compare-table"><thead><tr><th>Característica</th>';
+      breeds.forEach(b => { html += `<th>${b}</th>`; });
+      html += '</tr></thead><tbody>';
+
+      // Peso ideal
+      html += '<tr><td>Peso ideal</td>';
+      breeds.forEach(b => {
+        const r = findBreed(b);
+        html += `<td>${r ? r.pesoIdeal.min + '-' + r.pesoIdeal.max + ' kg' : '-'}</td>`;
+      });
+      html += '</tr>';
+
+      // kcal/kg
+      html += '<tr><td>kcal/kg aprox.</td>';
+      breeds.forEach(b => {
+        const info = INFO_RAZA_DETALLADA[b];
+        html += `<td>${info ? info.kcalPorKg : '~35'}</td>`;
+      });
+      html += '</tr>';
+
+      // Proteína
+      html += '<tr><td>Proteína recomendada</td>';
+      breeds.forEach(b => {
+        const info = INFO_RAZA_DETALLADA[b];
+        html += `<td>${info ? info.nutricionEspecifica.proteina.min + '-' + info.nutricionEspecifica.proteina.max + '%' : 'Estándar'}</td>`;
+      });
+      html += '</tr>';
+
+      // Grasa
+      html += '<tr><td>Grasa recomendada</td>';
+      breeds.forEach(b => {
+        const info = INFO_RAZA_DETALLADA[b];
+        html += `<td>${info ? info.nutricionEspecifica.grasa.min + '-' + info.nutricionEspecifica.grasa.max + '%' : 'Estándar'}</td>`;
+      });
+      html += '</tr>';
+
+      // Predisposiciones
+      html += '<tr><td>Predisposiciones</td>';
+      breeds.forEach(b => {
+        const info = INFO_RAZA_DETALLADA[b];
+        html += `<td style="font-size:0.8rem">${info ? info.predisposiciones.join(', ') : '-'}</td>`;
+      });
+      html += '</tr>';
+
+      // Suplementos
+      html += '<tr><td>Suplementos</td>';
+      breeds.forEach(b => {
+        const info = INFO_RAZA_DETALLADA[b];
+        html += `<td style="font-size:0.8rem">${info ? info.suplementos.join(', ') : '-'}</td>`;
+      });
+      html += '</tr>';
+
+      html += '</tbody></table>';
+      document.getElementById('compare-result').innerHTML = html;
+    }
+
+    function findBreed(nombre) {
+      for (const sp of ['perro','gato']) {
+        const r = RAZAS[sp].find(r => r.nombre === nombre);
+        if (r) return r;
+      }
+      return null;
+    }
+
+    // ==================== TIMELINE ====================
+    let timelineChart = null;
+
+    function renderTimelineChart(especie) {
+      const data = TIMELINE_VIDA[especie];
+      if (!data) return;
+
+      if (timelineChart) timelineChart.destroy();
+      timelineChart = new Chart(document.getElementById('timeline-chart'), {
+        type: 'line',
+        data: {
+          labels: data.map(d => d.etapa),
+          datasets: [
+            {
+              label: 'Factor calórico',
+              data: data.map(d => d.kcalFactor),
+              borderColor: '#4A90E2',
+              backgroundColor: 'rgba(74,144,226,0.1)',
+              fill: true,
+              tension: 0.3,
+              yAxisID: 'y'
+            },
+            {
+              label: '% Proteína',
+              data: data.map(d => d.proteinaPct),
+              borderColor: '#F5A623',
+              backgroundColor: 'rgba(245,166,35,0.1)',
+              fill: true,
+              tension: 0.3,
+              yAxisID: 'y1'
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          interaction: { mode: 'index', intersect: false },
+          plugins: { legend: { position: 'bottom' } },
+          scales: {
+            y: { type: 'linear', position: 'left', title: { display: true, text: 'Factor calórico' }, min: 0.5, max: 3 },
+            y1: { type: 'linear', position: 'right', title: { display: true, text: '% Proteína' }, min: 20, max: 50, grid: { drawOnChartArea: false } }
+          }
+        }
+      });
+
+      let details = '<div style="margin-top:1rem">';
+      data.forEach(d => {
+        details += `<div class="factor-card" style="margin-bottom:0.5rem">
+          <div class="factor-mult" style="font-size:1rem">${d.edadMeses}m</div>
+          <div class="factor-desc">
+            <h4>${d.etapa}</h4>
+            <p>Factor: x${d.kcalFactor} | Proteína: ${d.proteinaPct}% | ${d.nota}</p>
+          </div>
+        </div>`;
+      });
+      details += '</div>';
+      document.getElementById('timeline-details').innerHTML = details;
+    }
+
+    // ==================== MITOS ====================
+    function renderMyths() {
+      const container = document.getElementById('myths-container');
+      container.innerHTML = MITOS_REALIDAD.map(m => `
+        <div class="myth-card">
+          <div class="myth-label"><i class="fas fa-times-circle"></i> MITO</div>
+          <p class="myth-text"><i class="fas ${m.icono}" style="color:var(--text-secondary);margin-right:0.5rem"></i> "${m.mito}"</p>
+          <div class="reality-label"><i class="fas fa-check-circle"></i> REALIDAD</div>
+          <p>${m.realidad}</p>
+        </div>
+      `).join('');
+    }
+
+    // ==================== REFERENCIAS ====================
+    function renderReferences() {
+      const container = document.getElementById('refs-container');
+      container.innerHTML = REFERENCIAS_CIENTIFICAS.map(r => `
+        <div class="ref-card">
+          <h4><a href="${r.url}" target="_blank" rel="noopener"><i class="fas fa-external-link-alt"></i> ${r.titulo}</a></h4>
+          <p>${r.descripcion}</p>
+        </div>
+      `).join('');
+    }
+  </script>
+</body>
+</html>
