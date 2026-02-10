@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare Pro - Detalle Veterinaria</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { padding: 0; }
+    .detail-page { max-width: 900px; margin: 0 auto; padding: 1rem; }
+    .back-btn { display: inline-flex; align-items: center; gap: 0.4rem; color: var(--primary); text-decoration: none; font-size: 0.9rem; margin-bottom: 1rem; }
+    .back-btn:hover { text-decoration: underline; }
+
+    .detail-hero { background: var(--bg-card); border-radius: 12px; padding: 2rem; box-shadow: var(--shadow-sm); margin-bottom: 1.5rem; }
+    .detail-hero-top { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 1rem; }
+    .detail-hero h1 { font-size: 1.6rem; margin-bottom: 0.5rem; color: var(--text-primary); }
+    .detail-badges { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.75rem; }
+    .detail-badge { padding: 0.3rem 0.8rem; border-radius: 20px; font-size: 0.78rem; font-weight: 600; }
+    .badge-verified { background: rgba(74,144,226,0.1); color: var(--primary); }
+    .badge-24h { background: var(--danger); color: white; }
+    .badge-open { background: var(--success); color: white; }
+    .badge-closed { background: var(--text-light); color: white; }
+    .detail-rating { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; }
+    .detail-rating .stars { color: #FFC107; }
+    .detail-rating .count { font-size: 0.85rem; color: var(--text-secondary); }
+
+    .detail-section { background: var(--bg-card); border-radius: 12px; padding: 1.5rem; box-shadow: var(--shadow-sm); margin-bottom: 1rem; }
+    .detail-section h2 { font-size: 1.1rem; margin-bottom: 1rem; color: var(--text-primary); display: flex; align-items: center; gap: 0.5rem; }
+
+    .info-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; }
+    .info-item { display: flex; align-items: flex-start; gap: 0.75rem; }
+    .info-item i { color: var(--primary); font-size: 1.1rem; margin-top: 0.15rem; min-width: 20px; text-align: center; }
+    .info-item a { color: var(--primary); text-decoration: none; }
+    .info-item a:hover { text-decoration: underline; }
+
+    .horarios-table { width: 100%; border-collapse: collapse; }
+    .horarios-table td { padding: 0.5rem 0.75rem; border-bottom: 1px solid var(--border-color); font-size: 0.88rem; }
+    .horarios-table td:first-child { font-weight: 500; text-transform: capitalize; width: 120px; }
+    .horarios-table tr.today { background: rgba(74,144,226,0.06); }
+    .horarios-table tr.today td:first-child { color: var(--primary); font-weight: 700; }
+
+    .services-grid { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+    .service-badge { background: rgba(126,211,33,0.1); color: var(--success-dark); padding: 0.4rem 0.8rem; border-radius: 8px; font-size: 0.82rem; display: flex; align-items: center; gap: 0.3rem; }
+
+    .spec-list { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 0.5rem; }
+    .spec-list li { display: flex; align-items: center; gap: 0.5rem; font-size: 0.88rem; padding: 0.3rem 0; }
+    .spec-list li i { color: var(--primary); }
+
+    .price-table { width: 100%; border-collapse: collapse; }
+    .price-table th, .price-table td { padding: 0.6rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border-color); font-size: 0.88rem; }
+    .price-table th { color: var(--text-secondary); font-weight: 500; }
+
+    .action-buttons { display: flex; gap: 0.75rem; flex-wrap: wrap; margin-top: 1rem; }
+    .action-buttons .btn { padding: 0.7rem 1.2rem; font-size: 0.9rem; }
+
+    .map-placeholder { background: var(--bg-primary); border-radius: 8px; padding: 2rem; text-align: center; color: var(--text-secondary); }
+    .map-placeholder i { font-size: 2rem; margin-bottom: 0.5rem; display: block; color: var(--primary); }
+
+    .reviews-placeholder { text-align: center; padding: 2rem; color: var(--text-secondary); }
+
+    .not-found { text-align: center; padding: 3rem; }
+    .not-found i { font-size: 3rem; color: var(--text-light); margin-bottom: 1rem; }
+
+    @media (max-width: 768px) {
+      .detail-hero { padding: 1.25rem; }
+      .detail-hero h1 { font-size: 1.3rem; }
+      .action-buttons { flex-direction: column; }
+      .action-buttons .btn { width: 100%; text-align: center; }
+    }
+  </style>
+</head>
+<body>
+  <div class="detail-page">
+    <a href="directorio-veterinarias.html" class="back-btn"><i class="fas fa-arrow-left"></i> Volver al directorio</a>
+    <div id="vet-detail-content">
+      <div style="text-align:center;padding:3rem"><i class="fas fa-spinner fa-spin" style="font-size:2rem;color:var(--primary)"></i><p>Cargando...</p></div>
+    </div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="vet-database.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const tema = localStorage.getItem('petcare_tema') || 'light';
+      document.documentElement.setAttribute('data-theme', tema);
+
+      const params = new URLSearchParams(window.location.search);
+      const id = params.get('id');
+      if (!id) { mostrarNoEncontrado(); return; }
+
+      const vet = VET_DATABASE.find(v => v.id === id);
+      if (!vet) { mostrarNoEncontrado(); return; }
+
+      document.title = `PetCare Pro - ${vet.nombre}`;
+      renderizarDetalle(vet);
+    });
+
+    function mostrarNoEncontrado() {
+      document.getElementById('vet-detail-content').innerHTML = `
+        <div class="not-found">
+          <i class="fas fa-exclamation-circle"></i>
+          <h2>Veterinaria no encontrada</h2>
+          <p>La veterinaria que buscas no existe o fue removida.</p>
+          <a href="directorio-veterinarias.html" class="btn btn-primary" style="margin-top:1rem"><i class="fas fa-search"></i> Ver directorio</a>
+        </div>`;
+    }
+
+    function renderizarDetalle(v) {
+      const abierto = estaAbiertoAhora(v);
+      const dias = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+      const diaHoy = dias[new Date().getDay()];
+
+      let html = `
+        <!-- Hero -->
+        <div class="detail-hero">
+          <div class="detail-hero-top">
+            <div>
+              <h1>${esc(v.nombre)}</h1>
+              <div class="detail-badges">
+                ${v.verificada ? '<span class="detail-badge badge-verified"><i class="fas fa-check-circle"></i> Verificada</span>' : ''}
+                ${v.emergencia24h ? '<span class="detail-badge badge-24h"><i class="fas fa-bolt"></i> Emergencias 24/7</span>' : ''}
+                <span class="detail-badge ${abierto ? 'badge-open' : 'badge-closed'}">${abierto ? '<i class="fas fa-door-open"></i> Abierto ahora' : '<i class="fas fa-door-closed"></i> Cerrado'}</span>
+              </div>
+              <div class="detail-rating">
+                <span class="stars">${generarEstrellas(v.calificacion)}</span>
+                <strong>${v.calificacion}</strong>
+                <span class="count">(${v.numeroReseñas} reseñas)</span>
+              </div>
+            </div>
+          </div>
+          <div class="action-buttons">
+            <button class="btn btn-primary" onclick="llamar('${v.telefono}')"><i class="fas fa-phone"></i> Llamar</button>
+            <button class="btn" style="background:#25D366;color:white" onclick="whatsapp('${v.whatsapp}','${esc(v.nombre).replace(/'/g,"\\'")}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+            <button class="btn btn-outline" onclick="comoLlegar(${v.coordenadas.lat},${v.coordenadas.lng})"><i class="fas fa-directions"></i> Cómo llegar</button>
+          </div>
+        </div>
+
+        <!-- Información -->
+        <div class="detail-section">
+          <h2><i class="fas fa-info-circle"></i> Información de Contacto</h2>
+          <div class="info-grid">
+            <div class="info-item"><i class="fas fa-map-marker-alt"></i><div><strong>Dirección</strong><br>${esc(v.direccion)}, ${esc(v.barrio)}<br>${esc(v.ciudad)}, ${esc(v.pais)}</div></div>
+            <div class="info-item"><i class="fas fa-phone"></i><div><strong>Teléfono</strong><br><a href="tel:${v.telefono}">${v.telefono}</a></div></div>
+            <div class="info-item"><i class="fab fa-whatsapp"></i><div><strong>WhatsApp</strong><br><a href="https://wa.me/${v.whatsapp.replace(/[^0-9+]/g,'')}" target="_blank">${v.whatsapp}</a></div></div>
+            ${v.email ? `<div class="info-item"><i class="fas fa-envelope"></i><div><strong>Email</strong><br><a href="mailto:${v.email}">${v.email}</a></div></div>` : ''}
+            ${v.website ? `<div class="info-item"><i class="fas fa-globe"></i><div><strong>Sitio Web</strong><br><a href="https://${v.website}" target="_blank" rel="noopener">${v.website}</a></div></div>` : ''}
+          </div>
+        </div>
+
+        <!-- Horarios -->
+        <div class="detail-section">
+          <h2><i class="fas fa-clock"></i> Horarios de Atención</h2>
+          <table class="horarios-table">
+            ${dias.filter(d => d !== 'domingo').concat(['domingo']).map(d => {
+              const esHoy = d === diaHoy;
+              return `<tr class="${esHoy ? 'today' : ''}"><td>${d}${esHoy ? ' (hoy)' : ''}</td><td>${v.horarios[d] || 'No disponible'}</td></tr>`;
+            }).join('')}
+          </table>
+        </div>
+
+        <!-- Servicios -->
+        <div class="detail-section">
+          <h2><i class="fas fa-concierge-bell"></i> Servicios Ofrecidos</h2>
+          <div class="services-grid">
+            ${v.servicios.map(s => `<span class="service-badge"><i class="fas fa-check"></i> ${s}</span>`).join('')}
+          </div>
+        </div>
+
+        <!-- Especialidades -->
+        <div class="detail-section">
+          <h2><i class="fas fa-stethoscope"></i> Especialidades</h2>
+          <ul class="spec-list">
+            ${v.especialidades.map(e => `<li><i class="fas fa-check-circle"></i> ${e}</li>`).join('')}
+          </ul>
+          <div style="margin-top:0.75rem">
+            <strong style="font-size:0.85rem">Especies atendidas:</strong>
+            <span style="font-size:0.85rem;color:var(--text-secondary)"> ${v.especies.join(', ')}</span>
+          </div>
+        </div>
+
+        <!-- Precios -->
+        <div class="detail-section">
+          <h2><i class="fas fa-tag"></i> Precios Aproximados</h2>
+          <table class="price-table">
+            <thead><tr><th>Servicio</th><th>Rango de Precio</th></tr></thead>
+            <tbody>
+              <tr><td>Consulta General</td><td>$${v.rangoPrecios.consultaGeneral.min.toLocaleString('es-CO')} - $${v.rangoPrecios.consultaGeneral.max.toLocaleString('es-CO')} COP</td></tr>
+              <tr><td>Vacunación</td><td>$${v.rangoPrecios.vacuna.min.toLocaleString('es-CO')} - $${v.rangoPrecios.vacuna.max.toLocaleString('es-CO')} COP</td></tr>
+              <tr><td>Cirugía</td><td>$${v.rangoPrecios.cirugia.min.toLocaleString('es-CO')} - $${v.rangoPrecios.cirugia.max.toLocaleString('es-CO')} COP</td></tr>
+            </tbody>
+          </table>
+          <p style="font-size:0.78rem;color:var(--text-secondary);margin-top:0.75rem"><i class="fas fa-info-circle"></i> Precios referenciales. Pueden variar según la complejidad del caso.</p>
+        </div>
+
+        <!-- Ubicación -->
+        <div class="detail-section">
+          <h2><i class="fas fa-map"></i> Ubicación</h2>
+          <div class="map-placeholder">
+            <i class="fas fa-map-marked-alt"></i>
+            <p>${esc(v.direccion)}, ${esc(v.barrio)}, ${esc(v.ciudad)}</p>
+            <button class="btn btn-primary" style="margin-top:1rem" onclick="comoLlegar(${v.coordenadas.lat},${v.coordenadas.lng})">
+              <i class="fas fa-directions"></i> Abrir en Google Maps
+            </button>
+          </div>
+        </div>
+
+        <!-- Reseñas -->
+        <div class="detail-section">
+          <h2><i class="fas fa-star"></i> Reseñas</h2>
+          <div class="reviews-placeholder">
+            <i class="fas fa-comments" style="font-size:2rem;color:var(--text-light);margin-bottom:0.5rem;display:block"></i>
+            <p>Las reseñas estarán disponibles próximamente</p>
+            <p style="font-size:0.85rem;color:var(--text-secondary)">Calificación promedio: <strong>${v.calificacion}/5</strong> basada en ${v.numeroReseñas} reseñas</p>
+          </div>
+        </div>`;
+
+      document.getElementById('vet-detail-content').innerHTML = html;
+    }
+
+    function generarEstrellas(cal) {
+      const full = Math.floor(cal);
+      const half = cal - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '<i class="fas fa-star"></i>'.repeat(full) + (half ? '<i class="fas fa-star-half-alt"></i>' : '') + '<i class="far fa-star"></i>'.repeat(empty);
+    }
+
+    function llamar(tel) { window.location.href = `tel:${tel}`; }
+
+    function whatsapp(num, nombre) {
+      const msg = encodeURIComponent(`Hola! Encontré ${nombre} en PetCare Pro. Me gustaría agendar una cita.`);
+      window.open(`https://wa.me/${num.replace(/[^0-9+]/g,'')}?text=${msg}`, '_blank');
+    }
+
+    function comoLlegar(lat, lng) {
+      // Detectar plataforma
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+      const isAndroid = /Android/.test(navigator.userAgent);
+      if (isIOS) {
+        window.open(`maps://maps.apple.com/?daddr=${lat},${lng}`, '_blank');
+      } else {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}`, '_blank');
+      }
+    }
+
+    function estaAbiertoAhora(vet) {
+      const ahora = new Date();
+      const dias = ['domingo','lunes','martes','miercoles','jueves','viernes','sabado'];
+      const diaActual = dias[ahora.getDay()];
+      const horario = vet.horarios[diaActual];
+      if (!horario || horario === 'Cerrado') return false;
+      if (horario === '24 horas') return true;
+      const partes = horario.split(' - ');
+      if (partes.length !== 2) return false;
+      const aperturaMin = parsearHora(partes[0]);
+      const cierreMin = parsearHora(partes[1]);
+      const ahoraMin = ahora.getHours() * 60 + ahora.getMinutes();
+      return ahoraMin >= aperturaMin && ahoraMin <= cierreMin;
+    }
+
+    function parsearHora(horaStr) {
+      const match = horaStr.trim().match(/(\d+):(\d+)\s*(AM|PM)/i);
+      if (!match) return 0;
+      let h = parseInt(match[1]), m = parseInt(match[2]);
+      if (match[3].toUpperCase() === 'PM' && h !== 12) h += 12;
+      if (match[3].toUpperCase() === 'AM' && h === 12) h = 0;
+      return h * 60 + m;
+    }
+
+    function esc(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+  </script>
+</body>
+</html>

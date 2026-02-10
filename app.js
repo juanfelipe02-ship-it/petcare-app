@@ -284,7 +284,7 @@ function navegarA(seccion) {
     case 'seguimiento': renderizarSeguimiento(); break;
     case 'recordatorios': renderizarRecordatorios(); break;
     case 'calendario': renderizarCalendario(); break;
-    case 'veterinarias': renderizarFavoritos(); break;
+    case 'veterinarias': renderizarVeterinariasLocal(); renderizarFavoritos(); break;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -368,7 +368,7 @@ function actualizarRazas() {
   }
 }
 
-function guardarMascota(e) {
+async function guardarMascota(e) {
   e.preventDefault();
   if (!validarFormularioMascota()) return;
 
@@ -395,6 +395,43 @@ function guardarMascota(e) {
     alergias: alergias,
     fechaRegistro: editId ? (estado.mascotas.find(p => p.id === editId)?.fechaRegistro || fechaHoy()) : fechaHoy()
   };
+
+  // Subir foto a Firebase Storage si hay archivo pendiente
+  if (currentPhotoFile && mascota.foto === '__pending_upload__') {
+    try {
+      if (typeof subirFotoMascota === 'function' && typeof auth !== 'undefined' && auth.currentUser) {
+        const progressEl = document.getElementById('photo-upload-progress');
+        const progressBar = document.getElementById('photo-progress-bar');
+        const progressText = document.getElementById('photo-progress-text');
+        progressEl.classList.remove('hidden');
+        document.getElementById('photo-preview').classList.add('hidden');
+
+        const { urlFoto, urlThumb } = await subirFotoMascota(currentPhotoFile, mascota.id, (progress) => {
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `Subiendo... ${Math.round(progress)}%`;
+        });
+
+        mascota.foto = urlFoto;
+        mascota.fotoThumb = urlThumb;
+        progressEl.classList.add('hidden');
+        currentPhotoFile = null;
+      } else {
+        // Fallback: guardar como base64 si no hay Firebase Storage
+        const reader = new FileReader();
+        const dataUrl = await new Promise((resolve) => {
+          reader.onload = (ev) => resolve(ev.target.result);
+          reader.readAsDataURL(currentPhotoFile);
+        });
+        mascota.foto = dataUrl;
+        currentPhotoFile = null;
+      }
+    } catch (err) {
+      console.error('Error subiendo foto:', err);
+      mostrarToast('Error al subir la foto, se guardó localmente', 'warning');
+      mascota.foto = document.getElementById('photo-preview-img').src || '';
+      currentPhotoFile = null;
+    }
+  }
 
   if (editId) {
     const idx = estado.mascotas.findIndex(p => p.id === editId);
@@ -638,6 +675,34 @@ function actualizarDashboard() {
     }).join('');
   }
 
+  // Alertas inteligentes del dashboard
+  const dashAlertsEl = document.getElementById('dash-smart-alerts');
+  if (dashAlertsEl) {
+    let alertas = [];
+    // Alertas de exámenes
+    if (typeof generarAlertasExamenes === 'function') {
+      alertas = alertas.concat(generarAlertasExamenes(pet, estado.examenes));
+    }
+    // Alertas de peso
+    if (typeof generarAlertasPeso === 'function') {
+      alertas = alertas.concat(generarAlertasPeso(pet, estado.pesos));
+    }
+    if (alertas.length > 0) {
+      dashAlertsEl.innerHTML = alertas.slice(0, 4).map(a => `
+        <div class="dash-alert-item alert-${a.tipo}">
+          <i class="fas fa-${a.icono}"></i>
+          <div>
+            <strong>${a.titulo}</strong>
+            <p>${a.mensaje}</p>
+          </div>
+        </div>
+      `).join('');
+      dashAlertsEl.classList.remove('hidden');
+    } else {
+      dashAlertsEl.classList.add('hidden');
+    }
+  }
+
   // Gráfico de peso (mini)
   renderizarGraficoPesoMini(pet);
 }
@@ -653,7 +718,7 @@ function cerrarFormularioExamen() {
   document.getElementById('exam-form-container').classList.add('hidden');
 }
 
-function guardarExamen(e) {
+async function guardarExamen(e) {
   e.preventDefault();
   const pet = obtenerMascotaActiva();
   if (!pet) return;
@@ -665,6 +730,39 @@ function guardarExamen(e) {
   if (!fecha || !tipo || !resultados) {
     mostrarToast('Completa los campos obligatorios', 'warning');
     return;
+  }
+
+  let archivoUrl = document.getElementById('exam-file').value.trim();
+
+  // Subir PDF a Firebase Storage si hay archivo pendiente
+  if (currentPDFFile && archivoUrl === '__pending_upload__') {
+    try {
+      if (typeof subirPDFExamen === 'function' && typeof auth !== 'undefined' && auth.currentUser) {
+        const progressEl = document.getElementById('pdf-upload-progress');
+        const progressBar = document.getElementById('pdf-progress-bar');
+        const progressText = document.getElementById('pdf-progress-text');
+        progressEl.classList.remove('hidden');
+        document.getElementById('pdf-preview').classList.add('hidden');
+
+        const result = await subirPDFExamen(currentPDFFile, pet.id, (progress) => {
+          progressBar.style.width = `${progress}%`;
+          progressText.textContent = `Subiendo PDF... ${Math.round(progress)}%`;
+        });
+
+        archivoUrl = result.url;
+        progressEl.classList.add('hidden');
+        currentPDFFile = null;
+      } else {
+        archivoUrl = '';
+        mostrarToast('Firebase Storage no disponible, PDF no se subió', 'warning');
+        currentPDFFile = null;
+      }
+    } catch (err) {
+      console.error('Error subiendo PDF:', err);
+      archivoUrl = '';
+      mostrarToast('Error al subir el PDF', 'warning');
+      currentPDFFile = null;
+    }
   }
 
   const examen = {
@@ -681,12 +779,44 @@ function guardarExamen(e) {
       proteinas: parseFloat(document.getElementById('exam-proteinas').value) || null
     },
     observaciones: document.getElementById('exam-observations').value.trim(),
-    archivo: document.getElementById('exam-file').value.trim(),
+    archivo: archivoUrl,
     ajusteNutricional: document.getElementById('exam-nutrition-adjust').checked
   };
 
   if (!estado.examenes[pet.id]) estado.examenes[pet.id] = [];
   estado.examenes[pet.id].push(examen);
+
+  // Análisis inteligente del examen
+  if (typeof analyzeExam === 'function') {
+    const analisis = analyzeExam(examen, pet);
+    if (analisis && analisis.alertas && analisis.alertas.length > 0) {
+      const alertasUrgentes = analisis.alertas.filter(a => a.tipo === 'danger');
+      if (alertasUrgentes.length > 0) {
+        mostrarToast('Se detectaron valores que requieren atención urgente', 'warning');
+      }
+    }
+    // Generar recordatorios condicionales
+    if (typeof generarRecordatoriosCondicionales === 'function') {
+      const recsCondicionales = generarRecordatoriosCondicionales(analisis, pet);
+      if (recsCondicionales.length > 0) {
+        if (!estado.recordatorios[pet.id]) estado.recordatorios[pet.id] = [];
+        recsCondicionales.forEach(rec => {
+          estado.recordatorios[pet.id].push({
+            id: generarId(),
+            tipo: rec.tipo || 'veterinario',
+            hora: rec.hora || '09:00',
+            fecha: rec.fecha || '',
+            repetir: rec.repetir || 'unico',
+            nota: rec.nota || rec.mensaje,
+            alarma: true,
+            activo: true,
+            autoGenerado: true
+          });
+        });
+      }
+    }
+  }
+
   guardarDatos();
   cerrarFormularioExamen();
   renderizarExamenes();
@@ -735,6 +865,26 @@ function renderizarExamenes() {
       }
     });
 
+    // Análisis inteligente del examen
+    let analysisHtml = '';
+    if (typeof analyzeExam === 'function') {
+      const analisis = analyzeExam(ex, pet);
+      if (analisis) {
+        const comparacion = typeof compararConAnterior === 'function' ? compararConAnterior(ex, estado.examenes, pet.id) : null;
+        if (typeof renderizarAnalisisExamen === 'function') {
+          analysisHtml = `
+            <div class="exam-analysis-panel">
+              <button class="btn btn-sm btn-outline" onclick="this.nextElementSibling.classList.toggle('hidden');this.innerHTML=this.nextElementSibling.classList.contains('hidden')?'<i class=\\'fas fa-microscope\\'></i> Ver Análisis Inteligente':'<i class=\\'fas fa-times\\'></i> Ocultar Análisis'">
+                <i class="fas fa-microscope"></i> Ver Análisis Inteligente
+              </button>
+              <div class="hidden" style="margin-top:0.75rem">
+                ${renderizarAnalisisExamen(analisis, comparacion)}
+              </div>
+            </div>`;
+        }
+      }
+    }
+
     return `
       <div class="exam-card">
         <div class="exam-card-header">
@@ -750,7 +900,8 @@ function renderizarExamenes() {
         <p style="font-size:0.85rem">${escapeHtml(ex.resultados)}</p>
         ${badges.length > 0 ? `<div class="exam-values">${badges.join('')}</div>` : ''}
         ${ex.observaciones ? `<p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem"><strong>Obs:</strong> ${escapeHtml(ex.observaciones)}</p>` : ''}
-        ${ex.archivo ? `<a href="${escapeHtml(ex.archivo)}" target="_blank" rel="noopener" style="font-size:0.8rem;color:var(--primary)"><i class="fas fa-file"></i> Ver archivo</a>` : ''}
+        ${ex.archivo ? `<button class="btn btn-sm btn-outline" onclick="verPDF('${escapeHtml(ex.archivo)}')" style="margin-top:0.5rem"><i class="fas fa-file-pdf"></i> Ver PDF</button>` : ''}
+        ${analysisHtml}
         <div style="margin-top:0.5rem;text-align:right">
           <button class="btn btn-sm btn-secondary" onclick="eliminarExamen('${pet.id}','${ex.id}')"><i class="fas fa-trash"></i> Eliminar</button>
         </div>
@@ -889,6 +1040,62 @@ function renderizarNutricion() {
 
   // Calculadora de porciones
   calcularPorciones();
+
+  // Recomendaciones de alimentos inteligentes
+  const foodRecsContainer = document.getElementById('food-recommendations');
+  if (foodRecsContainer && typeof recommendFood === 'function') {
+    const ultimoExamen = (estado.examenes[pet.id] || []).sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
+    const examResults = ultimoExamen ? ultimoExamen.valores : null;
+    const pais = (pet.pais || 'Colombia').toLowerCase().includes('colomb') ? 'colombia' : 'mexico';
+    const recomendaciones = recommendFood(pet, examResults, pais);
+    if (recomendaciones.length > 0 && typeof renderizarRecomendaciones === 'function') {
+      foodRecsContainer.innerHTML = renderizarRecomendaciones(recomendaciones, pet, pais);
+    } else {
+      foodRecsContainer.innerHTML = '<p class="empty-list">No hay recomendaciones disponibles para esta raza</p>';
+    }
+  }
+
+  // Tiempo de digestión
+  const digestionContainer = document.getElementById('digestion-time');
+  if (digestionContainer && typeof calcularTiempoDigestion === 'function') {
+    const tiposAlimento = ['seco', 'humedo', 'natural'];
+    let digHtml = '<div class="digestion-grid">';
+    tiposAlimento.forEach(tipo => {
+      const resultado = calcularTiempoDigestion(pet, tipo);
+      if (resultado) {
+        const tipoLabel = tipo === 'seco' ? 'Alimento Seco' : tipo === 'humedo' ? 'Alimento Húmedo' : 'Alimento Natural';
+        const tipoIcon = tipo === 'seco' ? 'fa-cookie' : tipo === 'humedo' ? 'fa-drumstick-bite' : 'fa-leaf';
+        digHtml += `
+          <div class="digestion-card">
+            <div class="digestion-icon"><i class="fas ${tipoIcon}"></i></div>
+            <h4>${tipoLabel}</h4>
+            <p class="digestion-time">${resultado.tiempoMin} - ${resultado.tiempoMax} horas</p>
+            <p class="digestion-detail">${resultado.consejo || 'Esperar entre comidas el tiempo indicado'}</p>
+          </div>`;
+      }
+    });
+    digHtml += '</div>';
+    digestionContainer.innerHTML = digHtml;
+  }
+
+  // Peso ideal dinámico según edad
+  const idealWeightContainer = document.getElementById('ideal-weight-info');
+  if (idealWeightContainer && typeof predictIdealWeight === 'function') {
+    const prediccion = predictIdealWeight(pet.raza, edadMeses);
+    if (prediccion) {
+      const comp = typeof compareWithPercentiles === 'function' ? compareWithPercentiles(pet.peso, pet.raza, edadMeses) : null;
+      const estadoColor = comp ? (comp.estado === 'normal' ? 'var(--success)' : comp.estado === 'sobrepeso' ? 'var(--danger)' : 'var(--warning)') : 'var(--primary)';
+      idealWeightContainer.innerHTML = `
+        <div class="ideal-weight-display">
+          <div class="ideal-weight-range">
+            <span class="ideal-label">Peso ideal para ${escapeHtml(pet.raza)} (${prediccion.etapa}):</span>
+            <span class="ideal-values">${prediccion.min} - ${prediccion.max} kg</span>
+            <span class="ideal-current" style="color:${estadoColor}">Peso actual: ${pet.peso} kg ${comp ? '- ' + comp.mensaje : ''}</span>
+          </div>
+          ${comp && comp.percentil ? `<small>Percentil ${comp.percentil} para su raza y edad</small>` : ''}
+        </div>`;
+    }
+  }
 }
 
 function calcularPorciones() {
@@ -967,25 +1174,57 @@ function renderizarSeguimiento() {
   document.getElementById('track-water-progress').style.width = `${Math.min(pctAgua, 100)}%`;
   document.getElementById('track-water-status').textContent = `${aguaHoy} ml / ${Math.round(aguaReq)} ml (${Math.round(pctAgua)}%)`;
 
-  // Peso
+  // Peso - Análisis inteligente
   const pesosArr = estado.pesos[pet.id] || [];
   if (pesosArr.length > 0) {
     const ultimoPeso = pesosArr[pesosArr.length - 1];
-    const razaInfo = RAZAS[pet.especie].find(r => r.nombre === pet.raza);
+    const edadMesesPeso = (pet.edadAnios * 12) + (pet.edadMeses || 0);
     let compHtml = `<p>Último peso registrado: <strong>${ultimoPeso.peso} kg</strong> (${formatearFecha(ultimoPeso.fecha)})</p>`;
-    if (razaInfo) {
-      compHtml += `<p>Peso ideal para ${pet.raza}: <strong>${razaInfo.pesoIdeal.min} - ${razaInfo.pesoIdeal.max} kg</strong></p>`;
-      if (ultimoPeso.peso < razaInfo.pesoIdeal.min) {
-        compHtml += `<p style="color:var(--warning)">⚠ Por debajo del peso ideal</p>`;
-      } else if (ultimoPeso.peso > razaInfo.pesoIdeal.max) {
-        compHtml += `<p style="color:var(--danger)">⚠ Por encima del peso ideal</p>`;
-      } else {
-        compHtml += `<p style="color:var(--success)">✓ Dentro del rango ideal</p>`;
+
+    // Usar análisis inteligente de peso
+    if (typeof compareWithPercentiles === 'function') {
+      const comp = compareWithPercentiles(ultimoPeso.peso, pet.raza, edadMesesPeso);
+      if (comp) {
+        const estadoColor = comp.estado === 'normal' ? 'var(--success)' : comp.estado === 'sobrepeso' ? 'var(--danger)' : 'var(--warning)';
+        compHtml += `<p>Peso ideal para ${pet.raza} (${comp.etapa}): <strong>${comp.rangoIdeal.min} - ${comp.rangoIdeal.max} kg</strong></p>`;
+        compHtml += `<p style="color:${estadoColor}">${comp.estado === 'normal' ? '✓' : '⚠'} ${comp.mensaje}</p>`;
+        if (comp.percentil) compHtml += `<p style="font-size:0.8rem;color:var(--text-secondary)">Percentil ${comp.percentil} para su raza</p>`;
+      }
+    } else {
+      const razaInfo = RAZAS[pet.especie].find(r => r.nombre === pet.raza);
+      if (razaInfo) {
+        compHtml += `<p>Peso ideal para ${pet.raza}: <strong>${razaInfo.pesoIdeal.min} - ${razaInfo.pesoIdeal.max} kg</strong></p>`;
       }
     }
     document.getElementById('weight-comparison').innerHTML = compHtml;
   } else {
     document.getElementById('weight-comparison').innerHTML = '<p style="color:var(--text-secondary)">No hay registros de peso</p>';
+  }
+
+  // Análisis inteligente de peso (tendencias, alertas)
+  const weightAnalysisContainer = document.getElementById('weight-analysis');
+  if (weightAnalysisContainer && typeof renderizarAnalisisPeso === 'function') {
+    weightAnalysisContainer.innerHTML = renderizarAnalisisPeso(pet, estado.pesos);
+  }
+
+  // Alertas de peso
+  const weightAlertsContainer = document.getElementById('weight-alerts');
+  if (weightAlertsContainer && typeof generarAlertasPeso === 'function') {
+    const alertasPeso = generarAlertasPeso(pet, estado.pesos);
+    if (alertasPeso.length > 0) {
+      weightAlertsContainer.innerHTML = alertasPeso.map(a => `
+        <div class="alert alert-${a.tipo === 'danger' ? 'danger' : a.tipo === 'warning' ? 'warning' : 'success'}">
+          <i class="fas fa-${a.icono}"></i>
+          <div>
+            <strong>${a.titulo}</strong>
+            <p style="margin:0.25rem 0 0;font-size:0.85rem">${a.mensaje}</p>
+          </div>
+        </div>
+      `).join('');
+      weightAlertsContainer.classList.remove('hidden');
+    } else {
+      weightAlertsContainer.classList.add('hidden');
+    }
   }
 
   // Gráficos
@@ -1063,15 +1302,27 @@ function registrarPeso(e) {
   const peso = parseFloat(document.getElementById('weight-kg').value);
   if (!peso || peso <= 0) return;
 
+  // Campos adicionales opcionales
+  const condicionEl = document.getElementById('weight-condition');
+  const energiaEl = document.getElementById('weight-energy');
+  const apetitoEl = document.getElementById('weight-appetite');
+
+  const registro = {
+    fecha: fechaHoy(),
+    peso,
+    condicion: condicionEl ? parseInt(condicionEl.value) || null : null,
+    energia: energiaEl ? parseInt(energiaEl.value) || null : null,
+    apetito: apetitoEl ? parseInt(apetitoEl.value) || null : null
+  };
+
   if (!estado.pesos[pet.id]) estado.pesos[pet.id] = [];
 
-  const hoy = fechaHoy();
   // Reemplazar si ya hay registro de hoy
-  const idxHoy = estado.pesos[pet.id].findIndex(p => p.fecha === hoy);
+  const idxHoy = estado.pesos[pet.id].findIndex(p => p.fecha === registro.fecha);
   if (idxHoy !== -1) {
-    estado.pesos[pet.id][idxHoy].peso = peso;
+    estado.pesos[pet.id][idxHoy] = registro;
   } else {
-    estado.pesos[pet.id].push({ fecha: hoy, peso });
+    estado.pesos[pet.id].push(registro);
   }
 
   // Actualizar peso de la mascota
@@ -1080,6 +1331,9 @@ function registrarPeso(e) {
 
   guardarDatos();
   document.getElementById('weight-kg').value = '';
+  if (condicionEl) condicionEl.value = '';
+  if (energiaEl) energiaEl.value = '';
+  if (apetitoEl) apetitoEl.value = '';
   renderizarSeguimiento();
   renderizarMascotas();
   mostrarToast('Peso registrado', 'success');
@@ -1132,8 +1386,17 @@ function guardarRecordatorio(e) {
 
   const tipo = document.getElementById('reminder-type').value;
   const hora = document.getElementById('reminder-time').value;
+  const repetir = document.getElementById('reminder-repeat').value;
   if (!tipo || !hora) {
     mostrarToast('Completa los campos obligatorios', 'warning');
+    return;
+  }
+
+  // Validar fecha para recordatorios de una sola vez
+  const fechaEl = document.getElementById('reminder-date');
+  const fecha = fechaEl ? fechaEl.value : '';
+  if (repetir === 'unico' && !fecha) {
+    mostrarToast('Selecciona una fecha para el recordatorio', 'warning');
     return;
   }
 
@@ -1141,7 +1404,8 @@ function guardarRecordatorio(e) {
     id: generarId(),
     tipo,
     hora,
-    repetir: document.getElementById('reminder-repeat').value,
+    fecha: fecha || '',
+    repetir,
     nota: document.getElementById('reminder-note').value.trim(),
     alarma: document.getElementById('reminder-alarm').checked,
     activo: true
@@ -1200,11 +1464,14 @@ function renderizarRecordatorios() {
         <div class="reminder-info">
           <div class="reminder-icon ${r.tipo}"><i class="fas ${iconoRecordatorio(r.tipo)}"></i></div>
           <div class="reminder-text">
-            <strong>${capitalizarPrimera(r.tipo)}</strong>
-            <span>${r.hora} · ${capitalizarPrimera(r.repetir)} ${r.nota ? '· ' + escapeHtml(r.nota) : ''}</span>
+            <strong>${capitalizarPrimera(r.tipo)} ${r.autoGenerado ? '<span style="font-size:0.7rem;color:var(--primary)">(Auto)</span>' : ''}</strong>
+            <span>${r.hora} · ${capitalizarPrimera(r.repetir)} ${r.fecha ? '· ' + formatearFecha(r.fecha) : ''} ${r.nota ? '· ' + escapeHtml(r.nota) : ''}</span>
           </div>
         </div>
-        <button class="btn-icon btn-sm" onclick="eliminarRecordatorio('${r.id}')" title="Eliminar"><i class="fas fa-trash" style="color:var(--danger)"></i></button>
+        <div style="display:flex;gap:0.25rem;align-items:center">
+          <button class="btn-icon btn-sm" onclick="exportarCalendario('${r.id}')" title="Exportar a calendario"><i class="fas fa-calendar-plus" style="color:var(--primary)"></i></button>
+          <button class="btn-icon btn-sm" onclick="eliminarRecordatorio('${r.id}')" title="Eliminar"><i class="fas fa-trash" style="color:var(--danger)"></i></button>
+        </div>
       </li>
     `).join('');
   }
@@ -1225,21 +1492,37 @@ function verificarRecordatorios() {
 
   const now = new Date();
   const horaActual = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const hoy = fechaHoy();
 
   const recordatorios = estado.recordatorios[pet.id] || [];
   recordatorios.forEach(r => {
-    if (r.activo && r.hora === horaActual && r.alarma) {
-      mostrarToast(`⏰ ${capitalizarPrimera(r.tipo)}: ${r.nota || 'Es hora!'}`, 'warning');
-      // Intentar reproducir sonido
-      try {
-        const ctx = new (window.AudioContext || window.webkitAudioContext)();
-        const osc = ctx.createOscillator();
-        osc.type = 'sine';
-        osc.frequency.value = 800;
-        osc.connect(ctx.destination);
-        osc.start();
-        setTimeout(() => { osc.stop(); ctx.close(); }, 500);
-      } catch(e) { /* Sonido no disponible */ }
+    if (!r.activo || r.hora !== horaActual || !r.alarma) return;
+
+    // Para recordatorios únicos, verificar que sea la fecha correcta
+    if (r.repetir === 'unico' && r.fecha && r.fecha !== hoy) return;
+
+    // Para semanales, verificar día de la semana
+    if (r.repetir === 'semanal') {
+      // Se activa cualquier día (simplificado)
+    }
+
+    mostrarToast(`⏰ ${capitalizarPrimera(r.tipo)}: ${r.nota || 'Es hora!'}`, 'warning');
+
+    // Intentar reproducir sonido
+    try {
+      const ctx = new (window.AudioContext || window.webkitAudioContext)();
+      const osc = ctx.createOscillator();
+      osc.type = 'sine';
+      osc.frequency.value = 800;
+      osc.connect(ctx.destination);
+      osc.start();
+      setTimeout(() => { osc.stop(); ctx.close(); }, 500);
+    } catch(e) { /* Sonido no disponible */ }
+
+    // Desactivar recordatorios únicos después de dispararse
+    if (r.repetir === 'unico' && r.fecha === hoy) {
+      r.activo = false;
+      guardarDatos();
     }
   });
 }
@@ -1771,8 +2054,8 @@ function processPhotoFile(file) {
     document.getElementById('photo-preview-img').src = e.target.result;
     document.getElementById('photo-preview').classList.remove('hidden');
     document.getElementById('photo-placeholder').classList.add('hidden');
-    // Guardar como data URL para uso sin Firebase Storage
-    document.getElementById('pet-photo').value = e.target.result;
+    // Guardar preview temporal - se sube a Firebase Storage al guardar
+    document.getElementById('pet-photo').value = '__pending_upload__';
   };
   reader.readAsDataURL(file);
 }
@@ -1804,6 +2087,12 @@ function handlePDFSelect(e) {
 }
 
 async function processPDFFile(file) {
+  // Validar tamaño máximo 10MB
+  if (file.size > 10 * 1024 * 1024) {
+    mostrarToast('El PDF no debe superar 10MB', 'warning');
+    return;
+  }
+
   currentPDFFile = file;
   document.getElementById('pdf-file-name').textContent = file.name;
   document.getElementById('pdf-preview').classList.remove('hidden');
@@ -1851,12 +2140,8 @@ async function processPDFFile(file) {
     }
   }
 
-  // Guardar como data URL para referencia
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    document.getElementById('exam-file').value = e.target.result;
-  };
-  reader.readAsDataURL(file);
+  // Marcar como pendiente de upload - se sube al guardar examen
+  document.getElementById('exam-file').value = '__pending_upload__';
 }
 
 function removePDFPreview() {
@@ -1876,179 +2161,55 @@ function verPDF(url) {
   document.getElementById('pdf-viewer-modal').classList.remove('hidden');
 }
 
-// ==================== GOOGLE MAPS - VETERINARIAS ====================
-function usarUbicacionActual() {
-  if (!navigator.geolocation) {
-    mostrarToast('Tu navegador no soporta geolocalización', 'warning');
-    return;
-  }
-  mostrarToast('Obteniendo ubicación...', 'info');
-  navigator.geolocation.getCurrentPosition(
-    (pos) => {
-      buscarVeterinariasEnCoordenadas(pos.coords.latitude, pos.coords.longitude);
-    },
-    (err) => {
-      mostrarToast('No se pudo obtener tu ubicación. Verifica los permisos.', 'error');
-    }
-  );
-}
-
-function buscarVeterinarias() {
+// ==================== VETERINARIAS - DIRECTORIO LOCAL ====================
+function renderizarVeterinariasLocal() {
   const pet = obtenerMascotaActiva();
-  if (pet && pet.ciudad) {
-    // Geocodificar la ciudad de la mascota
-    if (typeof google === 'undefined' || !google.maps) {
-      mostrarToast('Google Maps no está disponible', 'error');
-      return;
-    }
-    const geocoder = new google.maps.Geocoder();
-    geocoder.geocode({ address: `${pet.ciudad}, ${pet.pais || ''}` }, (results, status) => {
-      if (status === 'OK' && results[0]) {
-        const loc = results[0].geometry.location;
-        buscarVeterinariasEnCoordenadas(loc.lat(), loc.lng());
-      } else {
-        mostrarToast('No se encontró la ubicación. Usa "Mi ubicación"', 'warning');
-      }
-    });
-  } else {
-    // Sin ciudad, usar geolocalización
-    usarUbicacionActual();
-  }
-}
+  const container = document.getElementById('vet-local-content');
+  if (!container) return;
 
-function buscarVeterinariasEnCoordenadas(lat, lng) {
-  if (typeof google === 'undefined' || !google.maps) {
-    mostrarToast('Google Maps no está disponible', 'error');
+  if (typeof VET_DATABASE === 'undefined' || typeof filtrarVeterinarias === 'undefined') {
+    container.innerHTML = '<p class="empty-list">Base de datos de veterinarias no disponible</p>';
     return;
   }
 
-  const mapDiv = document.getElementById('vet-map');
-  mapDiv.innerHTML = '';
+  const ciudad = pet ? pet.ciudad : '';
+  const filtros = { ciudad: ciudad || '' };
+  const vets = filtrarVeterinarias(filtros).slice(0, 6);
 
-  const location = new google.maps.LatLng(lat, lng);
-  const radio = parseInt(document.getElementById('vet-distance').value) || 5000;
-  const openNow = document.getElementById('vet-open-now').checked;
-
-  googleMap = new google.maps.Map(mapDiv, {
-    center: location,
-    zoom: 13,
-    styles: estado.tema === 'dark' ? darkMapStyles : []
-  });
-
-  // Marcador de ubicación del usuario
-  new google.maps.Marker({
-    position: location,
-    map: googleMap,
-    icon: { path: google.maps.SymbolPath.CIRCLE, scale: 10, fillColor: '#4A90E2', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 2 },
-    title: 'Tu ubicación'
-  });
-
-  mapInfoWindow = new google.maps.InfoWindow();
-
-  const service = new google.maps.places.PlacesService(googleMap);
-  const request = {
-    location,
-    radius: radio,
-    type: 'veterinary_care',
-    ...(openNow ? { openNow: true } : {})
-  };
-
-  service.nearbySearch(request, (results, status) => {
-    if (status === google.maps.places.PlacesServiceStatus.OK) {
-      // Limpiar marcadores anteriores
-      mapMarkers.forEach(m => m.setMap(null));
-      mapMarkers = [];
-
-      // Ordenar por distancia
-      results.sort((a, b) => {
-        const distA = calcularDistancia(lat, lng, a.geometry.location.lat(), a.geometry.location.lng());
-        const distB = calcularDistancia(lat, lng, b.geometry.location.lat(), b.geometry.location.lng());
-        return distA - distB;
-      });
-
-      results.forEach((place, idx) => {
-        const marker = new google.maps.Marker({
-          position: place.geometry.location,
-          map: googleMap,
-          title: place.name,
-          label: { text: String(idx + 1), color: '#fff', fontSize: '11px' },
-          icon: { path: google.maps.SymbolPath.BACKWARD_CLOSED_ARROW, scale: 6, fillColor: '#D0021B', fillOpacity: 1, strokeColor: '#fff', strokeWeight: 1 }
-        });
-
-        marker.addListener('click', () => {
-          const dist = calcularDistancia(lat, lng, place.geometry.location.lat(), place.geometry.location.lng());
-          const stars = place.rating ? '★'.repeat(Math.round(place.rating)) + '☆'.repeat(5 - Math.round(place.rating)) : 'Sin calificación';
-          mapInfoWindow.setContent(`
-            <div style="max-width:250px;font-family:Roboto,sans-serif">
-              <h4 style="margin:0 0 4px;font-size:14px">${escapeHtml(place.name)}</h4>
-              <p style="margin:0 0 4px;font-size:12px;color:#666">${escapeHtml(place.vicinity || '')}</p>
-              <p style="margin:0 0 4px;font-size:12px;color:#FFC107">${stars} ${place.rating ? '(' + place.rating + ')' : ''}</p>
-              <p style="margin:0 0 8px;font-size:12px;color:#4A90E2;font-weight:500">${dist.toFixed(1)} km</p>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${place.geometry.location.lat()},${place.geometry.location.lng()}" target="_blank" style="font-size:12px;color:#4A90E2;text-decoration:none">
-                <i class="fas fa-directions"></i> Cómo llegar
-              </a>
-            </div>
-          `);
-          mapInfoWindow.open(googleMap, marker);
-        });
-
-        mapMarkers.push(marker);
-      });
-
-      renderizarListaVeterinarias(results, lat, lng);
-      mostrarToast(`${results.length} veterinarias encontradas`, 'success');
-    } else {
-      mostrarToast('No se encontraron veterinarias en esta área', 'info');
-    }
-  });
-}
-
-function renderizarListaVeterinarias(places, userLat, userLng) {
-  const list = document.getElementById('vet-list');
-  const favs = estado.veterinariasFavoritas || [];
-
-  list.innerHTML = places.map((place, idx) => {
-    const dist = calcularDistancia(userLat, userLng, place.geometry.location.lat(), place.geometry.location.lng());
-    const isFav = favs.some(f => f.placeId === place.place_id);
-    const stars = place.rating ? '★'.repeat(Math.round(place.rating)) + '☆'.repeat(5 - Math.round(place.rating)) : '';
-
-    return `
-      <div class="vet-card" onclick="googleMap.panTo({lat:${place.geometry.location.lat()},lng:${place.geometry.location.lng()}});googleMap.setZoom(16)">
-        <div style="display:flex;justify-content:space-between;align-items:flex-start">
-          <h4>${idx + 1}. ${escapeHtml(place.name)}</h4>
-          <button class="btn-icon btn-sm" onclick="event.stopPropagation();toggleFavorito('${place.place_id}','${escapeHtml(place.name).replace(/'/g, "\\'")}','${escapeHtml(place.vicinity || '').replace(/'/g, "\\'")}')" title="${isFav ? 'Quitar de favoritos' : 'Agregar a favoritos'}">
-            <i class="fas fa-heart" style="color:${isFav ? 'var(--danger)' : 'var(--text-light)'}"></i>
-          </button>
-        </div>
-        <p class="vet-address"><i class="fas fa-map-pin"></i> ${escapeHtml(place.vicinity || '')}</p>
-        ${stars ? `<div class="vet-rating"><span class="stars">${stars}</span><span>${place.rating}</span></div>` : ''}
-        <span class="vet-distance"><i class="fas fa-route"></i> ${dist.toFixed(1)} km</span>
-        <div class="vet-actions">
-          <a href="https://www.google.com/maps/dir/?api=1&destination=${place.geometry.location.lat()},${place.geometry.location.lng()}" target="_blank" class="btn btn-sm btn-outline" onclick="event.stopPropagation()">
-            <i class="fas fa-directions"></i> Cómo llegar
-          </a>
-        </div>
-      </div>
-    `;
-  }).join('');
-}
-
-function toggleFavorito(placeId, nombre, direccion) {
-  if (!estado.veterinariasFavoritas) estado.veterinariasFavoritas = [];
-  const idx = estado.veterinariasFavoritas.findIndex(f => f.placeId === placeId);
-  if (idx !== -1) {
-    estado.veterinariasFavoritas.splice(idx, 1);
-    mostrarToast('Eliminada de favoritos', 'info');
-  } else {
-    estado.veterinariasFavoritas.push({ placeId, nombre, direccion });
-    mostrarToast('Agregada a favoritos', 'success');
+  if (vets.length === 0) {
+    container.innerHTML = `
+      <p class="empty-list">No se encontraron veterinarias${ciudad ? ' en ' + ciudad : ''}</p>
+      <a href="directorio-veterinarias.html" class="btn btn-primary" style="margin-top:1rem">
+        <i class="fas fa-search"></i> Ver directorio completo
+      </a>`;
+    return;
   }
-  guardarDatos();
-  renderizarFavoritos();
+
+  let html = '<div class="vet-local-grid">';
+  vets.forEach(vet => {
+    const stars = '★'.repeat(Math.round(vet.calificacion)) + '☆'.repeat(5 - Math.round(vet.calificacion));
+    html += `
+      <div class="vet-card">
+        <h4>${escapeHtml(vet.nombre)}</h4>
+        <p class="vet-address"><i class="fas fa-map-pin"></i> ${escapeHtml(vet.direccion)}, ${escapeHtml(vet.ciudad)}</p>
+        <div class="vet-rating"><span class="stars">${stars}</span> <span>${vet.calificacion}</span></div>
+        ${vet.emergencia24h ? '<span class="vet-badge-24h"><i class="fas fa-hospital"></i> 24/7</span>' : ''}
+        <div class="vet-actions" style="margin-top:0.5rem">
+          <a href="tel:${vet.telefono}" class="btn btn-sm btn-primary"><i class="fas fa-phone"></i> Llamar</a>
+          <a href="veterinaria-detalle.html?id=${vet.id}" class="btn btn-sm btn-outline"><i class="fas fa-info-circle"></i> Detalles</a>
+        </div>
+      </div>`;
+  });
+  html += '</div>';
+  html += `<a href="directorio-veterinarias.html" class="btn btn-outline" style="margin-top:1rem;display:block;text-align:center">
+    <i class="fas fa-th-list"></i> Ver directorio completo (${typeof VET_DATABASE !== 'undefined' ? VET_DATABASE.length : 0} veterinarias)
+  </a>`;
+  container.innerHTML = html;
 }
 
 function renderizarFavoritos() {
   const list = document.getElementById('vet-favorites');
+  if (!list) return;
   const favs = estado.veterinariasFavoritas || [];
 
   if (favs.length === 0) {
@@ -2060,31 +2221,20 @@ function renderizarFavoritos() {
     <li>
       <div>
         <strong>${escapeHtml(f.nombre)}</strong><br>
-        <small style="color:var(--text-secondary)">${escapeHtml(f.direccion)}</small>
+        <small style="color:var(--text-secondary)">${escapeHtml(f.direccion || f.ciudad || '')}</small>
       </div>
-      <button class="btn-icon btn-sm" onclick="toggleFavorito('${f.placeId}','','')" title="Quitar"><i class="fas fa-heart" style="color:var(--danger)"></i></button>
+      <button class="btn-icon btn-sm" onclick="quitarFavorito('${escapeHtml(f.id || f.placeId || '')}')" title="Quitar"><i class="fas fa-heart" style="color:var(--danger)"></i></button>
     </li>
   `).join('');
 }
 
-function calcularDistancia(lat1, lon1, lat2, lon2) {
-  const R = 6371;
-  const dLat = (lat2 - lat1) * Math.PI / 180;
-  const dLon = (lon2 - lon1) * Math.PI / 180;
-  const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
-            Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
-            Math.sin(dLon/2) * Math.sin(dLon/2);
-  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+function quitarFavorito(id) {
+  if (!estado.veterinariasFavoritas) return;
+  estado.veterinariasFavoritas = estado.veterinariasFavoritas.filter(f => (f.id || f.placeId) !== id);
+  guardarDatos();
+  renderizarFavoritos();
+  mostrarToast('Eliminada de favoritos', 'info');
 }
-
-// Estilos oscuros para Google Maps
-const darkMapStyles = [
-  { elementType: 'geometry', stylers: [{ color: '#1d2c4d' }] },
-  { elementType: 'labels.text.stroke', stylers: [{ color: '#1a3646' }] },
-  { elementType: 'labels.text.fill', stylers: [{ color: '#8ec3b9' }] },
-  { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#304a7d' }] },
-  { featureType: 'water', elementType: 'geometry', stylers: [{ color: '#0e1626' }] }
-];
 
 // ==================== EXPLICACIONES NUTRICIONALES ====================
 function mostrarExplicacion(tipo) {
@@ -2136,6 +2286,92 @@ function mostrarExplicacion(tipo) {
 
   body.innerHTML = html;
   modal.classList.remove('hidden');
+}
+
+// ==================== EXPORTAR CALENDARIO (.ics) ====================
+function exportarCalendario(recordatorioId) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+
+  const recordatorio = (estado.recordatorios[pet.id] || []).find(r => r.id === recordatorioId);
+  if (!recordatorio) {
+    mostrarToast('Recordatorio no encontrado', 'warning');
+    return;
+  }
+
+  const fecha = recordatorio.fecha || fechaHoy();
+  const hora = recordatorio.hora || '09:00';
+  const [h, m] = hora.split(':');
+  const startDate = new Date(`${fecha}T${h}:${m}:00`);
+  const endDate = new Date(startDate.getTime() + 30 * 60 * 1000); // 30 min duración
+
+  const formatICSDate = (d) => {
+    return d.toISOString().replace(/[-:]/g, '').replace(/\.\d{3}/, '');
+  };
+
+  let rrule = '';
+  if (recordatorio.repetir === 'diario') rrule = 'RRULE:FREQ=DAILY\n';
+  else if (recordatorio.repetir === 'semanal') rrule = 'RRULE:FREQ=WEEKLY\n';
+  else if (recordatorio.repetir === 'mensual') rrule = 'RRULE:FREQ=MONTHLY\n';
+
+  const icsContent = [
+    'BEGIN:VCALENDAR',
+    'VERSION:2.0',
+    'PRODID:-//PetCare Pro//ES',
+    'CALSCALE:GREGORIAN',
+    'BEGIN:VEVENT',
+    `DTSTART:${formatICSDate(startDate)}`,
+    `DTEND:${formatICSDate(endDate)}`,
+    `SUMMARY:PetCare - ${capitalizarPrimera(recordatorio.tipo)} (${pet.nombre})`,
+    `DESCRIPTION:${recordatorio.nota || capitalizarPrimera(recordatorio.tipo) + ' para ' + pet.nombre}`,
+    rrule ? rrule.trim() : '',
+    recordatorio.alarma ? 'BEGIN:VALARM\nTRIGGER:-PT15M\nACTION:DISPLAY\nDESCRIPTION:Recordatorio PetCare\nEND:VALARM' : '',
+    'END:VEVENT',
+    'END:VCALENDAR'
+  ].filter(l => l).join('\n');
+
+  const blob = new Blob([icsContent], { type: 'text/calendar;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = `petcare_${recordatorio.tipo}_${pet.nombre}.ics`;
+  a.click();
+  URL.revokeObjectURL(url);
+  mostrarToast('Archivo .ics descargado. Ábrelo para agregar a tu calendario.', 'success');
+}
+
+// ==================== CREAR RECORDATORIO DE PESAJE ====================
+function crearRecordatorioPesaje(dias) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) {
+    mostrarToast('Selecciona una mascota primero', 'warning');
+    return;
+  }
+
+  // Verificar si ya existe un recordatorio de pesaje
+  const existente = (estado.recordatorios[pet.id] || []).find(r => r.tipo === 'pesaje' && r.activo);
+  if (existente) {
+    mostrarToast('Ya tienes un recordatorio de pesaje activo', 'info');
+    return;
+  }
+
+  if (!estado.recordatorios[pet.id]) estado.recordatorios[pet.id] = [];
+
+  const repetir = dias <= 7 ? 'semanal' : dias <= 14 ? 'semanal' : 'mensual';
+  estado.recordatorios[pet.id].push({
+    id: generarId(),
+    tipo: 'pesaje',
+    hora: '09:00',
+    fecha: '',
+    repetir,
+    nota: `Pesar a ${pet.nombre} (cada ${dias} días)`,
+    alarma: true,
+    activo: true,
+    autoGenerado: true
+  });
+
+  guardarDatos();
+  mostrarToast(`Recordatorio de pesaje creado (${repetir})`, 'success');
 }
 
 // ==================== INFO DE RAZA EN NUTRICIÓN ====================

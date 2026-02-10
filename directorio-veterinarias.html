@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare Pro - Directorio de Veterinarias</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Inter:wght@400;500&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="styles.css">
+  <style>
+    body { padding: 0; }
+    .vet-page { display: flex; flex-direction: column; min-height: 100vh; }
+    .vet-header { background: var(--bg-secondary); padding: 1rem 1.5rem; box-shadow: var(--shadow-sm); display: flex; align-items: center; gap: 1rem; position: sticky; top: 0; z-index: 100; }
+    .vet-header .logo { display: flex; align-items: center; gap: 0.5rem; font-weight: 700; font-size: 1.2rem; color: var(--primary); text-decoration: none; }
+    .vet-header h1 { font-size: 1.1rem; font-weight: 600; flex: 1; }
+    .vet-search-bar { flex: 1; max-width: 500px; position: relative; }
+    .vet-search-bar input { width: 100%; padding: 0.6rem 1rem 0.6rem 2.5rem; border: 2px solid var(--border-color); border-radius: 24px; font-size: 0.9rem; background: var(--bg-input); color: var(--text-primary); transition: border-color 0.3s; }
+    .vet-search-bar input:focus { outline: none; border-color: var(--primary); }
+    .vet-search-bar i { position: absolute; left: 1rem; top: 50%; transform: translateY(-50%); color: var(--text-secondary); }
+
+    .vet-layout { display: flex; flex: 1; }
+    .vet-sidebar { width: 300px; background: var(--bg-secondary); padding: 1.5rem; border-right: 1px solid var(--border-color); overflow-y: auto; max-height: calc(100vh - 60px); position: sticky; top: 60px; }
+    .vet-sidebar h3 { font-size: 1rem; margin-bottom: 1rem; color: var(--text-primary); }
+    .vet-sidebar .filter-group { margin-bottom: 1.25rem; }
+    .vet-sidebar .filter-group label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.4rem; color: var(--text-primary); }
+    .vet-sidebar select, .vet-sidebar input[type="range"] { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; background: var(--bg-input); color: var(--text-primary); }
+    .vet-sidebar .checkbox-group { display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto; }
+    .vet-sidebar .checkbox-group label { display: flex; align-items: center; gap: 0.4rem; font-size: 0.82rem; cursor: pointer; }
+    .vet-sidebar .checkbox-group input[type="checkbox"] { accent-color: var(--primary); }
+    .vet-sidebar .toggle-group { display: flex; align-items: center; gap: 0.5rem; }
+    .vet-sidebar .toggle-group label { font-size: 0.85rem; }
+    .filter-actions { display: flex; gap: 0.5rem; margin-top: 1rem; }
+    .filter-actions .btn { flex: 1; font-size: 0.85rem; padding: 0.5rem; }
+    .price-display { font-size: 0.8rem; color: var(--text-secondary); text-align: center; margin-top: 0.3rem; }
+
+    .vet-main { flex: 1; padding: 1.5rem; }
+    .vet-results-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; flex-wrap: wrap; gap: 0.5rem; }
+    .vet-results-bar span { font-size: 0.9rem; color: var(--text-secondary); }
+    .vet-results-bar select { padding: 0.4rem 0.6rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.82rem; background: var(--bg-input); color: var(--text-primary); }
+
+    .vet-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: 1rem; }
+    .vet-card { background: var(--bg-card); border-radius: 12px; box-shadow: var(--shadow-sm); overflow: hidden; transition: transform 0.2s, box-shadow 0.2s; position: relative; }
+    .vet-card:hover { transform: translateY(-2px); box-shadow: var(--shadow-md); }
+    .vet-card-header { padding: 1rem 1rem 0.5rem; }
+    .vet-card-header h3 { font-size: 1rem; margin-bottom: 0.3rem; color: var(--text-primary); }
+    .vet-badge-24h { position: absolute; top: 0.75rem; right: 0.75rem; background: var(--danger); color: white; padding: 0.2rem 0.6rem; border-radius: 12px; font-size: 0.7rem; font-weight: 600; }
+    .vet-badge-verified { display: inline-flex; align-items: center; gap: 0.2rem; color: var(--primary); font-size: 0.75rem; }
+    .vet-rating { display: flex; align-items: center; gap: 0.3rem; margin-bottom: 0.3rem; }
+    .vet-rating .stars { color: #FFC107; font-size: 0.85rem; }
+    .vet-rating span { font-size: 0.8rem; color: var(--text-secondary); }
+    .vet-card-body { padding: 0 1rem 0.75rem; }
+    .vet-card-body p { font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 0.3rem; }
+    .vet-especialidades { display: flex; flex-wrap: wrap; gap: 0.3rem; margin: 0.5rem 0; }
+    .vet-especialidades span { background: rgba(74,144,226,0.1); color: var(--primary); padding: 0.15rem 0.5rem; border-radius: 12px; font-size: 0.72rem; }
+    .vet-precio { font-size: 0.85rem; font-weight: 500; color: var(--text-primary); margin: 0.3rem 0; }
+    .vet-card-actions { display: flex; gap: 0.5rem; padding: 0.75rem 1rem; border-top: 1px solid var(--border-color); }
+    .vet-card-actions .btn { flex: 1; font-size: 0.78rem; padding: 0.4rem 0.5rem; }
+    .btn-llamar { background: var(--success); color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-llamar:hover { background: var(--success-dark); }
+    .btn-whatsapp { background: #25D366; color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-whatsapp:hover { opacity: 0.9; }
+    .btn-detalles { background: var(--primary); color: white; border: none; border-radius: 6px; cursor: pointer; }
+    .btn-detalles:hover { background: var(--primary-dark); }
+
+    .fab-suggest { position: fixed; bottom: 2rem; right: 2rem; background: var(--primary); color: white; border: none; padding: 0.9rem 1.2rem; border-radius: 50px; font-size: 0.9rem; cursor: pointer; box-shadow: var(--shadow-lg); z-index: 90; display: flex; align-items: center; gap: 0.5rem; transition: transform 0.2s; }
+    .fab-suggest:hover { transform: scale(1.05); }
+
+    .suggest-modal { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 200; }
+    .suggest-modal.hidden { display: none; }
+    .suggest-modal-content { background: var(--bg-card); border-radius: 12px; padding: 2rem; max-width: 500px; width: 90%; max-height: 90vh; overflow-y: auto; }
+    .suggest-modal-content h3 { margin-bottom: 1rem; }
+    .suggest-modal-content .form-group { margin-bottom: 1rem; }
+    .suggest-modal-content label { display: block; font-size: 0.85rem; font-weight: 500; margin-bottom: 0.3rem; }
+    .suggest-modal-content input, .suggest-modal-content textarea { width: 100%; padding: 0.5rem; border: 1px solid var(--border-color); border-radius: 6px; font-size: 0.85rem; background: var(--bg-input); color: var(--text-primary); }
+    .suggest-modal-content textarea { min-height: 80px; resize: vertical; }
+
+    .no-results { text-align: center; padding: 3rem; color: var(--text-secondary); }
+    .no-results i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+    .mobile-filter-toggle { display: none; }
+
+    @media (max-width: 768px) {
+      .vet-layout { flex-direction: column; }
+      .vet-sidebar { width: 100%; max-height: none; position: static; display: none; border-right: none; border-bottom: 1px solid var(--border-color); }
+      .vet-sidebar.open { display: block; }
+      .vet-grid { grid-template-columns: 1fr; }
+      .vet-header h1 { display: none; }
+      .mobile-filter-toggle { display: inline-flex; align-items: center; gap: 0.3rem; background: var(--bg-input); border: 1px solid var(--border-color); padding: 0.4rem 0.8rem; border-radius: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-primary); }
+    }
+  </style>
+</head>
+<body>
+  <div class="vet-page">
+    <!-- Header -->
+    <div class="vet-header">
+      <a href="index.html" class="logo"><i class="fas fa-paw"></i> PetCare Pro</a>
+      <h1>Directorio de Veterinarias</h1>
+      <div class="vet-search-bar">
+        <i class="fas fa-search"></i>
+        <input type="text" id="vet-search" placeholder="Buscar veterinarias, especialidades, servicios..." oninput="buscarVeterinariasDebounced()">
+      </div>
+      <button class="mobile-filter-toggle" onclick="document.querySelector('.vet-sidebar').classList.toggle('open')">
+        <i class="fas fa-filter"></i> Filtros
+      </button>
+    </div>
+
+    <div class="vet-layout">
+      <!-- Sidebar Filtros -->
+      <aside class="vet-sidebar">
+        <h3><i class="fas fa-sliders-h"></i> Filtros</h3>
+
+        <div class="filter-group">
+          <label for="filter-ciudad"><i class="fas fa-map-marker-alt"></i> Ciudad</label>
+          <select id="filter-ciudad" onchange="aplicarFiltros()">
+            <option value="">Todas las ciudades</option>
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <div class="toggle-group">
+            <input type="checkbox" id="filter-24h" onchange="aplicarFiltros()">
+            <label for="filter-24h">Solo emergencias 24/7</label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <div class="toggle-group">
+            <input type="checkbox" id="filter-abierto" onchange="aplicarFiltros()">
+            <label for="filter-abierto">Abierto ahora</label>
+          </div>
+        </div>
+
+        <div class="filter-group">
+          <label>Especialidades</label>
+          <div class="checkbox-group" id="filter-especialidades"></div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-precio">Precio máximo consulta</label>
+          <input type="range" id="filter-precio" min="20000" max="200000" step="5000" value="200000" oninput="actualizarPrecioDisplay(); aplicarFiltros()">
+          <div class="price-display" id="precio-display">Hasta $200.000</div>
+        </div>
+
+        <div class="filter-group">
+          <label for="filter-calificacion">Calificación mínima</label>
+          <select id="filter-calificacion" onchange="aplicarFiltros()">
+            <option value="">Cualquiera</option>
+            <option value="4.5">4.5+ estrellas</option>
+            <option value="4">4+ estrellas</option>
+            <option value="3.5">3.5+ estrellas</option>
+            <option value="3">3+ estrellas</option>
+          </select>
+        </div>
+
+        <div class="filter-actions">
+          <button class="btn btn-outline" onclick="limpiarFiltros()"><i class="fas fa-times"></i> Limpiar</button>
+          <button class="btn btn-primary" onclick="aplicarFiltros()"><i class="fas fa-search"></i> Aplicar</button>
+        </div>
+      </aside>
+
+      <!-- Main Content -->
+      <main class="vet-main">
+        <div class="vet-results-bar">
+          <span id="results-count">Cargando...</span>
+          <select id="sort-by" onchange="aplicarFiltros()">
+            <option value="calificacion">Ordenar por: Calificación</option>
+            <option value="precio">Ordenar por: Precio</option>
+            <option value="nombre">Ordenar por: Nombre</option>
+          </select>
+        </div>
+
+        <div class="vet-grid" id="vet-grid"></div>
+        <div class="no-results hidden" id="no-results">
+          <i class="fas fa-search"></i>
+          <h3>No se encontraron veterinarias</h3>
+          <p>Intenta ajustar los filtros o buscar con otros términos</p>
+        </div>
+      </main>
+    </div>
+
+    <!-- FAB Sugerir -->
+    <button class="fab-suggest" onclick="abrirSugerencia()">
+      <i class="fas fa-plus"></i> Sugerir veterinaria
+    </button>
+
+    <!-- Modal Sugerir -->
+    <div class="suggest-modal hidden" id="suggest-modal">
+      <div class="suggest-modal-content">
+        <h3><i class="fas fa-plus-circle"></i> Sugerir una veterinaria</h3>
+        <form id="suggest-form" onsubmit="enviarSugerencia(event)">
+          <div class="form-group">
+            <label>Nombre de la veterinaria *</label>
+            <input type="text" id="sug-nombre" required>
+          </div>
+          <div class="form-group">
+            <label>Ciudad *</label>
+            <input type="text" id="sug-ciudad" required>
+          </div>
+          <div class="form-group">
+            <label>Dirección *</label>
+            <input type="text" id="sug-direccion" required>
+          </div>
+          <div class="form-group">
+            <label>Teléfono</label>
+            <input type="tel" id="sug-telefono">
+          </div>
+          <div class="form-group">
+            <label>Tu email (para confirmar)</label>
+            <input type="email" id="sug-email">
+          </div>
+          <div class="form-group">
+            <label>Mensaje adicional</label>
+            <textarea id="sug-mensaje" placeholder="Cuéntanos más sobre esta veterinaria..."></textarea>
+          </div>
+          <div style="display:flex;gap:0.5rem">
+            <button type="button" class="btn btn-outline" onclick="cerrarSugerencia()" style="flex:1">Cancelar</button>
+            <button type="submit" class="btn btn-primary" style="flex:1"><i class="fas fa-paper-plane"></i> Enviar</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast-container" style="position:fixed;top:1rem;right:1rem;z-index:999"></div>
+  </div>
+
+  <script src="data.js"></script>
+  <script src="vet-database.js"></script>
+  <!-- Firebase para sugerencias -->
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    let debounceTimer;
+    let vetResultados = [];
+
+    // Inicializar al cargar
+    document.addEventListener('DOMContentLoaded', () => {
+      // Tema
+      const tema = localStorage.getItem('petcare_tema') || 'light';
+      document.documentElement.setAttribute('data-theme', tema);
+
+      inicializarFiltros();
+      aplicarFiltros();
+    });
+
+    function inicializarFiltros() {
+      // Ciudades
+      const ciudades = obtenerCiudadesDisponibles();
+      const selectCiudad = document.getElementById('filter-ciudad');
+      ciudades.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c;
+        opt.textContent = c;
+        selectCiudad.appendChild(opt);
+      });
+
+      // Especialidades únicas
+      const especialidades = [...new Set(VET_DATABASE.flatMap(v => v.especialidades))].sort();
+      const container = document.getElementById('filter-especialidades');
+      especialidades.forEach(e => {
+        const label = document.createElement('label');
+        label.innerHTML = `<input type="checkbox" value="${e}" onchange="aplicarFiltros()"> ${e}`;
+        container.appendChild(label);
+      });
+    }
+
+    function aplicarFiltros() {
+      const filtros = {
+        ciudad: document.getElementById('filter-ciudad').value,
+        emergencia24h: document.getElementById('filter-24h').checked,
+        abiertoAhora: document.getElementById('filter-abierto').checked,
+        especialidades: [...document.querySelectorAll('#filter-especialidades input:checked')].map(i => i.value),
+        precioMax: parseInt(document.getElementById('filter-precio').value),
+        calificacionMin: parseFloat(document.getElementById('filter-calificacion').value) || null,
+        busqueda: document.getElementById('vet-search').value.trim(),
+        ordenarPor: document.getElementById('sort-by').value
+      };
+
+      vetResultados = filtrarVeterinarias(filtros);
+      renderizarResultados(vetResultados);
+
+      // Cerrar sidebar en móvil
+      if (window.innerWidth <= 768) {
+        document.querySelector('.vet-sidebar').classList.remove('open');
+      }
+    }
+
+    function buscarVeterinariasDebounced() {
+      clearTimeout(debounceTimer);
+      debounceTimer = setTimeout(aplicarFiltros, 300);
+    }
+
+    function actualizarPrecioDisplay() {
+      const val = parseInt(document.getElementById('filter-precio').value);
+      document.getElementById('precio-display').textContent = `Hasta $${val.toLocaleString('es-CO')}`;
+    }
+
+    function limpiarFiltros() {
+      document.getElementById('filter-ciudad').value = '';
+      document.getElementById('filter-24h').checked = false;
+      document.getElementById('filter-abierto').checked = false;
+      document.querySelectorAll('#filter-especialidades input').forEach(i => i.checked = false);
+      document.getElementById('filter-precio').value = 200000;
+      document.getElementById('filter-calificacion').value = '';
+      document.getElementById('vet-search').value = '';
+      actualizarPrecioDisplay();
+      aplicarFiltros();
+    }
+
+    function renderizarResultados(vets) {
+      const grid = document.getElementById('vet-grid');
+      const noResults = document.getElementById('no-results');
+      document.getElementById('results-count').textContent = `${vets.length} veterinarias encontradas`;
+
+      if (vets.length === 0) {
+        grid.innerHTML = '';
+        noResults.classList.remove('hidden');
+        return;
+      }
+      noResults.classList.add('hidden');
+
+      grid.innerHTML = vets.map(v => {
+        const stars = generarEstrellas(v.calificacion);
+        const abierto = estaAbiertoAhora(v);
+        const precioMin = v.rangoPrecios.consultaGeneral.min.toLocaleString('es-CO');
+        const precioMax = v.rangoPrecios.consultaGeneral.max.toLocaleString('es-CO');
+
+        return `
+          <div class="vet-card">
+            ${v.emergencia24h ? '<div class="vet-badge-24h"><i class="fas fa-bolt"></i> 24/7</div>' : ''}
+            <div class="vet-card-header">
+              <h3>${escapeHtml(v.nombre)}</h3>
+              <div class="vet-rating">
+                <span class="stars">${stars}</span>
+                <span>${v.calificacion} (${v.numeroReseñas})</span>
+                ${v.verificada ? '<span class="vet-badge-verified"><i class="fas fa-check-circle"></i> Verificada</span>' : ''}
+              </div>
+            </div>
+            <div class="vet-card-body">
+              <p><i class="fas fa-map-marker-alt" style="color:var(--danger)"></i> ${escapeHtml(v.direccion)}, ${escapeHtml(v.barrio)} - ${escapeHtml(v.ciudad)}</p>
+              <p><i class="fas fa-clock" style="color:${abierto ? 'var(--success)' : 'var(--text-light)'}"></i> ${abierto ? '<strong style="color:var(--success)">Abierto ahora</strong>' : 'Cerrado'}</p>
+              <div class="vet-especialidades">
+                ${v.especialidades.slice(0, 4).map(e => `<span>${e}</span>`).join('')}
+                ${v.especialidades.length > 4 ? `<span>+${v.especialidades.length - 4}</span>` : ''}
+              </div>
+              <div class="vet-precio">Consulta: $${precioMin} - $${precioMax}</div>
+            </div>
+            <div class="vet-card-actions">
+              <button class="btn-llamar" onclick="llamarVeterinaria('${v.telefono}')"><i class="fas fa-phone"></i> Llamar</button>
+              <button class="btn-whatsapp" onclick="whatsappVeterinaria('${v.whatsapp}','${escapeHtml(v.nombre).replace(/'/g, "\\'")}')"><i class="fab fa-whatsapp"></i> WhatsApp</button>
+              <button class="btn-detalles" onclick="verDetalle('${v.id}')"><i class="fas fa-info-circle"></i> Detalles</button>
+            </div>
+          </div>`;
+      }).join('');
+    }
+
+    function generarEstrellas(cal) {
+      const full = Math.floor(cal);
+      const half = cal - full >= 0.5 ? 1 : 0;
+      const empty = 5 - full - half;
+      return '<i class="fas fa-star"></i>'.repeat(full) +
+        (half ? '<i class="fas fa-star-half-alt"></i>' : '') +
+        '<i class="far fa-star"></i>'.repeat(empty);
+    }
+
+    function llamarVeterinaria(tel) {
+      window.location.href = `tel:${tel}`;
+    }
+
+    function whatsappVeterinaria(num, nombre) {
+      const msg = encodeURIComponent(`Hola! Encontré ${nombre} en PetCare Pro. Me gustaría información sobre sus servicios.`);
+      window.open(`https://wa.me/${num.replace(/[^0-9+]/g, '')}?text=${msg}`, '_blank');
+    }
+
+    function verDetalle(id) {
+      window.location.href = `veterinaria-detalle.html?id=${id}`;
+    }
+
+    function abrirSugerencia() {
+      document.getElementById('suggest-modal').classList.remove('hidden');
+    }
+    function cerrarSugerencia() {
+      document.getElementById('suggest-modal').classList.add('hidden');
+    }
+
+    async function enviarSugerencia(e) {
+      e.preventDefault();
+      try {
+        const sugerencia = {
+          nombre: document.getElementById('sug-nombre').value,
+          ciudad: document.getElementById('sug-ciudad').value,
+          direccion: document.getElementById('sug-direccion').value,
+          telefono: document.getElementById('sug-telefono').value,
+          emailContacto: document.getElementById('sug-email').value,
+          mensaje: document.getElementById('sug-mensaje').value,
+          fecha: new Date().toISOString()
+        };
+
+        if (typeof db !== 'undefined') {
+          await db.collection('veterinarias_sugeridas').add(sugerencia);
+        }
+
+        cerrarSugerencia();
+        document.getElementById('suggest-form').reset();
+        mostrarToastSimple('Gracias! Revisaremos tu sugerencia pronto.', 'success');
+      } catch (err) {
+        console.error('Error al enviar sugerencia:', err);
+        mostrarToastSimple('Error al enviar. Intenta de nuevo.', 'error');
+      }
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#039;');
+    }
+
+    function mostrarToastSimple(msg, type) {
+      const container = document.getElementById('toast-container');
+      const toast = document.createElement('div');
+      const colors = { success: 'var(--success)', error: 'var(--danger)', info: 'var(--primary)', warning: 'var(--warning)' };
+      toast.style.cssText = `background:${colors[type] || colors.info};color:white;padding:0.75rem 1.25rem;border-radius:8px;margin-bottom:0.5rem;box-shadow:0 4px 12px rgba(0,0,0,0.15);animation:slideIn 0.3s ease;font-size:0.9rem;`;
+      toast.textContent = msg;
+      container.appendChild(toast);
+      setTimeout(() => { toast.style.opacity = '0'; toast.style.transition = 'opacity 0.3s'; setTimeout(() => toast.remove(), 300); }, 4000);
+    }
+  </script>
+</body>
+</html>

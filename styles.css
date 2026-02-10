@@ -1217,6 +1217,244 @@ body {
 ::-webkit-scrollbar-thumb { background: var(--text-light); border-radius: 3px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--text-secondary); }
 
+/* ==================== EXAM ANALYSIS ==================== */
+.exam-analysis-panel { margin-top: 0.75rem; }
+.exam-analysis-result {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  margin-top: 0.5rem;
+}
+.exam-param-card {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 0.5rem;
+  transition: background var(--transition);
+}
+.exam-param-card:hover { background: rgba(0,0,0,0.02); }
+.exam-param-card .param-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  font-size: 0.9rem;
+}
+.exam-param-card .param-icon.normal { background: rgba(126,211,33,0.15); color: var(--success); }
+.exam-param-card .param-icon.warning { background: rgba(245,166,35,0.15); color: var(--warning); }
+.exam-param-card .param-icon.danger { background: rgba(208,2,27,0.15); color: var(--danger); }
+.exam-param-card .param-info { flex: 1; }
+.exam-param-card .param-info strong { font-size: 0.9rem; }
+.exam-param-card .param-info p { font-size: 0.8rem; color: var(--text-secondary); margin: 0.15rem 0; }
+.exam-param-card .param-value { font-weight: 600; font-size: 0.95rem; white-space: nowrap; }
+.exam-sugerencias {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  background: rgba(74,144,226,0.05);
+  border-radius: var(--border-radius-sm);
+  border-left: 3px solid var(--primary);
+}
+.exam-sugerencias h5 { font-size: 0.85rem; margin-bottom: 0.5rem; color: var(--primary); }
+.exam-sugerencias ul { list-style: none; font-size: 0.8rem; }
+.exam-sugerencias li { padding: 0.25rem 0; display: flex; align-items: flex-start; gap: 0.35rem; }
+.exam-sugerencias li i { margin-top: 0.15rem; color: var(--primary); font-size: 0.7rem; }
+.exam-comparacion { margin-top: 0.5rem; font-size: 0.8rem; color: var(--text-secondary); }
+
+/* ==================== FOOD RECOMMENDATIONS ==================== */
+.food-rec-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+.food-rec-card {
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  padding: 1rem;
+  transition: all var(--transition);
+  position: relative;
+}
+.food-rec-card:hover { box-shadow: var(--shadow-sm); }
+.food-rec-card .food-score {
+  position: absolute;
+  top: 0.75rem;
+  right: 0.75rem;
+  background: var(--primary);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.food-rec-card h4 { font-size: 0.95rem; padding-right: 3rem; }
+.food-rec-card .food-brand { font-size: 0.8rem; color: var(--text-secondary); }
+.food-rec-card .food-macros {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+  flex-wrap: wrap;
+}
+.food-rec-card .food-macro-badge {
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  background: var(--bg-primary);
+}
+.food-rec-card .food-portions {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  line-height: 1.6;
+}
+.food-rec-card .food-price {
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success-dark);
+}
+@media (min-width: 600px) {
+  .food-rec-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1024px) {
+  .food-rec-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
+/* ==================== DIGESTION TIME ==================== */
+.digestion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 1rem;
+}
+.digestion-card {
+  text-align: center;
+  padding: 1.25rem 1rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  transition: all var(--transition);
+}
+.digestion-card:hover { box-shadow: var(--shadow-sm); }
+.digestion-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgba(74,144,226,0.1);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.75rem;
+  font-size: 1.2rem;
+}
+.digestion-card h4 { font-size: 0.9rem; margin-bottom: 0.35rem; }
+.digestion-time { font-size: 1.25rem; font-weight: 700; color: var(--primary); margin-bottom: 0.25rem; }
+.digestion-detail { font-size: 0.75rem; color: var(--text-secondary); }
+
+/* ==================== IDEAL WEIGHT ==================== */
+.ideal-weight-display {
+  text-align: center;
+  padding: 0.5rem 0;
+}
+.ideal-weight-range { display: flex; flex-direction: column; gap: 0.35rem; }
+.ideal-label { font-size: 0.85rem; color: var(--text-secondary); }
+.ideal-values { font-size: 1.5rem; font-weight: 700; color: var(--primary); }
+.ideal-current { font-size: 0.95rem; font-weight: 500; }
+
+/* ==================== WEIGHT ANALYSIS ==================== */
+.weight-frequency-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: rgba(74,144,226,0.08);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+}
+.weight-frequency-banner i { color: var(--primary); font-size: 1.1rem; }
+.weight-frequency-banner .btn { margin-left: auto; flex-shrink: 0; }
+
+.weight-trend-indicator {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-sm);
+  margin-bottom: 1rem;
+}
+.weight-trend-indicator div small { display: block; font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.15rem; }
+
+.weight-breed-comparison {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  background: var(--bg-primary);
+  border-radius: var(--border-radius-sm);
+}
+.weight-breed-comparison i { font-size: 1.3rem; margin-top: 0.15rem; }
+.weight-breed-comparison div { flex: 1; }
+.weight-breed-comparison strong { font-size: 0.9rem; }
+.weight-breed-comparison p { font-size: 0.8rem; color: var(--text-secondary); margin: 0.15rem 0; }
+
+/* ==================== DASHBOARD ALERTS ==================== */
+.dash-alerts {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.dash-alert-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-radius: var(--border-radius-sm);
+  font-size: 0.85rem;
+}
+.dash-alert-item i { margin-top: 0.1rem; flex-shrink: 0; }
+.dash-alert-item strong { display: block; font-size: 0.85rem; }
+.dash-alert-item p { margin: 0.15rem 0 0; font-size: 0.8rem; }
+.dash-alert-item.alert-warning { background: rgba(245,166,35,0.1); border-left: 3px solid var(--warning); }
+.dash-alert-item.alert-danger { background: rgba(208,2,27,0.1); border-left: 3px solid var(--danger); }
+.dash-alert-item.alert-info { background: rgba(74,144,226,0.1); border-left: 3px solid var(--primary); }
+.dash-alert-item.alert-warning i { color: var(--warning); }
+.dash-alert-item.alert-danger i { color: var(--danger); }
+.dash-alert-item.alert-info i { color: var(--primary); }
+
+/* ==================== VET LOCAL GRID ==================== */
+.vet-local-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+.vet-badge-24h {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(208,2,27,0.1);
+  color: var(--danger);
+  margin-bottom: 0.35rem;
+}
+@media (min-width: 600px) {
+  .vet-local-grid { grid-template-columns: 1fr 1fr; }
+}
+@media (min-width: 1024px) {
+  .vet-local-grid { grid-template-columns: repeat(3, 1fr); }
+}
+
 /* Print styles */
 @media print {
   .app-header, .sidebar, .fab, .fab-menu, .toast-container { display: none !important; }
