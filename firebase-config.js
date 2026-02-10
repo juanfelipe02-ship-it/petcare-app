@@ -285,14 +285,39 @@ async function extraerValoresPDF(file) {
           textoCompleto += pageText + '\n';
         }
 
-        // Buscar valores con regex
+        console.log('PDF texto extraído:', textoCompleto.substring(0, 500));
+
+        // Buscar valores con múltiples patrones por parámetro
         const valores = {
-          hemoglobina: extraerValor(textoCompleto, /hemoglobina[\s:]*(\d+[.,]?\d*)\s*(g\/dL|g\/dl)/i),
-          glucosa: extraerValor(textoCompleto, /glucosa[\s:]*(\d+[.,]?\d*)\s*(mg\/dL|mg\/dl)/i),
-          creatinina: extraerValor(textoCompleto, /creatinina[\s:]*(\d+[.,]?\d*)\s*(mg\/dL|mg\/dl)/i),
-          alt: extraerValor(textoCompleto, /alt[\s:]*(\d+[.,]?\d*)\s*(U\/L|u\/l)/i) ||
-               extraerValor(textoCompleto, /alanina[\s\w]*[\s:]*(\d+[.,]?\d*)\s*(U\/L|u\/l)/i),
-          proteinas: extraerValor(textoCompleto, /prote[ií]nas?\s*totales?[\s:]*(\d+[.,]?\d*)\s*(g\/dL|g\/dl)/i)
+          hemoglobina: extraerValorMultiple(textoCompleto, [
+            /hemoglobina[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
+            /hgb[\s:.,]*(\d+[.,]?\d*)/i,
+            /hb[\s:.,]*(\d+[.,]?\d*)/i,
+            /hemoglobin[\s:.,]*(\d+[.,]?\d*)/i
+          ]),
+          glucosa: extraerValorMultiple(textoCompleto, [
+            /glucosa[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
+            /glucose[\s:.,]*(\d+[.,]?\d*)/i,
+            /glicemia[\s:.,]*(\d+[.,]?\d*)/i,
+            /glu[\s:.,]*(\d+[.,]?\d*)/i
+          ]),
+          creatinina: extraerValorMultiple(textoCompleto, [
+            /creatinina[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
+            /creatinine[\s:.,]*(\d+[.,]?\d*)/i,
+            /crea[\s:.,]*(\d+[.,]?\d*)/i
+          ]),
+          alt: extraerValorMultiple(textoCompleto, [
+            /\balt[\s:.,]*(\d+[.,]?\d*)\s*(?:U\/[Ll])?/i,
+            /alanina[\s\w]*[\s:.,]*(\d+[.,]?\d*)/i,
+            /\bgpt[\s:.,]*(\d+[.,]?\d*)/i,
+            /\btgp[\s:.,]*(\d+[.,]?\d*)/i,
+            /alat[\s:.,]*(\d+[.,]?\d*)/i
+          ]),
+          proteinas: extraerValorMultiple(textoCompleto, [
+            /prote[ií]nas?\s*totales?[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
+            /total\s*protein[\s:.,]*(\d+[.,]?\d*)/i,
+            /pt[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])/i
+          ])
         };
 
         resolve({ valores, textoCompleto });
@@ -303,6 +328,17 @@ async function extraerValoresPDF(file) {
     reader.onerror = () => reject(new Error('Error al leer PDF'));
     reader.readAsArrayBuffer(file);
   });
+}
+
+function extraerValorMultiple(texto, regexList) {
+  for (const regex of regexList) {
+    const match = texto.match(regex);
+    if (match) {
+      const val = parseFloat(match[1].replace(',', '.'));
+      if (!isNaN(val) && val > 0) return val;
+    }
+  }
+  return null;
 }
 
 function extraerValor(texto, regex) {

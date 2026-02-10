@@ -217,6 +217,18 @@ function renderizarAnalisisExamen(analisis, comparacion) {
 
   let html = '';
 
+  // Si no hay resultados (todos los valores son null)
+  if (!analisis.resultados || analisis.resultados.length === 0) {
+    html += `
+      <div class="exam-no-values-msg" style="padding:1rem;background:var(--bg-secondary);border-radius:8px;text-align:center">
+        <i class="fas fa-info-circle" style="font-size:2rem;color:var(--primary);margin-bottom:0.5rem;display:block"></i>
+        <p style="margin-bottom:0.5rem"><strong>No hay valores numéricos para analizar</strong></p>
+        <p style="font-size:0.85rem;color:var(--text-secondary)">Para que el análisis inteligente funcione, necesitas ingresar los valores del examen (hemoglobina, glucosa, creatinina, ALT, proteínas totales) en los campos numéricos al registrar el examen.</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.5rem">Si subiste un PDF y no se extrajeron automáticamente, puedes editar los valores manualmente.</p>
+      </div>`;
+    return html;
+  }
+
   // Alerta urgente
   if (analisis.requiereAtencion) {
     html += `

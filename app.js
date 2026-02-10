@@ -885,8 +885,10 @@ function renderizarExamenes() {
       }
     }
 
+    const tieneValores = ex.valores && Object.values(ex.valores).some(v => v !== null && v !== undefined);
+
     return `
-      <div class="exam-card">
+      <div class="exam-card" id="exam-card-${ex.id}">
         <div class="exam-card-header">
           <div>
             <h4>${escapeHtml(ex.tipo)}</h4>
@@ -902,7 +904,8 @@ function renderizarExamenes() {
         ${ex.observaciones ? `<p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem"><strong>Obs:</strong> ${escapeHtml(ex.observaciones)}</p>` : ''}
         ${ex.archivo ? `<button class="btn btn-sm btn-outline" onclick="verPDF('${escapeHtml(ex.archivo)}')" style="margin-top:0.5rem"><i class="fas fa-file-pdf"></i> Ver PDF</button>` : ''}
         ${analysisHtml}
-        <div style="margin-top:0.5rem;text-align:right">
+        <div style="margin-top:0.5rem;display:flex;gap:0.5rem;justify-content:flex-end;flex-wrap:wrap">
+          <button class="btn btn-sm btn-outline" onclick="editarValoresExamen('${pet.id}','${ex.id}')"><i class="fas fa-edit"></i> ${tieneValores ? 'Editar valores' : 'Ingresar valores'}</button>
           <button class="btn btn-sm btn-secondary" onclick="eliminarExamen('${pet.id}','${ex.id}')"><i class="fas fa-trash"></i> Eliminar</button>
         </div>
       </div>
@@ -917,6 +920,72 @@ function eliminarExamen(petId, examId) {
     renderizarExamenes();
     mostrarToast('Examen eliminado', 'info');
   });
+}
+
+function editarValoresExamen(petId, examId) {
+  const examen = (estado.examenes[petId] || []).find(e => e.id === examId);
+  if (!examen) return;
+  if (!examen.valores) examen.valores = {};
+
+  const editDiv = document.getElementById(`edit-valores-${examId}`);
+  if (editDiv) {
+    editDiv.classList.toggle('hidden');
+    return;
+  }
+
+  // Crear formulario inline de edición
+  const container = document.getElementById(`exam-card-${examId}`);
+  if (!container) return;
+
+  const formHtml = `
+    <div id="edit-valores-${examId}" class="exam-edit-valores" style="margin-top:0.75rem;padding:0.75rem;background:var(--bg-secondary);border-radius:8px">
+      <h5 style="margin-bottom:0.5rem"><i class="fas fa-edit"></i> Editar valores del examen</h5>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem">
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">Hemoglobina (g/dL)</label>
+          <input type="number" step="0.1" id="edit-hemo-${examId}" value="${examen.valores.hemoglobina || ''}" class="form-control" style="padding:0.4rem">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">Glucosa (mg/dL)</label>
+          <input type="number" step="0.1" id="edit-glu-${examId}" value="${examen.valores.glucosa || ''}" class="form-control" style="padding:0.4rem">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">Creatinina (mg/dL)</label>
+          <input type="number" step="0.01" id="edit-crea-${examId}" value="${examen.valores.creatinina || ''}" class="form-control" style="padding:0.4rem">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">ALT (U/L)</label>
+          <input type="number" step="0.1" id="edit-alt-${examId}" value="${examen.valores.alt || ''}" class="form-control" style="padding:0.4rem">
+        </div>
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">Proteínas Totales (g/dL)</label>
+          <input type="number" step="0.1" id="edit-prot-${examId}" value="${examen.valores.proteinas || ''}" class="form-control" style="padding:0.4rem">
+        </div>
+      </div>
+      <div style="margin-top:0.5rem;display:flex;gap:0.5rem">
+        <button class="btn btn-sm btn-primary" onclick="guardarValoresEditados('${petId}','${examId}')"><i class="fas fa-save"></i> Guardar</button>
+        <button class="btn btn-sm btn-secondary" onclick="document.getElementById('edit-valores-${examId}').remove()"><i class="fas fa-times"></i> Cancelar</button>
+      </div>
+    </div>`;
+
+  container.insertAdjacentHTML('beforeend', formHtml);
+}
+
+function guardarValoresEditados(petId, examId) {
+  const examen = (estado.examenes[petId] || []).find(e => e.id === examId);
+  if (!examen) return;
+
+  examen.valores = {
+    hemoglobina: parseFloat(document.getElementById(`edit-hemo-${examId}`).value) || null,
+    glucosa: parseFloat(document.getElementById(`edit-glu-${examId}`).value) || null,
+    creatinina: parseFloat(document.getElementById(`edit-crea-${examId}`).value) || null,
+    alt: parseFloat(document.getElementById(`edit-alt-${examId}`).value) || null,
+    proteinas: parseFloat(document.getElementById(`edit-prot-${examId}`).value) || null
+  };
+
+  guardarDatos();
+  renderizarExamenes();
+  mostrarToast('Valores actualizados. Análisis recalculado.', 'success');
 }
 
 function tieneValoresAnormales(examen, especie) {
