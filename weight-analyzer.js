@@ -68,17 +68,52 @@ function predictIdealWeight(raza, edadMeses) {
   const rangoRaza = typeof RANGOS_PESO_RAZA !== 'undefined' ? RANGOS_PESO_RAZA[raza] : null;
 
   if (!rangoRaza) {
-    // Usar datos de RAZAS como fallback
+    // Usar datos de RAZAS como fallback, escalando por edad
     if (typeof RAZAS !== 'undefined') {
       for (const especie of ['perro', 'gato']) {
         const razaData = RAZAS[especie].find(r => r.nombre === raza);
         if (razaData) {
+          const pesoAdultoMin = razaData.pesoIdeal.min;
+          const pesoAdultoMax = razaData.pesoIdeal.max;
+          let factor, etapa;
+
+          // Factor de escala según edad (porcentaje del peso adulto)
+          if (especie === 'perro') {
+            if (edadMeses <= 1) { factor = 0.10; etapa = 'neonato (0-1m)'; }
+            else if (edadMeses <= 2) { factor = 0.20; etapa = 'cachorro (1-2m)'; }
+            else if (edadMeses <= 3) { factor = 0.30; etapa = 'cachorro (2-3m)'; }
+            else if (edadMeses <= 4) { factor = 0.40; etapa = 'cachorro (3-4m)'; }
+            else if (edadMeses <= 6) { factor = 0.55; etapa = 'cachorro (4-6m)'; }
+            else if (edadMeses <= 8) { factor = 0.70; etapa = 'juvenil (6-8m)'; }
+            else if (edadMeses <= 10) { factor = 0.80; etapa = 'juvenil (8-10m)'; }
+            else if (edadMeses <= 12) { factor = 0.90; etapa = 'juvenil (10-12m)'; }
+            else if (edadMeses <= 18) { factor = 0.95; etapa = 'adulto joven'; }
+            else if (edadMeses > 84) { factor = 1.0; etapa = 'senior'; }
+            else { factor = 1.0; etapa = 'adulto'; }
+          } else {
+            // Gatos maduran más rápido
+            if (edadMeses <= 1) { factor = 0.12; etapa = 'neonato (0-1m)'; }
+            else if (edadMeses <= 2) { factor = 0.25; etapa = 'cachorro (1-2m)'; }
+            else if (edadMeses <= 3) { factor = 0.35; etapa = 'cachorro (2-3m)'; }
+            else if (edadMeses <= 4) { factor = 0.50; etapa = 'cachorro (3-4m)'; }
+            else if (edadMeses <= 6) { factor = 0.65; etapa = 'cachorro (4-6m)'; }
+            else if (edadMeses <= 9) { factor = 0.80; etapa = 'juvenil (6-9m)'; }
+            else if (edadMeses <= 12) { factor = 0.90; etapa = 'juvenil (9-12m)'; }
+            else if (edadMeses > 120) { factor = 1.0; etapa = 'senior'; }
+            else { factor = 1.0; etapa = 'adulto'; }
+          }
+
+          // Margen de tolerancia más amplio para cachorros (crecimiento variable)
+          const margen = edadMeses < 6 ? 0.25 : edadMeses < 12 ? 0.15 : 0;
+          const minEscalado = parseFloat((pesoAdultoMin * factor * (1 - margen)).toFixed(1));
+          const maxEscalado = parseFloat((pesoAdultoMax * factor * (1 + margen)).toFixed(1));
+
           return {
-            min: razaData.pesoIdeal.min,
-            max: razaData.pesoIdeal.max,
-            ideal: (razaData.pesoIdeal.min + razaData.pesoIdeal.max) / 2,
-            etapa: edadMeses < 12 ? 'cachorro' : edadMeses > 84 ? 'senior' : 'adulto',
-            fuente: 'general'
+            min: minEscalado,
+            max: maxEscalado,
+            ideal: parseFloat(((minEscalado + maxEscalado) / 2).toFixed(1)),
+            etapa,
+            fuente: 'estimada'
           };
         }
       }

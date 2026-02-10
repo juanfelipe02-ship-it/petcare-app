@@ -514,6 +514,46 @@ const RANGOS_PESO_RAZA = {
       'adulto': { min: 3.5, max: 7 }
     },
     percentiles: { p25: 4, p50: 5, p75: 6 }
+  },
+  'Poodle': {
+    especie: 'perro',
+    pesoIdeal: {
+      '3meses': { min: 1.5, max: 8 },
+      '6meses': { min: 3, max: 16 },
+      '12meses': { min: 3, max: 25 },
+      'adulto': { min: 3, max: 32 }
+    },
+    percentiles: { p25: 6, p50: 15, p75: 25 }
+  },
+  'Yorkshire Terrier': {
+    especie: 'perro',
+    pesoIdeal: {
+      '3meses': { min: 0.5, max: 1 },
+      '6meses': { min: 1, max: 2 },
+      '12meses': { min: 1.8, max: 3 },
+      'adulto': { min: 2, max: 3.2 }
+    },
+    percentiles: { p25: 2.2, p50: 2.7, p75: 3 }
+  },
+  'Ragdoll': {
+    especie: 'gato',
+    pesoIdeal: {
+      '3meses': { min: 1.2, max: 2 },
+      '6meses': { min: 2.5, max: 4.5 },
+      '12meses': { min: 4, max: 7 },
+      'adulto': { min: 4, max: 9 }
+    },
+    percentiles: { p25: 5, p50: 6.5, p75: 8 }
+  },
+  'Británico de Pelo Corto': {
+    especie: 'gato',
+    pesoIdeal: {
+      '3meses': { min: 1, max: 2 },
+      '6meses': { min: 2.5, max: 4 },
+      '12meses': { min: 3.5, max: 6 },
+      'adulto': { min: 4, max: 8 }
+    },
+    percentiles: { p25: 4.5, p50: 5.5, p75: 7 }
   }
 };
 
