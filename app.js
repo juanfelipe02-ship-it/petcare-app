@@ -1491,39 +1491,78 @@ function renderizarTablaPesoEdad(pet) {
     return;
   }
 
+  // Título personalizado con nombre de la mascota
+  const cardHeader = document.querySelector('#weight-age-table-card .card-header h3');
+  if (cardHeader) {
+    cardHeader.innerHTML = `<i class="fas fa-table"></i> Peso por Edad para ${pet.nombre}`;
+  }
+
   const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
   const especie = pet.especie;
+  const edadSenior = especie === 'perro' ? 84 : 120;
 
-  // Edades clave a mostrar
-  const edadesClave = especie === 'perro'
-    ? [1, 2, 3, 4, 6, 8, 10, 12, 18, 24, 84]
-    : [1, 2, 3, 4, 6, 9, 12, 18, 24, 120];
+  // Usar edades reales de INFO_RAZA_DETALLADA si disponibles
+  let edadesClave;
+  let usaDatosLiteratura = false;
+  const infoRaza = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] : null;
 
-  const etiquetas = {
-    1: '1 mes', 2: '2 meses', 3: '3 meses', 4: '4 meses', 6: '6 meses',
-    8: '8 meses', 9: '9 meses', 10: '10 meses', 12: '1 año', 18: '1.5 años',
-    24: 'Adulto (2a)', 84: 'Senior (7a)', 120: 'Senior (10a)'
-  };
+  if (infoRaza && infoRaza.pesoSaludablePorEdad && infoRaza.pesoSaludablePorEdad.length > 0) {
+    edadesClave = infoRaza.pesoSaludablePorEdad.map(p => p.edadMeses);
+    // Agregar fila Senior si el último punto no es senior
+    const ultimaEdad = edadesClave[edadesClave.length - 1];
+    if (ultimaEdad < edadSenior) {
+      edadesClave.push(edadSenior);
+    }
+    usaDatosLiteratura = true;
+  } else {
+    edadesClave = especie === 'perro'
+      ? [1, 2, 3, 4, 6, 8, 10, 12, 18, 24, 84]
+      : [1, 2, 3, 4, 6, 9, 12, 18, 24, 120];
+  }
+
+  function etiquetaEdad(meses) {
+    if (meses === edadSenior) return especie === 'perro' ? 'Senior (7a)' : 'Senior (10a)';
+    if (meses < 12) return meses + ' meses';
+    if (meses === 12) return '1 año';
+    if (meses === 18) return '1.5 años';
+    if (meses === 24) return '2 años';
+    if (meses === 48) return '4 años';
+    return (meses / 12) + ' años';
+  }
+
+  // Encontrar la fila más cercana a la edad actual
+  let filaActualIdx = -1;
+  let menorDiff = Infinity;
+  edadesClave.forEach((edad, idx) => {
+    const diff = Math.abs(edadMeses - edad);
+    // Para la fila senior, solo resaltar si realmente es senior
+    if (edad === edadSenior && edadMeses < edadSenior) return;
+    // Para edades adultas (>último punto de crecimiento), marcar la fila adulta
+    if (diff < menorDiff) {
+      menorDiff = diff;
+      filaActualIdx = idx;
+    }
+  });
+  // Si la mascota es senior, forzar la fila senior
+  if (edadMeses >= edadSenior) {
+    filaActualIdx = edadesClave.indexOf(edadSenior);
+  }
 
   let html = `<div style="overflow-x:auto"><table class="weight-age-table">
     <thead><tr>
       <th>Edad</th><th>Etapa</th><th>Peso mín</th><th>Peso ideal</th><th>Peso máx</th><th>Actual</th>
     </tr></thead><tbody>`;
 
-  edadesClave.forEach(edad => {
+  edadesClave.forEach((edad, idx) => {
     const pred = predictIdealWeight(pet.raza, edad);
     if (!pred) return;
 
-    const esCurrent = (edadMeses >= edad - 1 && edadMeses <= edad + 1) ||
-      (edad === 24 && edadMeses >= 18 && edadMeses < 84) ||
-      (edad === 84 && edadMeses >= 84) ||
-      (edad === 120 && edadMeses >= 120);
-
+    const esCurrent = idx === filaActualIdx;
     const rowClass = esCurrent ? 'weight-age-current' : '';
     const pesoActualStr = esCurrent ? `<strong>${pet.peso} kg</strong>` : '-';
 
     html += `<tr class="${rowClass}">
-      <td>${etiquetas[edad] || edad + 'm'}</td>
+      <td>${etiquetaEdad(edad)}</td>
       <td>${pred.etapa}</td>
       <td>${pred.min} kg</td>
       <td><strong>${pred.ideal} kg</strong></td>
@@ -1533,6 +1572,9 @@ function renderizarTablaPesoEdad(pet) {
   });
 
   html += '</tbody></table></div>';
+  if (usaDatosLiteratura) {
+    html += '<p class="text-muted" style="font-size:0.8rem;margin-top:0.5rem;text-align:center"><i class="fas fa-book-medical"></i> Datos basados en literatura veterinaria para la raza ' + pet.raza + '</p>';
+  }
   container.innerHTML = html;
 }
 
@@ -2292,8 +2334,9 @@ function mostrarConfirmacion(titulo, mensaje, callback) {
   document.getElementById('confirm-modal').classList.remove('hidden');
   modalCallback = callback;
   document.getElementById('modal-confirm-btn').onclick = () => {
+    const cb = modalCallback;
     cerrarModal();
-    if (modalCallback) modalCallback();
+    if (cb) cb();
   };
 }
 
