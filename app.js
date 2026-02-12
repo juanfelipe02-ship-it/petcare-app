@@ -12,6 +12,8 @@ let estado = {
   pesos: {},          // { petId: [{ fecha, peso }] }
   recordatorios: {},  // { petId: [...] }
   visitas: {},        // { petId: [...] }
+  frecuenciaAlimentacion: {}, // { petId: number }
+  checklists: {},     // { petId: { checklistKey: [bool] } }
   tema: 'light',
   veterinariasFavoritas: []
 };
@@ -19,6 +21,7 @@ let estado = {
 let firestoreUnsubscribe = null;
 let currentPhotoFile = null;
 let currentPDFFile = null;
+let isSaving = false;
 let googleMap = null;
 let mapMarkers = [];
 let mapInfoWindow = null;
@@ -45,6 +48,8 @@ document.addEventListener('DOMContentLoaded', () => {
 
       // Escuchar cambios en tiempo real para sincronización entre dispositivos
       firestoreUnsubscribe = escucharCambiosFirestore((data) => {
+        // Ignorar ecos de nuestras propias escrituras
+        if (isSaving) return;
         // Solo actualizar si los datos son más recientes
         if (data && data.mascotas) {
           estado = { ...estado, ...data };
@@ -159,6 +164,14 @@ function inicializarUI() {
     mealFoodSelect.appendChild(opt);
   });
 
+  // Mostrar/ocultar campo de calorías custom para "Otro"
+  document.getElementById('meal-food-type').addEventListener('change', (e) => {
+    const customGroup = document.getElementById('custom-kcal-group');
+    if (customGroup) {
+      customGroup.classList.toggle('hidden', e.target.value !== 'Otro');
+    }
+  });
+
   // Hora actual para meal-time
   const now = new Date();
   document.getElementById('meal-time').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
@@ -177,7 +190,7 @@ function inicializarUI() {
 }
 
 // ==================== ALMACENAMIENTO ====================
-function guardarDatos() {
+async function guardarDatos() {
   try {
     localStorage.setItem('petcare_data', JSON.stringify(estado));
   } catch(e) {
@@ -185,7 +198,14 @@ function guardarDatos() {
   }
   // También guardar en Firestore si está disponible
   if (typeof guardarDatosFirestore === 'function' && typeof auth !== 'undefined' && auth.currentUser) {
-    guardarDatosFirestore(estado).catch(e => console.error('Error Firestore:', e));
+    isSaving = true;
+    try {
+      await guardarDatosFirestore(estado);
+    } catch(e) {
+      console.error('Error Firestore:', e);
+    } finally {
+      isSaving = false;
+    }
   }
 }
 
@@ -255,7 +275,10 @@ function limpiarTodo() {
             pesos: {},
             recordatorios: {},
             visitas: {},
-            tema: estado.tema
+            frecuenciaAlimentacion: {},
+            checklists: {},
+            tema: estado.tema,
+            veterinariasFavoritas: []
           };
           guardarDatos();
           renderizarMascotas();
@@ -285,6 +308,7 @@ function navegarA(seccion) {
     case 'recordatorios': renderizarRecordatorios(); break;
     case 'calendario': renderizarCalendario(); break;
     case 'veterinarias': renderizarVeterinariasLocal(); renderizarFavoritos(); break;
+    case 'checklists': renderizarChecklists(); break;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -765,19 +789,23 @@ async function guardarExamen(e) {
     }
   }
 
+  // Recoger valores dinámicamente del contenedor
+  const valoresDinamicos = {};
+  document.querySelectorAll('#exam-extracted-values input[data-param-key]').forEach(input => {
+    const key = input.dataset.paramKey;
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0) {
+      valoresDinamicos[key] = val;
+    }
+  });
+
   const examen = {
     id: generarId(),
     fecha,
     tipo,
     veterinario: document.getElementById('exam-vet').value.trim(),
     resultados,
-    valores: {
-      hemoglobina: parseFloat(document.getElementById('exam-hemoglobina').value) || null,
-      glucosa: parseFloat(document.getElementById('exam-glucosa').value) || null,
-      creatinina: parseFloat(document.getElementById('exam-creatinina').value) || null,
-      alt: parseFloat(document.getElementById('exam-alt').value) || null,
-      proteinas: parseFloat(document.getElementById('exam-proteinas').value) || null
-    },
+    valores: valoresDinamicos,
     observaciones: document.getElementById('exam-observations').value.trim(),
     archivo: archivoUrl,
     ajusteNutricional: document.getElementById('exam-nutrition-adjust').checked
@@ -817,7 +845,10 @@ async function guardarExamen(e) {
     }
   }
 
-  guardarDatos();
+  const submitBtn = document.querySelector('#exam-form button[type="submit"]');
+  if (submitBtn) submitBtn.disabled = true;
+  await guardarDatos();
+  if (submitBtn) submitBtn.disabled = false;
   cerrarFormularioExamen();
   renderizarExamenes();
   mostrarToast('Examen registrado correctamente', 'success');
@@ -853,17 +884,35 @@ function renderizarExamenes() {
     return;
   }
 
-  const refs = VALORES_REFERENCIA[pet.especie];
+  const refs = (typeof RANGOS_REFERENCIA !== 'undefined' ? RANGOS_REFERENCIA : {})[pet.especie] || {};
   listEl.innerHTML = examenes.map(ex => {
     const badges = [];
-    Object.keys(ex.valores).forEach(key => {
+    const valoresKeys = Object.keys(ex.valores || {});
+    // Normalizar key viejo proteinas -> proteinastotales
+    const normalizeKey = k => k === 'proteinas' ? 'proteinastotales' : k;
+    valoresKeys.forEach(key => {
       const val = ex.valores[key];
-      if (val !== null && refs[key]) {
-        const ref = refs[key];
+      const nk = normalizeKey(key);
+      if (val !== null && val !== undefined && refs[nk]) {
+        const ref = refs[nk];
         const isNormal = val >= ref.min && val <= ref.max;
-        badges.push(`<span class="exam-value-badge ${isNormal ? 'normal' : 'abnormal'}">${ref.nombre.split(' ')[0]}: ${val} ${ref.unidad} ${isNormal ? '✓' : '⚠'}</span>`);
+        const label = (ref.nombre || nk).split(' ')[0];
+        badges.push(`<span class="exam-value-badge ${isNormal ? 'normal' : 'abnormal'}">${label}: ${val} ${ref.unit || ''} ${isNormal ? '✓' : '⚠'}</span>`);
+      } else if (val !== null && val !== undefined) {
+        const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG[nk] : null;
+        const label = catalog ? catalog.nombre.split(' ')[0] : nk;
+        const unit = catalog ? catalog.unit : '';
+        badges.push(`<span class="exam-value-badge sin_referencia">${label}: ${val} ${unit}</span>`);
       }
     });
+    // Limitar badges visibles
+    const maxBadges = 6;
+    let badgesHtml = '';
+    if (badges.length > maxBadges) {
+      badgesHtml = badges.slice(0, maxBadges).join('') + `<span class="exam-value-badge more">+${badges.length - maxBadges} más</span>`;
+    } else {
+      badgesHtml = badges.join('');
+    }
 
     // Análisis inteligente del examen
     let analysisHtml = '';
@@ -900,7 +949,7 @@ function renderizarExamenes() {
           </div>
         </div>
         <p style="font-size:0.85rem">${escapeHtml(ex.resultados)}</p>
-        ${badges.length > 0 ? `<div class="exam-values">${badges.join('')}</div>` : ''}
+        ${badges.length > 0 ? `<div class="exam-values">${badgesHtml}</div>` : ''}
         ${ex.observaciones ? `<p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem"><strong>Obs:</strong> ${escapeHtml(ex.observaciones)}</p>` : ''}
         ${ex.archivo ? `<button class="btn btn-sm btn-outline" onclick="verPDF('${escapeHtml(ex.archivo)}')" style="margin-top:0.5rem"><i class="fas fa-file-pdf"></i> Ver PDF</button>` : ''}
         ${analysisHtml}
@@ -914,9 +963,9 @@ function renderizarExamenes() {
 }
 
 function eliminarExamen(petId, examId) {
-  mostrarConfirmacion('Eliminar examen', '¿Eliminar este examen?', () => {
+  mostrarConfirmacion('Eliminar examen', '¿Eliminar este examen?', async () => {
     estado.examenes[petId] = (estado.examenes[petId] || []).filter(e => e.id !== examId);
-    guardarDatos();
+    await guardarDatos();
     renderizarExamenes();
     mostrarToast('Examen eliminado', 'info');
   });
@@ -937,31 +986,39 @@ function editarValoresExamen(petId, examId) {
   const container = document.getElementById(`exam-card-${examId}`);
   if (!container) return;
 
+  // Generar campos dinámicos desde los valores existentes del examen
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const valores = examen.valores || {};
+  // Normalizar proteinas -> proteinastotales
+  const valoresNorm = {};
+  Object.keys(valores).forEach(k => {
+    const nk = k === 'proteinas' ? 'proteinastotales' : k;
+    valoresNorm[nk] = valores[k];
+  });
+
+  let fieldsHtml = '';
+  Object.keys(valoresNorm).forEach(key => {
+    const val = valoresNorm[key];
+    const info = catalog[key] || {};
+    const nombre = info.nombre || key;
+    const unit = info.unit || '';
+    const step = info.step || 0.1;
+    fieldsHtml += `
+      <div class="form-group" style="margin-bottom:0">
+        <label style="font-size:0.75rem">${nombre} (${unit})</label>
+        <input type="number" step="${step}" data-param-key="${key}" value="${val !== null && val !== undefined ? val : ''}" class="form-control edit-param-input" style="padding:0.4rem">
+      </div>`;
+  });
+
   const formHtml = `
     <div id="edit-valores-${examId}" class="exam-edit-valores" style="margin-top:0.75rem;padding:0.75rem;background:var(--bg-secondary);border-radius:8px">
       <h5 style="margin-bottom:0.5rem"><i class="fas fa-edit"></i> Editar valores del examen</h5>
-      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem">
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:0.75rem">Hemoglobina (g/dL)</label>
-          <input type="number" step="0.1" id="edit-hemo-${examId}" value="${examen.valores.hemoglobina || ''}" class="form-control" style="padding:0.4rem">
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:0.75rem">Glucosa (mg/dL)</label>
-          <input type="number" step="0.1" id="edit-glu-${examId}" value="${examen.valores.glucosa || ''}" class="form-control" style="padding:0.4rem">
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:0.75rem">Creatinina (mg/dL)</label>
-          <input type="number" step="0.01" id="edit-crea-${examId}" value="${examen.valores.creatinina || ''}" class="form-control" style="padding:0.4rem">
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:0.75rem">ALT (U/L)</label>
-          <input type="number" step="0.1" id="edit-alt-${examId}" value="${examen.valores.alt || ''}" class="form-control" style="padding:0.4rem">
-        </div>
-        <div class="form-group" style="margin-bottom:0">
-          <label style="font-size:0.75rem">Proteínas Totales (g/dL)</label>
-          <input type="number" step="0.1" id="edit-prot-${examId}" value="${examen.valores.proteinas || ''}" class="form-control" style="padding:0.4rem">
-        </div>
+      <div id="edit-grid-${examId}" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:0.5rem">
+        ${fieldsHtml}
       </div>
+      <button type="button" class="btn btn-outline btn-sm" onclick="agregarParametroEdicion('${examId}')" style="margin-top:8px">
+        <i class="fas fa-plus"></i> Agregar parámetro
+      </button>
       <div style="margin-top:0.5rem;display:flex;gap:0.5rem">
         <button class="btn btn-sm btn-primary" onclick="guardarValoresEditados('${petId}','${examId}')"><i class="fas fa-save"></i> Guardar</button>
         <button class="btn btn-sm btn-secondary" onclick="document.getElementById('edit-valores-${examId}').remove()"><i class="fas fa-times"></i> Cancelar</button>
@@ -971,30 +1028,33 @@ function editarValoresExamen(petId, examId) {
   container.insertAdjacentHTML('beforeend', formHtml);
 }
 
-function guardarValoresEditados(petId, examId) {
+async function guardarValoresEditados(petId, examId) {
   const examen = (estado.examenes[petId] || []).find(e => e.id === examId);
   if (!examen) return;
 
-  examen.valores = {
-    hemoglobina: parseFloat(document.getElementById(`edit-hemo-${examId}`).value) || null,
-    glucosa: parseFloat(document.getElementById(`edit-glu-${examId}`).value) || null,
-    creatinina: parseFloat(document.getElementById(`edit-crea-${examId}`).value) || null,
-    alt: parseFloat(document.getElementById(`edit-alt-${examId}`).value) || null,
-    proteinas: parseFloat(document.getElementById(`edit-prot-${examId}`).value) || null
-  };
+  const nuevosValores = {};
+  document.querySelectorAll(`#edit-valores-${examId} input[data-param-key]`).forEach(input => {
+    const key = input.dataset.paramKey;
+    const val = parseFloat(input.value);
+    if (!isNaN(val) && val > 0) {
+      nuevosValores[key] = val;
+    }
+  });
+  examen.valores = nuevosValores;
 
-  guardarDatos();
+  await guardarDatos();
   renderizarExamenes();
   mostrarToast('Valores actualizados. Análisis recalculado.', 'success');
 }
 
 function tieneValoresAnormales(examen, especie) {
-  const refs = VALORES_REFERENCIA[especie];
-  if (!refs) return false;
+  const refs = (typeof RANGOS_REFERENCIA !== 'undefined' ? RANGOS_REFERENCIA : {})[especie] || {};
+  if (!refs || !examen.valores) return false;
   return Object.keys(examen.valores).some(key => {
     const val = examen.valores[key];
-    if (val === null) return false;
-    const ref = refs[key];
+    if (val === null || val === undefined) return false;
+    const nk = key === 'proteinas' ? 'proteinastotales' : key;
+    const ref = refs[nk];
     if (!ref) return false;
     return val < ref.min || val > ref.max;
   });
@@ -1072,13 +1132,33 @@ function renderizarNutricion() {
 
   // Frecuencia
   const frecData = FRECUENCIA_ALIMENTACION[pet.especie].find(f => edadMeses >= f.edadMin && edadMeses < f.edadMax);
-  if (frecData) {
-    document.getElementById('nutri-frequency').innerHTML = `
-      <p class="freq-main">${frecData.frecuencia}</p>
-      <p>Etapa: ${frecData.nota}</p>
-      <p>Edad: ${pet.edadAnios} años ${pet.edadMeses} meses (${edadMeses} meses)</p>
-    `;
+  const frecGuardada = estado.frecuenciaAlimentacion[pet.id];
+  const frecDefault = frecData ? parseInt(frecData.frecuencia) || 2 : 2;
+  const frecActual = frecGuardada || frecDefault;
+
+  let frecHtml = `<p>Recomendación por edad: <strong>${frecData ? frecData.frecuencia : '2 veces al día'}</strong> (${frecData ? frecData.nota : 'Adulto'})</p>`;
+  frecHtml += `<p>Edad: ${pet.edadAnios} años ${pet.edadMeses} meses (${edadMeses} meses)</p>`;
+  frecHtml += `<div class="form-group" style="margin-top:0.75rem">
+    <label for="feeding-freq-select">Frecuencia personalizada</label>
+    <select id="feeding-freq-select" onchange="cambiarFrecuenciaAlimentacion(this.value)">
+      ${[1,2,3,4,5,6].map(n => `<option value="${n}" ${n === frecActual ? 'selected' : ''}>${n} ${n === 1 ? 'vez' : 'veces'} al día</option>`).join('')}
+    </select>
+  </div>`;
+
+  // Advertencia de digestión
+  if (typeof calcularTiempoDigestion === 'function') {
+    const digSeco = calcularTiempoDigestion(pet, 'seco');
+    if (digSeco && frecActual > 1) {
+      const horasEntreComidas = 24 / frecActual;
+      if (horasEntreComidas < digSeco.tiempoMin) {
+        frecHtml += `<div class="alert alert-warning" style="margin-top:0.75rem">
+          <i class="fas fa-exclamation-triangle"></i> Con ${frecActual} comidas al día, hay ~${horasEntreComidas.toFixed(1)}h entre comidas. El tiempo mínimo de digestión es ${digSeco.tiempoMin}h. Considera reducir la frecuencia.
+        </div>`;
+      }
+    }
   }
+
+  document.getElementById('nutri-frequency').innerHTML = frecHtml;
 
   // Marcas recomendadas
   let categoria = 'adulto';
@@ -1165,6 +1245,98 @@ function renderizarNutricion() {
         </div>`;
     }
   }
+
+  // Educación nutricional inline
+  renderizarEducacionInline(pet);
+}
+
+function renderizarEducacionInline(pet) {
+  const container = document.getElementById('education-tips');
+  if (!container || !pet) return;
+
+  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const info = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] : null;
+
+  let html = '<div class="education-tips">';
+
+  // Tips generales
+  html += '<h4><i class="fas fa-apple-alt"></i> Salud Digestiva General</h4><ul>';
+  html += '<li>Evita cambios bruscos de alimento; haz transiciones graduales en 7-10 días</li>';
+  html += '<li>No alimentar inmediatamente antes o después de ejercicio intenso</li>';
+  html += '<li>El agua fresca debe estar siempre disponible</li>';
+  html += '<li>Evita dar huesos cocidos: pueden astillarse y causar lesiones internas</li>';
+  html += '</ul>';
+
+  // Tips específicos de etapa
+  if (edadMeses < 12) {
+    html += '<h4><i class="fas fa-baby"></i> Tips para Cachorros</h4><ul>';
+    html += '<li>Alimentar con porciones pequeñas y frecuentes para evitar hipoglucemia</li>';
+    html += '<li>No dar suplementos de calcio sin prescripción veterinaria</li>';
+    html += '<li>Croquetas de cachorro hasta los 12 meses (razas grandes hasta 18 meses)</li>';
+    html += '</ul>';
+  } else if (edadMeses > 84) {
+    html += '<h4><i class="fas fa-heart"></i> Tips para Seniors</h4><ul>';
+    html += '<li>Considerar alimento senior con mayor proteína y menos calorías</li>';
+    html += '<li>Dividir la comida en porciones más pequeñas y frecuentes</li>';
+    html += '<li>Monitorear peso más frecuentemente (cambios pueden indicar problemas de salud)</li>';
+    html += '</ul>';
+  }
+
+  // Guía de horarios basada en digestión
+  if (typeof calcularTiempoDigestion === 'function') {
+    const digSeco = calcularTiempoDigestion(pet, 'seco');
+    if (digSeco) {
+      const frecActual = estado.frecuenciaAlimentacion[pet.id] || 2;
+      const horasDisponibles = 14; // Horas activas del día aprox
+      html += '<h4><i class="fas fa-clock"></i> Guía de Horarios</h4><ul>';
+      html += `<li>Digestión de alimento seco: ${digSeco.tiempoMin}-${digSeco.tiempoMax} horas</li>`;
+      if (frecActual >= 2) {
+        const intervalo = Math.round(horasDisponibles / frecActual);
+        html += `<li>Con ${frecActual} comidas/día: alimentar cada ~${intervalo} horas</li>`;
+        html += `<li>Ejemplo: ${generarHorariosEjemplo(frecActual)}</li>`;
+      }
+      html += '</ul>';
+    }
+  }
+
+  // Notas de raza
+  if (info && info.nutricionEspecifica) {
+    html += `<h4><i class="fas fa-dna"></i> Notas para ${escapeHtml(pet.raza)}</h4><ul>`;
+    if (info.nutricionEspecifica.nota) {
+      html += `<li>${escapeHtml(info.nutricionEspecifica.nota)}</li>`;
+    }
+    if (info.alimentosEvitar && info.alimentosEvitar.length > 0) {
+      html += `<li><strong>Evitar:</strong> ${info.alimentosEvitar.map(a => escapeHtml(a)).join(', ')}</li>`;
+    }
+    if (info.suplementos && info.suplementos.length > 0) {
+      html += `<li><strong>Suplementos recomendados:</strong> ${info.suplementos.map(s => escapeHtml(s)).join(', ')}</li>`;
+    }
+    html += '</ul>';
+  }
+
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function generarHorariosEjemplo(frecuencia) {
+  const horaInicio = 7;
+  const horasDisponibles = 14;
+  const intervalo = horasDisponibles / frecuencia;
+  const horarios = [];
+  for (let i = 0; i < frecuencia; i++) {
+    const hora = Math.round(horaInicio + (intervalo * i));
+    horarios.push(`${String(hora).padStart(2, '0')}:00`);
+  }
+  return horarios.join(', ');
+}
+
+async function cambiarFrecuenciaAlimentacion(value) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+  estado.frecuenciaAlimentacion[pet.id] = parseInt(value) || 2;
+  await guardarDatos();
+  calcularPorciones();
+  renderizarNutricion();
 }
 
 function calcularPorciones() {
@@ -1176,8 +1348,14 @@ function calcularPorciones() {
   const tazas = grams / 240;
 
   const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
-  const frecData = FRECUENCIA_ALIMENTACION[pet.especie].find(f => edadMeses >= f.edadMin && edadMeses < f.edadMax);
-  const comidas = frecData ? parseInt(frecData.frecuencia) || 2 : 2;
+  const frecGuardada = estado.frecuenciaAlimentacion[pet.id];
+  let comidas;
+  if (frecGuardada) {
+    comidas = frecGuardada;
+  } else {
+    const frecData = FRECUENCIA_ALIMENTACION[pet.especie].find(f => edadMeses >= f.edadMin && edadMeses < f.edadMax);
+    comidas = frecData ? parseInt(frecData.frecuencia) || 2 : 2;
+  }
 
   document.getElementById('portion-grams').textContent = `${Math.round(grams)} g`;
   document.getElementById('portion-cups').textContent = `${tazas.toFixed(1)} tazas`;
@@ -1300,9 +1478,65 @@ function renderizarSeguimiento() {
   renderizarGraficoCalSemanal(pet);
   renderizarGraficoPeso(pet);
   renderizarHistorial7Dias(pet);
+
+  // Tabla peso por edad
+  renderizarTablaPesoEdad(pet);
 }
 
-function registrarComida(e) {
+function renderizarTablaPesoEdad(pet) {
+  const container = document.getElementById('weight-age-table');
+  if (!container || !pet) return;
+  if (typeof predictIdealWeight !== 'function') {
+    container.innerHTML = '<p class="empty-list">Analizador de peso no disponible</p>';
+    return;
+  }
+
+  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const especie = pet.especie;
+
+  // Edades clave a mostrar
+  const edadesClave = especie === 'perro'
+    ? [1, 2, 3, 4, 6, 8, 10, 12, 18, 24, 84]
+    : [1, 2, 3, 4, 6, 9, 12, 18, 24, 120];
+
+  const etiquetas = {
+    1: '1 mes', 2: '2 meses', 3: '3 meses', 4: '4 meses', 6: '6 meses',
+    8: '8 meses', 9: '9 meses', 10: '10 meses', 12: '1 año', 18: '1.5 años',
+    24: 'Adulto (2a)', 84: 'Senior (7a)', 120: 'Senior (10a)'
+  };
+
+  let html = `<div style="overflow-x:auto"><table class="weight-age-table">
+    <thead><tr>
+      <th>Edad</th><th>Etapa</th><th>Peso mín</th><th>Peso ideal</th><th>Peso máx</th><th>Actual</th>
+    </tr></thead><tbody>`;
+
+  edadesClave.forEach(edad => {
+    const pred = predictIdealWeight(pet.raza, edad);
+    if (!pred) return;
+
+    const esCurrent = (edadMeses >= edad - 1 && edadMeses <= edad + 1) ||
+      (edad === 24 && edadMeses >= 18 && edadMeses < 84) ||
+      (edad === 84 && edadMeses >= 84) ||
+      (edad === 120 && edadMeses >= 120);
+
+    const rowClass = esCurrent ? 'weight-age-current' : '';
+    const pesoActualStr = esCurrent ? `<strong>${pet.peso} kg</strong>` : '-';
+
+    html += `<tr class="${rowClass}">
+      <td>${etiquetas[edad] || edad + 'm'}</td>
+      <td>${pred.etapa}</td>
+      <td>${pred.min} kg</td>
+      <td><strong>${pred.ideal} kg</strong></td>
+      <td>${pred.max} kg</td>
+      <td>${pesoActualStr}</td>
+    </tr>`;
+  });
+
+  html += '</tbody></table></div>';
+  container.innerHTML = html;
+}
+
+async function registrarComida(e) {
   e.preventDefault();
   const pet = obtenerMascotaActiva();
   if (!pet) return;
@@ -1317,15 +1551,23 @@ function registrarComida(e) {
     return;
   }
 
-  const calPor100g = ALIMENTOS_CALORIAS[tipo] || 0;
+  let calPor100g = ALIMENTOS_CALORIAS[tipo] || 0;
+  if (tipo === 'Otro') {
+    const customKcal = parseFloat(document.getElementById('meal-custom-kcal')?.value);
+    if (!customKcal || customKcal <= 0) {
+      mostrarToast('Ingresa las calorías por 100g del alimento', 'warning');
+      return;
+    }
+    calPor100g = customKcal;
+  }
   const calorias = (calPor100g / 100) * gramos;
 
   const hoy = fechaHoy();
   if (!estado.comidas[pet.id]) estado.comidas[pet.id] = {};
   if (!estado.comidas[pet.id][hoy]) estado.comidas[pet.id][hoy] = [];
 
-  estado.comidas[pet.id][hoy].push({ hora, tipo, marca, gramos, calorias });
-  guardarDatos();
+  estado.comidas[pet.id][hoy].push({ hora, tipo, marca, gramos, calorias, calPor100g });
+  await guardarDatos();
 
   document.getElementById('meal-form').reset();
   const now = new Date();
@@ -1335,17 +1577,17 @@ function registrarComida(e) {
   mostrarToast('Comida registrada', 'success');
 }
 
-function eliminarComida(fecha, idx) {
+async function eliminarComida(fecha, idx) {
   const pet = obtenerMascotaActiva();
   if (!pet) return;
   if (estado.comidas[pet.id]?.[fecha]) {
     estado.comidas[pet.id][fecha].splice(idx, 1);
-    guardarDatos();
+    await guardarDatos();
     renderizarSeguimiento();
   }
 }
 
-function registrarAgua(e) {
+async function registrarAgua(e) {
   e.preventDefault();
   const pet = obtenerMascotaActiva();
   if (!pet) return;
@@ -1356,14 +1598,14 @@ function registrarAgua(e) {
   const hoy = fechaHoy();
   if (!estado.agua[pet.id]) estado.agua[pet.id] = {};
   estado.agua[pet.id][hoy] = (estado.agua[pet.id][hoy] || 0) + ml;
-  guardarDatos();
+  await guardarDatos();
 
   document.getElementById('water-ml').value = '';
   renderizarSeguimiento();
   mostrarToast(`+${ml} ml de agua registrado`, 'success');
 }
 
-function registrarPeso(e) {
+async function registrarPeso(e) {
   e.preventDefault();
   const pet = obtenerMascotaActiva();
   if (!pet) return;
@@ -1398,7 +1640,7 @@ function registrarPeso(e) {
   const petIdx = estado.mascotas.findIndex(p => p.id === pet.id);
   if (petIdx !== -1) estado.mascotas[petIdx].peso = peso;
 
-  guardarDatos();
+  await guardarDatos();
   document.getElementById('weight-kg').value = '';
   if (condicionEl) condicionEl.value = '';
   if (energiaEl) energiaEl.value = '';
@@ -1764,13 +2006,27 @@ function eliminarVisita(id) {
 
 // ==================== REFERENCIAS Y GLOSARIO ====================
 function renderizarReferencias() {
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
   ['perro', 'gato'].forEach(especie => {
     const tbody = document.getElementById(`ref-table-${especie}`);
-    const refs = VALORES_REFERENCIA[especie];
-    tbody.innerHTML = Object.keys(refs).map(key => {
-      const r = refs[key];
-      return `<tr><td>${r.nombre}</td><td>${r.min}</td><td>${r.max}</td><td>${r.unidad}</td></tr>`;
-    }).join('');
+    const refs = (typeof RANGOS_REFERENCIA !== 'undefined' ? RANGOS_REFERENCIA : {})[especie] || {};
+    // Agrupar por categoría
+    const porCategoria = {};
+    Object.keys(refs).forEach(key => {
+      const cat = (catalog[key] || {}).categoria || 'otros';
+      if (!porCategoria[cat]) porCategoria[cat] = [];
+      porCategoria[cat].push({ key, ...refs[key] });
+    });
+    let html = '';
+    Object.keys(porCategoria).forEach(cat => {
+      const label = catLabels[cat] || cat;
+      html += `<tr class="ref-category-row"><td colspan="4"><strong>${label}</strong></td></tr>`;
+      porCategoria[cat].forEach(r => {
+        html += `<tr><td>${r.nombre}</td><td>${r.min}</td><td>${r.max}</td><td>${r.unit || ''}</td></tr>`;
+      });
+    });
+    tbody.innerHTML = html;
   });
 }
 
@@ -2174,32 +2430,11 @@ async function processPDFFile(file) {
       const result = await extraerValoresPDF(file);
       const { valores } = result;
 
-      let valoresEncontrados = false;
-
-      if (valores.hemoglobina !== null) {
-        document.getElementById('exam-hemoglobina').value = valores.hemoglobina;
-        valoresEncontrados = true;
-      }
-      if (valores.glucosa !== null) {
-        document.getElementById('exam-glucosa').value = valores.glucosa;
-        valoresEncontrados = true;
-      }
-      if (valores.creatinina !== null) {
-        document.getElementById('exam-creatinina').value = valores.creatinina;
-        valoresEncontrados = true;
-      }
-      if (valores.alt !== null) {
-        document.getElementById('exam-alt').value = valores.alt;
-        valoresEncontrados = true;
-      }
-      if (valores.proteinas !== null) {
-        document.getElementById('exam-proteinas').value = valores.proteinas;
-        valoresEncontrados = true;
-      }
-
-      if (valoresEncontrados) {
+      const keys = Object.keys(valores);
+      if (keys.length > 0) {
+        poblarValoresExtraidos(valores);
         document.getElementById('pdf-analysis').classList.remove('hidden');
-        mostrarToast('Valores detectados del PDF', 'success');
+        mostrarToast(`${keys.length} valores detectados del PDF`, 'success');
       } else {
         mostrarToast('No se detectaron valores automáticamente', 'info');
       }
@@ -2223,11 +2458,280 @@ function removePDFPreview() {
   if (fileInput) fileInput.value = '';
 }
 
+// Poblar el contenedor dinámico con valores extraídos del PDF
+function poblarValoresExtraidos(valores) {
+  const container = document.getElementById('exam-extracted-values');
+  if (!container) return;
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
+
+  // Agrupar por categoría
+  const porCategoria = {};
+  Object.keys(valores).forEach(key => {
+    const cat = (catalog[key] || {}).categoria || 'otros';
+    if (!porCategoria[cat]) porCategoria[cat] = [];
+    porCategoria[cat].push(key);
+  });
+
+  let html = '';
+  Object.keys(porCategoria).forEach(cat => {
+    const label = catLabels[cat] || cat;
+    html += `<div class="extracted-category"><span class="extracted-category-label">${label}</span><div class="extracted-grid" data-cat="${cat}">`;
+    porCategoria[cat].forEach(key => {
+      const info = catalog[key] || {};
+      const nombre = info.nombre || key;
+      const unit = info.unit || '';
+      const step = info.step || 0.1;
+      html += `
+        <div class="form-group" style="margin-bottom:0">
+          <label style="font-size:0.75rem">${nombre} (${unit})</label>
+          <input type="number" step="${step}" min="0" data-param-key="${key}" value="${valores[key]}" class="form-control" style="padding:0.4rem">
+        </div>`;
+    });
+    html += '</div></div>';
+  });
+
+  container.innerHTML = html;
+}
+
+// Agregar parámetro manualmente al formulario de nuevo examen
+function agregarParametroManual() {
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const container = document.getElementById('exam-extracted-values');
+  if (!container) return;
+
+  // Obtener keys ya presentes
+  const existentes = new Set();
+  container.querySelectorAll('input[data-param-key]').forEach(el => existentes.add(el.dataset.paramKey));
+
+  // Filtrar disponibles
+  const disponibles = Object.keys(catalog).filter(k => !existentes.has(k));
+  if (disponibles.length === 0) {
+    mostrarToast('Todos los parámetros ya están agregados', 'info');
+    return;
+  }
+
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
+  let selectHtml = '<select id="select-nuevo-param" class="form-control" style="margin-bottom:0.5rem">';
+  // Agrupar por categoría
+  const porCat = {};
+  disponibles.forEach(k => {
+    const cat = catalog[k].categoria || 'otros';
+    if (!porCat[cat]) porCat[cat] = [];
+    porCat[cat].push(k);
+  });
+  Object.keys(porCat).forEach(cat => {
+    selectHtml += `<optgroup label="${catLabels[cat] || cat}">`;
+    porCat[cat].forEach(k => {
+      selectHtml += `<option value="${k}">${catalog[k].nombre} (${catalog[k].unit})</option>`;
+    });
+    selectHtml += '</optgroup>';
+  });
+  selectHtml += '</select>';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modal-add-param';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:360px">
+      <h3>Agregar parámetro</h3>
+      ${selectHtml}
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <button class="btn btn-primary btn-sm" onclick="confirmarAgregarParametro()">Agregar</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-add-param').remove()">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function confirmarAgregarParametro() {
+  const select = document.getElementById('select-nuevo-param');
+  if (!select) return;
+  const key = select.value;
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const info = catalog[key] || {};
+
+  const container = document.getElementById('exam-extracted-values');
+  if (!container) return;
+
+  // Buscar o crear grid de la categoría correcta
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
+  const cat = info.categoria || 'otros';
+  let grid = container.querySelector(`.extracted-grid[data-cat="${cat}"]`);
+  if (!grid) {
+    const catDiv = document.createElement('div');
+    catDiv.className = 'extracted-category';
+    catDiv.innerHTML = `<span class="extracted-category-label">${catLabels[cat] || cat}</span><div class="extracted-grid" data-cat="${cat}"></div>`;
+    container.appendChild(catDiv);
+    grid = catDiv.querySelector('.extracted-grid');
+  }
+
+  const fieldHtml = `
+    <div class="form-group" style="margin-bottom:0">
+      <label style="font-size:0.75rem">${info.nombre || key} (${info.unit || ''})</label>
+      <input type="number" step="${info.step || 0.1}" min="0" data-param-key="${key}" value="" class="form-control" style="padding:0.4rem" placeholder="Valor">
+    </div>`;
+  grid.insertAdjacentHTML('beforeend', fieldHtml);
+
+  const modal = document.getElementById('modal-add-param');
+  if (modal) modal.remove();
+}
+
+// Agregar parámetro al formulario de edición inline
+function agregarParametroEdicion(examId) {
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const grid = document.getElementById(`edit-grid-${examId}`);
+  if (!grid) return;
+
+  const existentes = new Set();
+  grid.querySelectorAll('input[data-param-key]').forEach(el => existentes.add(el.dataset.paramKey));
+
+  const disponibles = Object.keys(catalog).filter(k => !existentes.has(k));
+  if (disponibles.length === 0) {
+    mostrarToast('Todos los parámetros ya están agregados', 'info');
+    return;
+  }
+
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
+  let selectHtml = '<select id="select-edit-param" class="form-control" style="margin-bottom:0.5rem">';
+  const porCat = {};
+  disponibles.forEach(k => {
+    const cat = catalog[k].categoria || 'otros';
+    if (!porCat[cat]) porCat[cat] = [];
+    porCat[cat].push(k);
+  });
+  Object.keys(porCat).forEach(cat => {
+    selectHtml += `<optgroup label="${catLabels[cat] || cat}">`;
+    porCat[cat].forEach(k => {
+      selectHtml += `<option value="${k}">${catalog[k].nombre} (${catalog[k].unit})</option>`;
+    });
+    selectHtml += '</optgroup>';
+  });
+  selectHtml += '</select>';
+
+  const modal = document.createElement('div');
+  modal.className = 'modal-overlay';
+  modal.id = 'modal-edit-param';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:360px">
+      <h3>Agregar parámetro</h3>
+      ${selectHtml}
+      <div style="display:flex;gap:0.5rem;margin-top:0.5rem">
+        <button class="btn btn-primary btn-sm" onclick="confirmarAgregarParametroEdicion('${examId}')">Agregar</button>
+        <button class="btn btn-secondary btn-sm" onclick="document.getElementById('modal-edit-param').remove()">Cancelar</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function confirmarAgregarParametroEdicion(examId) {
+  const select = document.getElementById('select-edit-param');
+  if (!select) return;
+  const key = select.value;
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const info = catalog[key] || {};
+
+  const grid = document.getElementById(`edit-grid-${examId}`);
+  if (!grid) return;
+
+  const fieldHtml = `
+    <div class="form-group" style="margin-bottom:0">
+      <label style="font-size:0.75rem">${info.nombre || key} (${info.unit || ''})</label>
+      <input type="number" step="${info.step || 0.1}" data-param-key="${key}" value="" class="form-control edit-param-input" style="padding:0.4rem" placeholder="Valor">
+    </div>`;
+  grid.insertAdjacentHTML('beforeend', fieldHtml);
+
+  const modal = document.getElementById('modal-edit-param');
+  if (modal) modal.remove();
+}
+
 function verPDF(url) {
   if (!url) return;
   document.getElementById('pdf-viewer-frame').src = url;
   document.getElementById('pdf-download-link').href = url;
   document.getElementById('pdf-viewer-modal').classList.remove('hidden');
+}
+
+// ==================== CHECKLISTS ====================
+function renderizarChecklists() {
+  const pet = obtenerMascotaActiva();
+  document.getElementById('checklists-no-pet').classList.toggle('hidden', !!pet);
+  document.getElementById('checklists-content').classList.toggle('hidden', !pet);
+  if (!pet) return;
+
+  const grid = document.getElementById('checklists-grid');
+  if (!grid || typeof CHECKLIST_TEMPLATES === 'undefined') return;
+
+  const especie = pet.especie || 'perro';
+  const checklistState = estado.checklists[pet.id] || {};
+
+  let html = '';
+  Object.keys(CHECKLIST_TEMPLATES).forEach(key => {
+    const tmpl = CHECKLIST_TEMPLATES[key];
+    const items = tmpl.items[especie] || tmpl.items.perro;
+    const checked = checklistState[key] || new Array(items.length).fill(false);
+    const completados = checked.filter(Boolean).length;
+    const total = items.length;
+    const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
+
+    html += `
+      <div class="checklist-card card">
+        <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
+          <h3><i class="fas ${tmpl.icono}"></i> ${tmpl.nombre}</h3>
+          <button class="btn btn-sm btn-outline" onclick="resetChecklist('${key}')" title="Reiniciar"><i class="fas fa-redo"></i></button>
+        </div>
+        <div class="card-body">
+          <div class="checklist-progress">
+            <div class="progress-bar-container">
+              <div class="progress-fill" style="width:${pct}%;background:${pct === 100 ? 'var(--success)' : 'var(--primary)'}"></div>
+            </div>
+            <span class="checklist-progress-text">${completados}/${total} (${pct}%)</span>
+          </div>
+          <ul class="checklist-items">
+            ${items.map((item, i) => `
+              <li class="checklist-item ${checked[i] ? 'checked' : ''}">
+                <label>
+                  <input type="checkbox" ${checked[i] ? 'checked' : ''} onchange="toggleChecklistItem('${key}',${i},this.checked)">
+                  <span>${escapeHtml(item)}</span>
+                </label>
+              </li>
+            `).join('')}
+          </ul>
+        </div>
+      </div>`;
+  });
+
+  grid.innerHTML = html;
+}
+
+async function toggleChecklistItem(key, index, checked) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+  if (!estado.checklists[pet.id]) estado.checklists[pet.id] = {};
+
+  const especie = pet.especie || 'perro';
+  const tmpl = CHECKLIST_TEMPLATES[key];
+  const items = tmpl.items[especie] || tmpl.items.perro;
+
+  if (!estado.checklists[pet.id][key]) {
+    estado.checklists[pet.id][key] = new Array(items.length).fill(false);
+  }
+  estado.checklists[pet.id][key][index] = checked;
+  await guardarDatos();
+  renderizarChecklists();
+}
+
+async function resetChecklist(key) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+  if (!estado.checklists[pet.id]) estado.checklists[pet.id] = {};
+
+  const especie = pet.especie || 'perro';
+  const tmpl = CHECKLIST_TEMPLATES[key];
+  const items = tmpl.items[especie] || tmpl.items.perro;
+  estado.checklists[pet.id][key] = new Array(items.length).fill(false);
+  await guardarDatos();
+  renderizarChecklists();
 }
 
 // ==================== VETERINARIAS - DIRECTORIO LOCAL ====================
@@ -2243,7 +2747,7 @@ function renderizarVeterinariasLocal() {
 
   const ciudad = pet ? pet.ciudad : '';
   const filtros = { ciudad: ciudad || '' };
-  const vets = filtrarVeterinarias(filtros).slice(0, 6);
+  const vets = filtrarVeterinarias(filtros).slice(0, 15);
 
   if (vets.length === 0) {
     container.innerHTML = `
@@ -2270,9 +2774,15 @@ function renderizarVeterinariasLocal() {
       </div>`;
   });
   html += '</div>';
-  html += `<a href="directorio-veterinarias.html" class="btn btn-outline" style="margin-top:1rem;display:block;text-align:center">
-    <i class="fas fa-th-list"></i> Ver directorio completo (${typeof VET_DATABASE !== 'undefined' ? VET_DATABASE.length : 0} veterinarias)
-  </a>`;
+  const ciudadBuscar = encodeURIComponent('veterinarias en ' + (ciudad || 'Colombia'));
+  html += `<div style="margin-top:1rem;display:flex;gap:0.5rem;flex-wrap:wrap;justify-content:center">
+    <a href="directorio-veterinarias.html" class="btn btn-outline">
+      <i class="fas fa-th-list"></i> Ver directorio completo (${typeof VET_DATABASE !== 'undefined' ? VET_DATABASE.length : 0})
+    </a>
+    <a href="https://www.google.com/maps/search/${ciudadBuscar}" target="_blank" rel="noopener" class="btn btn-primary">
+      <i class="fas fa-map-marked-alt"></i> Buscar en Google Maps
+    </a>
+  </div>`;
   container.innerHTML = html;
 }
 

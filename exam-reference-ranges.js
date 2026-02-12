@@ -2,6 +2,51 @@
 // PetCare Pro - Rangos de Referencia para Exámenes Médicos
 // ============================================================
 
+// Catálogo de todos los parámetros soportados
+const PARAM_CATALOG = {
+  // Hemograma
+  hemoglobina:      { nombre: 'Hemoglobina',        unit: 'g/dL',   step: 0.1,  categoria: 'hemograma' },
+  hematocrito:      { nombre: 'Hematocrito',         unit: '%',      step: 0.1,  categoria: 'hemograma' },
+  eritrocitos:      { nombre: 'Eritrocitos',         unit: 'x10⁶/µL', step: 0.01, categoria: 'hemograma' },
+  leucocitos:       { nombre: 'Leucocitos',          unit: 'x10³/µL', step: 0.1,  categoria: 'hemograma' },
+  plaquetas:        { nombre: 'Plaquetas',           unit: 'x10³/µL', step: 1,    categoria: 'hemograma' },
+  vcm:              { nombre: 'VCM',                 unit: 'fL',     step: 0.1,  categoria: 'hemograma' },
+  hcm:              { nombre: 'HCM',                 unit: 'pg',     step: 0.1,  categoria: 'hemograma' },
+  chcm:             { nombre: 'CHCM',                unit: 'g/dL',   step: 0.1,  categoria: 'hemograma' },
+  neutrofilos:      { nombre: 'Neutrófilos',         unit: 'x10³/µL', step: 0.1,  categoria: 'hemograma' },
+  linfocitos:       { nombre: 'Linfocitos',          unit: 'x10³/µL', step: 0.1,  categoria: 'hemograma' },
+  monocitos:        { nombre: 'Monocitos',           unit: 'x10³/µL', step: 0.01, categoria: 'hemograma' },
+  eosinofilos:      { nombre: 'Eosinófilos',         unit: 'x10³/µL', step: 0.01, categoria: 'hemograma' },
+  // Química sanguínea
+  glucosa:          { nombre: 'Glucosa',             unit: 'mg/dL',  step: 1,    categoria: 'quimica' },
+  bun:              { nombre: 'BUN (Nitrógeno Ureico)', unit: 'mg/dL', step: 0.1, categoria: 'quimica' },
+  creatinina:       { nombre: 'Creatinina',          unit: 'mg/dL',  step: 0.01, categoria: 'quimica' },
+  alt:              { nombre: 'ALT (Alanina Aminotransferasa)', unit: 'U/L', step: 1, categoria: 'quimica' },
+  ast:              { nombre: 'AST (Aspartato Aminotransferasa)', unit: 'U/L', step: 1, categoria: 'quimica' },
+  alp:              { nombre: 'ALP (Fosfatasa Alcalina)', unit: 'U/L', step: 1, categoria: 'quimica' },
+  ggt:              { nombre: 'GGT (Gamma-Glutamil Transferasa)', unit: 'U/L', step: 1, categoria: 'quimica' },
+  bilirrubina:      { nombre: 'Bilirrubina Total',   unit: 'mg/dL',  step: 0.01, categoria: 'quimica' },
+  proteinastotales: { nombre: 'Proteínas Totales',   unit: 'g/dL',   step: 0.1,  categoria: 'quimica' },
+  albumina:         { nombre: 'Albúmina',            unit: 'g/dL',   step: 0.1,  categoria: 'quimica' },
+  globulinas:       { nombre: 'Globulinas',          unit: 'g/dL',   step: 0.1,  categoria: 'quimica' },
+  colesterol:       { nombre: 'Colesterol',          unit: 'mg/dL',  step: 1,    categoria: 'quimica' },
+  trigliceridos:    { nombre: 'Triglicéridos',       unit: 'mg/dL',  step: 1,    categoria: 'quimica' },
+  amilasa:          { nombre: 'Amilasa',             unit: 'U/L',    step: 1,    categoria: 'quimica' },
+  lipasa:           { nombre: 'Lipasa',              unit: 'U/L',    step: 1,    categoria: 'quimica' },
+  calcio:           { nombre: 'Calcio',              unit: 'mg/dL',  step: 0.1,  categoria: 'quimica' },
+  fosforo:          { nombre: 'Fósforo',             unit: 'mg/dL',  step: 0.1,  categoria: 'quimica' },
+  // Electrolitos
+  sodio:            { nombre: 'Sodio',               unit: 'mEq/L',  step: 1,    categoria: 'electrolitos' },
+  potasio:          { nombre: 'Potasio',             unit: 'mEq/L',  step: 0.1,  categoria: 'electrolitos' },
+  cloro:            { nombre: 'Cloro',               unit: 'mEq/L',  step: 1,    categoria: 'electrolitos' }
+};
+
+const CATEGORIAS_LABEL = {
+  hemograma: 'Hemograma',
+  quimica: 'Química Sanguínea',
+  electrolitos: 'Electrolitos'
+};
+
 const RANGOS_REFERENCIA = {
   perro: {
     hemoglobina: {
@@ -200,6 +245,230 @@ const RANGOS_REFERENCIA = {
           ]
         }
       }
+    },
+    // === Hemograma expandido (perro) ===
+    hematocrito: {
+      min: 37, max: 55, unit: '%', nombre: 'Hematocrito',
+      descripcion: 'Porcentaje del volumen sanguíneo ocupado por glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['Anemia', 'Hemorragia', 'Enfermedad crónica'], recomendaciones: ['Consulta veterinaria', 'Evaluar posible pérdida de sangre'] },
+        alto: { causas: ['Deshidratación', 'Policitemia'], recomendaciones: ['Asegurar hidratación adecuada', 'Consulta veterinaria si persiste'] }
+      }
+    },
+    eritrocitos: {
+      min: 5.5, max: 8.5, unit: 'x10⁶/µL', nombre: 'Eritrocitos',
+      descripcion: 'Conteo de glóbulos rojos en sangre',
+      interpretaciones: {
+        bajo: { causas: ['Anemia', 'Deficiencia de hierro', 'Enfermedad crónica'], recomendaciones: ['Consulta veterinaria para diagnóstico de anemia'] },
+        alto: { causas: ['Deshidratación', 'Policitemia vera'], recomendaciones: ['Mejorar hidratación', 'Consulta veterinaria'] }
+      }
+    },
+    leucocitos: {
+      min: 6, max: 17, unit: 'x10³/µL', nombre: 'Leucocitos',
+      descripcion: 'Glóbulos blancos, parte del sistema inmunológico',
+      interpretaciones: {
+        bajo: { causas: ['Infección viral severa', 'Inmunosupresión', 'Enfermedad de médula ósea'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Evitar exposición a infecciones'], urgente: true },
+        alto: { causas: ['Infección bacteriana activa', 'Inflamación', 'Estrés', 'Leucemia'], recomendaciones: ['Consulta veterinaria para identificar foco infeccioso', 'Monitorear temperatura corporal'] }
+      }
+    },
+    plaquetas: {
+      min: 175, max: 500, unit: 'x10³/µL', nombre: 'Plaquetas',
+      descripcion: 'Células que participan en la coagulación sanguínea',
+      interpretaciones: {
+        bajo: { causas: ['Trombocitopenia inmunomediada', 'Infección por garrapatas (Ehrlichia)', 'CID'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Evitar traumatismos', 'Verificar presencia de garrapatas'], urgente: true },
+        alto: { causas: ['Inflamación crónica', 'Deficiencia de hierro', 'Esplenectomía'], recomendaciones: ['Consulta veterinaria para evaluación'] }
+      }
+    },
+    vcm: {
+      min: 60, max: 77, unit: 'fL', nombre: 'VCM',
+      descripcion: 'Volumen corpuscular medio de los glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['Deficiencia de hierro', 'Enfermedad crónica'], recomendaciones: ['Evaluar dieta y posible suplementación de hierro'] },
+        alto: { causas: ['Deficiencia de B12/ácido fólico', 'Reticulocitosis'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    hcm: {
+      min: 19, max: 28, unit: 'pg', nombre: 'HCM',
+      descripcion: 'Hemoglobina corpuscular media',
+      interpretaciones: {
+        bajo: { causas: ['Deficiencia de hierro'], recomendaciones: ['Verificar aporte de hierro en la dieta'] },
+        alto: { causas: ['Macrocitosis', 'Hemólisis'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    chcm: {
+      min: 32, max: 36, unit: 'g/dL', nombre: 'CHCM',
+      descripcion: 'Concentración de hemoglobina corpuscular media',
+      interpretaciones: {
+        bajo: { causas: ['Deficiencia de hierro', 'Reticulocitosis'], recomendaciones: ['Evaluar suplementación de hierro'] },
+        alto: { causas: ['Esferocitosis', 'Hemólisis intravascular'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    neutrofilos: {
+      min: 3, max: 12, unit: 'x10³/µL', nombre: 'Neutrófilos',
+      descripcion: 'Tipo de glóbulo blanco, primera línea de defensa',
+      interpretaciones: {
+        bajo: { causas: ['Infección viral severa', 'Parvovirus', 'Toxicidad por medicamentos'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Aislamiento si hay sospecha de parvovirus'], urgente: true },
+        alto: { causas: ['Infección bacteriana', 'Estrés', 'Inflamación', 'Uso de corticoides'], recomendaciones: ['Consulta veterinaria para identificar causa'] }
+      }
+    },
+    linfocitos: {
+      min: 1, max: 4.8, unit: 'x10³/µL', nombre: 'Linfocitos',
+      descripcion: 'Glóbulos blancos importantes para inmunidad adaptativa',
+      interpretaciones: {
+        bajo: { causas: ['Estrés (cortisol elevado)', 'Uso de corticoides', 'Enfermedad viral'], recomendaciones: ['Consulta veterinaria'] },
+        alto: { causas: ['Infección crónica', 'Estimulación antigénica', 'Leucemia linfocítica'], recomendaciones: ['Consulta veterinaria para evaluación'] }
+      }
+    },
+    monocitos: {
+      min: 0.15, max: 1.35, unit: 'x10³/µL', nombre: 'Monocitos',
+      descripcion: 'Glóbulos blancos que participan en la respuesta inflamatoria',
+      interpretaciones: {
+        bajo: { causas: ['No suele ser clínicamente significativo'], recomendaciones: ['Mencionar al veterinario en próxima consulta'] },
+        alto: { causas: ['Inflamación crónica', 'Estrés', 'Infección por hongos'], recomendaciones: ['Consulta veterinaria si se mantiene elevado'] }
+      }
+    },
+    eosinofilos: {
+      min: 0.1, max: 1.25, unit: 'x10³/µL', nombre: 'Eosinófilos',
+      descripcion: 'Glóbulos blancos asociados a alergias y parásitos',
+      interpretaciones: {
+        bajo: { causas: ['Estrés agudo', 'Uso de corticoides'], recomendaciones: ['No requiere acción inmediata'] },
+        alto: { causas: ['Parásitos intestinales', 'Alergias', 'Enfermedad inflamatoria intestinal'], recomendaciones: ['Desparasitación si no está al día', 'Evaluar alergias alimentarias'] }
+      }
+    },
+    // === Química expandida (perro) ===
+    bun: {
+      min: 7, max: 27, unit: 'mg/dL', nombre: 'BUN (Nitrógeno Ureico)',
+      descripcion: 'Producto de desecho del metabolismo de proteínas, filtrado por riñones',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática severa', 'Dieta muy baja en proteína'], recomendaciones: ['Evaluar función hepática', 'Verificar aporte proteico en dieta'] },
+        alto: {
+          causas: ['Enfermedad renal', 'Deshidratación', 'Obstrucción urinaria', 'Dieta muy alta en proteína'],
+          recomendaciones: ['CONSULTA VETERINARIA URGENTE si está muy elevado', 'Asegurar hidratación', 'Evaluar función renal completa'],
+          nutricional: { nota: 'Considerar dieta renal si se confirma enfermedad renal', ajuste: { proteina: { min: 18, max: 22 } } },
+          urgente: true
+        }
+      }
+    },
+    ast: {
+      min: 10, max: 50, unit: 'U/L', nombre: 'AST (Aspartato Aminotransferasa)',
+      descripcion: 'Enzima presente en hígado y músculo, indica daño celular',
+      interpretaciones: {
+        bajo: { causas: ['No es clínicamente significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Daño hepático', 'Daño muscular', 'Ejercicio intenso reciente'], recomendaciones: ['Consulta veterinaria', 'Evaluar junto con ALT y CK para diferenciar origen'] }
+      }
+    },
+    alp: {
+      min: 20, max: 150, unit: 'U/L', nombre: 'ALP (Fosfatasa Alcalina)',
+      descripcion: 'Enzima presente en hígado, huesos e intestino',
+      interpretaciones: {
+        bajo: { causas: ['No suele ser significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Enfermedad hepática', 'Cushing', 'Uso de corticoides', 'Crecimiento en cachorros (normal)'], recomendaciones: ['Consulta veterinaria', 'En cachorros puede ser normal por crecimiento óseo'] }
+      }
+    },
+    ggt: {
+      min: 0, max: 11, unit: 'U/L', nombre: 'GGT (Gamma-Glutamil Transferasa)',
+      descripcion: 'Enzima hepática y biliar',
+      interpretaciones: {
+        bajo: { causas: ['No es significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Colestasis (obstrucción biliar)', 'Enfermedad hepática', 'Pancreatitis'], recomendaciones: ['Consulta veterinaria para evaluación hepática y biliar'] }
+      }
+    },
+    bilirrubina: {
+      min: 0.1, max: 0.5, unit: 'mg/dL', nombre: 'Bilirrubina Total',
+      descripcion: 'Pigmento producido por la descomposición de glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['No es significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Hemólisis', 'Enfermedad hepática', 'Obstrucción biliar'], recomendaciones: ['CONSULTA VETERINARIA', 'Observar si hay ictericia (encías/ojos amarillos)'], urgente: true }
+      }
+    },
+    albumina: {
+      min: 2.3, max: 4.0, unit: 'g/dL', nombre: 'Albúmina',
+      descripcion: 'Proteína principal producida por el hígado',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática', 'Pérdida renal (nefropatía)', 'Malnutrición', 'Enteropatía'], recomendaciones: ['Consulta veterinaria', 'Evaluar función hepática y renal', 'Dieta alta en proteína de calidad'] },
+        alto: { causas: ['Deshidratación'], recomendaciones: ['Mejorar hidratación'] }
+      }
+    },
+    globulinas: {
+      min: 2.5, max: 4.5, unit: 'g/dL', nombre: 'Globulinas',
+      descripcion: 'Proteínas relacionadas con inmunidad e inflamación',
+      interpretaciones: {
+        bajo: { causas: ['Inmunodeficiencia', 'Cachorro joven'], recomendaciones: ['Consulta veterinaria si es adulto'] },
+        alto: { causas: ['Infección crónica', 'Enfermedad inmunomediada', 'Mieloma'], recomendaciones: ['Consulta veterinaria para descartar infección crónica'] }
+      }
+    },
+    colesterol: {
+      min: 135, max: 270, unit: 'mg/dL', nombre: 'Colesterol',
+      descripcion: 'Lípido importante para membranas celulares y hormonas',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática', 'Malabsorción'], recomendaciones: ['Evaluar función hepática'] },
+        alto: { causas: ['Hipotiroidismo', 'Cushing', 'Diabetes', 'Pancreatitis'], recomendaciones: ['Consulta veterinaria', 'Considerar perfil tiroideo'] }
+      }
+    },
+    trigliceridos: {
+      min: 50, max: 150, unit: 'mg/dL', nombre: 'Triglicéridos',
+      descripcion: 'Tipo de grasa en sangre',
+      interpretaciones: {
+        bajo: { causas: ['Malnutrición', 'Malabsorción'], recomendaciones: ['Evaluar dieta'] },
+        alto: { causas: ['Muestra no en ayunas', 'Hipotiroidismo', 'Cushing', 'Pancreatitis'], recomendaciones: ['Repetir en ayunas de 12h', 'Consulta veterinaria'] }
+      }
+    },
+    amilasa: {
+      min: 500, max: 1500, unit: 'U/L', nombre: 'Amilasa',
+      descripcion: 'Enzima pancreática e intestinal',
+      interpretaciones: {
+        bajo: { causas: ['No suele ser significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Pancreatitis', 'Enfermedad renal', 'Obstrucción intestinal'], recomendaciones: ['Consulta veterinaria', 'Evaluar junto con lipasa'] }
+      }
+    },
+    lipasa: {
+      min: 100, max: 750, unit: 'U/L', nombre: 'Lipasa',
+      descripcion: 'Enzima pancreática que digiere grasas',
+      interpretaciones: {
+        bajo: { causas: ['No es significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Pancreatitis', 'Enfermedad renal'], recomendaciones: ['CONSULTA VETERINARIA', 'Dieta baja en grasa', 'Evaluar función pancreática'], urgente: true }
+      }
+    },
+    calcio: {
+      min: 9.0, max: 11.3, unit: 'mg/dL', nombre: 'Calcio',
+      descripcion: 'Mineral esencial para huesos, músculos y nervios',
+      interpretaciones: {
+        bajo: { causas: ['Hipoparatiroidismo', 'Enfermedad renal', 'Eclampsia (hembras lactantes)'], recomendaciones: ['CONSULTA VETERINARIA URGENTE si hay temblores', 'Suplementación de calcio bajo supervisión'], urgente: true },
+        alto: { causas: ['Linfoma', 'Enfermedad de paratiroides', 'Insuficiencia renal', 'Intoxicación por vitamina D'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Asegurar hidratación'], urgente: true }
+      }
+    },
+    fosforo: {
+      min: 2.6, max: 6.8, unit: 'mg/dL', nombre: 'Fósforo',
+      descripcion: 'Mineral importante para huesos y metabolismo energético',
+      interpretaciones: {
+        bajo: { causas: ['Hiperparatiroidismo', 'Uso de antiácidos'], recomendaciones: ['Consulta veterinaria'] },
+        alto: { causas: ['Enfermedad renal', 'Hipoparatiroidismo', 'Normal en cachorros'], recomendaciones: ['Consulta veterinaria', 'Si hay enfermedad renal: dieta baja en fósforo'] }
+      }
+    },
+    // === Electrolitos (perro) ===
+    sodio: {
+      min: 140, max: 155, unit: 'mEq/L', nombre: 'Sodio',
+      descripcion: 'Electrolito principal del líquido extracelular',
+      interpretaciones: {
+        bajo: { causas: ['Vómito/diarrea severa', 'Enfermedad de Addison', 'Insuficiencia cardíaca'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Evaluar hidratación'], urgente: true },
+        alto: { causas: ['Deshidratación severa', 'Diabetes insípida', 'Ingesta excesiva de sal'], recomendaciones: ['Asegurar acceso a agua', 'Consulta veterinaria'] }
+      }
+    },
+    potasio: {
+      min: 3.5, max: 5.8, unit: 'mEq/L', nombre: 'Potasio',
+      descripcion: 'Electrolito esencial para función cardíaca y muscular',
+      interpretaciones: {
+        bajo: { causas: ['Vómito/diarrea prolongados', 'Uso de diuréticos', 'Anorexia'], recomendaciones: ['CONSULTA VETERINARIA', 'Evaluar hidratación y nutrición'], urgente: true },
+        alto: { causas: ['Enfermedad renal', 'Enfermedad de Addison', 'Obstrucción urinaria'], recomendaciones: ['CONSULTA VETERINARIA URGENTE - riesgo cardíaco', 'Si es macho y no orina: EMERGENCIA'], urgente: true }
+      }
+    },
+    cloro: {
+      min: 105, max: 115, unit: 'mEq/L', nombre: 'Cloro',
+      descripcion: 'Electrolito que ayuda a mantener el equilibrio ácido-base',
+      interpretaciones: {
+        bajo: { causas: ['Vómito prolongado', 'Uso de diuréticos'], recomendaciones: ['Consulta veterinaria', 'Evaluar hidratación'] },
+        alto: { causas: ['Deshidratación', 'Acidosis metabólica'], recomendaciones: ['Asegurar hidratación', 'Consulta veterinaria'] }
+      }
     }
   },
   gato: {
@@ -388,6 +657,225 @@ const RANGOS_REFERENCIA = {
             'Repetir examen tras hidratación'
           ]
         }
+      }
+    },
+    // === Hemograma expandido (gato) ===
+    hematocrito: {
+      min: 30, max: 45, unit: '%', nombre: 'Hematocrito',
+      descripcion: 'Porcentaje del volumen sanguíneo ocupado por glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['Anemia', 'Enfermedad renal crónica', 'FeLV'], recomendaciones: ['Consulta veterinaria', 'Test FeLV/FIV'] },
+        alto: { causas: ['Deshidratación (muy común en gatos)'], recomendaciones: ['Aumentar hidratación', 'Alimento húmedo'] }
+      }
+    },
+    eritrocitos: {
+      min: 5.0, max: 10.0, unit: 'x10⁶/µL', nombre: 'Eritrocitos',
+      descripcion: 'Conteo de glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['Anemia', 'FeLV', 'Enfermedad renal'], recomendaciones: ['Consulta veterinaria'] },
+        alto: { causas: ['Deshidratación', 'Policitemia'], recomendaciones: ['Mejorar hidratación'] }
+      }
+    },
+    leucocitos: {
+      min: 5.5, max: 19.5, unit: 'x10³/µL', nombre: 'Leucocitos',
+      descripcion: 'Glóbulos blancos del sistema inmunológico',
+      interpretaciones: {
+        bajo: { causas: ['FeLV', 'Panleucopenia', 'Inmunosupresión'], recomendaciones: ['CONSULTA VETERINARIA URGENTE', 'Test FeLV/FIV'], urgente: true },
+        alto: { causas: ['Infección', 'Estrés', 'Inflamación'], recomendaciones: ['Consulta veterinaria para identificar causa'] }
+      }
+    },
+    plaquetas: {
+      min: 175, max: 500, unit: 'x10³/µL', nombre: 'Plaquetas',
+      descripcion: 'Células de coagulación',
+      interpretaciones: {
+        bajo: { causas: ['Agregación plaquetaria (artefacto en gatos)', 'Infección', 'CID'], recomendaciones: ['Repetir examen con anticoagulante diferente', 'Consulta veterinaria'] },
+        alto: { causas: ['Inflamación', 'Deficiencia de hierro'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    vcm: {
+      min: 39, max: 55, unit: 'fL', nombre: 'VCM',
+      descripcion: 'Volumen corpuscular medio',
+      interpretaciones: {
+        bajo: { causas: ['Deficiencia de hierro'], recomendaciones: ['Evaluar dieta'] },
+        alto: { causas: ['FeLV', 'Reticulocitosis'], recomendaciones: ['Test FeLV si no se ha realizado'] }
+      }
+    },
+    hcm: {
+      min: 12.5, max: 17.5, unit: 'pg', nombre: 'HCM',
+      descripcion: 'Hemoglobina corpuscular media',
+      interpretaciones: {
+        bajo: { causas: ['Deficiencia de hierro'], recomendaciones: ['Verificar dieta'] },
+        alto: { causas: ['Macrocitosis'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    chcm: {
+      min: 30, max: 36, unit: 'g/dL', nombre: 'CHCM',
+      descripcion: 'Concentración de hemoglobina corpuscular media',
+      interpretaciones: {
+        bajo: { causas: ['Reticulocitosis', 'Deficiencia de hierro'], recomendaciones: ['Evaluar causa de anemia'] },
+        alto: { causas: ['Hemólisis', 'Esferocitosis'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    neutrofilos: {
+      min: 2.5, max: 12.5, unit: 'x10³/µL', nombre: 'Neutrófilos',
+      descripcion: 'Primera línea de defensa del sistema inmune',
+      interpretaciones: {
+        bajo: { causas: ['Panleucopenia', 'FeLV', 'Sepsis'], recomendaciones: ['CONSULTA VETERINARIA URGENTE'], urgente: true },
+        alto: { causas: ['Infección bacteriana', 'Estrés', 'Inflamación'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    linfocitos: {
+      min: 1.5, max: 7.0, unit: 'x10³/µL', nombre: 'Linfocitos',
+      descripcion: 'Glóbulos blancos para inmunidad adaptativa',
+      interpretaciones: {
+        bajo: { causas: ['Estrés', 'FIV', 'Corticoides'], recomendaciones: ['Test FIV si no se ha realizado'] },
+        alto: { causas: ['Infección crónica', 'Linfoma'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    monocitos: {
+      min: 0, max: 0.85, unit: 'x10³/µL', nombre: 'Monocitos',
+      descripcion: 'Glóbulos blancos de respuesta inflamatoria',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Inflamación crónica', 'Estrés'], recomendaciones: ['Consulta veterinaria si persiste'] }
+      }
+    },
+    eosinofilos: {
+      min: 0, max: 1.5, unit: 'x10³/µL', nombre: 'Eosinófilos',
+      descripcion: 'Asociados a alergias y parásitos',
+      interpretaciones: {
+        bajo: { causas: ['Estrés', 'Corticoides'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Parásitos', 'Alergias', 'Asma felina', 'Complejo granuloma eosinofílico'], recomendaciones: ['Desparasitación', 'Evaluar alergias'] }
+      }
+    },
+    // === Química expandida (gato) ===
+    bun: {
+      min: 16, max: 36, unit: 'mg/dL', nombre: 'BUN (Nitrógeno Ureico)',
+      descripcion: 'Producto de desecho filtrado por riñones',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática severa', 'Dieta baja en proteína'], recomendaciones: ['Los gatos necesitan alta proteína - evaluar dieta'] },
+        alto: { causas: ['Enfermedad renal crónica (muy común en gatos)', 'Deshidratación', 'Obstrucción urinaria'], recomendaciones: ['CONSULTA VETERINARIA', 'Hidratación CRÍTICA', 'Evaluar función renal completa'], urgente: true }
+      }
+    },
+    ast: {
+      min: 10, max: 50, unit: 'U/L', nombre: 'AST (Aspartato Aminotransferasa)',
+      descripcion: 'Enzima de hígado y músculo',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Lipidosis hepática', 'Daño muscular', 'Hepatitis'], recomendaciones: ['Consulta veterinaria', 'Si dejó de comer: URGENTE'] }
+      }
+    },
+    alp: {
+      min: 10, max: 80, unit: 'U/L', nombre: 'ALP (Fosfatasa Alcalina)',
+      descripcion: 'Enzima hepática y ósea',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Lipidosis hepática', 'Hipertiroidismo', 'Enfermedad hepática'], recomendaciones: ['CONSULTA VETERINARIA - en gatos, ALP elevada es más significativa que en perros'], urgente: true }
+      }
+    },
+    ggt: {
+      min: 0, max: 5, unit: 'U/L', nombre: 'GGT (Gamma-Glutamil Transferasa)',
+      descripcion: 'Enzima hepática y biliar',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Colangitis', 'Obstrucción biliar', 'Lipidosis hepática'], recomendaciones: ['Consulta veterinaria para evaluación hepática'] }
+      }
+    },
+    bilirrubina: {
+      min: 0.1, max: 0.4, unit: 'mg/dL', nombre: 'Bilirrubina Total',
+      descripcion: 'Pigmento de descomposición de glóbulos rojos',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Lipidosis hepática', 'Hemólisis', 'Colangitis'], recomendaciones: ['CONSULTA VETERINARIA', 'Observar ictericia'], urgente: true }
+      }
+    },
+    albumina: {
+      min: 2.1, max: 3.3, unit: 'g/dL', nombre: 'Albúmina',
+      descripcion: 'Proteína hepática principal',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática', 'Pérdida renal', 'Enteropatía', 'Malnutrición'], recomendaciones: ['Consulta veterinaria', 'Dieta alta en proteína animal'] },
+        alto: { causas: ['Deshidratación'], recomendaciones: ['Mejorar hidratación con alimento húmedo'] }
+      }
+    },
+    globulinas: {
+      min: 2.6, max: 5.1, unit: 'g/dL', nombre: 'Globulinas',
+      descripcion: 'Proteínas de inmunidad',
+      interpretaciones: {
+        bajo: { causas: ['Inmunodeficiencia', 'FIV'], recomendaciones: ['Test FIV si no se ha realizado'] },
+        alto: { causas: ['FIP', 'Infección crónica', 'Enfermedad inmunomediada'], recomendaciones: ['Consulta veterinaria - descartar FIP'] }
+      }
+    },
+    colesterol: {
+      min: 95, max: 220, unit: 'mg/dL', nombre: 'Colesterol',
+      descripcion: 'Lípido sanguíneo',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad hepática', 'Hipertiroidismo'], recomendaciones: ['Evaluar función hepática y tiroides'] },
+        alto: { causas: ['Diabetes', 'Hipotiroidismo (raro en gatos)', 'Dieta alta en grasa'], recomendaciones: ['Consulta veterinaria'] }
+      }
+    },
+    trigliceridos: {
+      min: 25, max: 160, unit: 'mg/dL', nombre: 'Triglicéridos',
+      descripcion: 'Grasa en sangre',
+      interpretaciones: {
+        bajo: { causas: ['Malnutrición'], recomendaciones: ['Evaluar dieta'] },
+        alto: { causas: ['Muestra no en ayunas', 'Diabetes', 'Pancreatitis'], recomendaciones: ['Repetir en ayunas', 'Consulta veterinaria'] }
+      }
+    },
+    amilasa: {
+      min: 500, max: 1500, unit: 'U/L', nombre: 'Amilasa',
+      descripcion: 'Enzima pancreática',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Pancreatitis', 'Enfermedad renal'], recomendaciones: ['Consulta veterinaria', 'Evaluar junto con lipasa'] }
+      }
+    },
+    lipasa: {
+      min: 100, max: 750, unit: 'U/L', nombre: 'Lipasa',
+      descripcion: 'Enzima pancreática',
+      interpretaciones: {
+        bajo: { causas: ['No significativo'], recomendaciones: ['No requiere acción'] },
+        alto: { causas: ['Pancreatitis (común en gatos)', 'Enfermedad renal'], recomendaciones: ['CONSULTA VETERINARIA', 'Dieta baja en grasa'], urgente: true }
+      }
+    },
+    calcio: {
+      min: 8.0, max: 10.8, unit: 'mg/dL', nombre: 'Calcio',
+      descripcion: 'Mineral para huesos y funciones celulares',
+      interpretaciones: {
+        bajo: { causas: ['Enfermedad renal', 'Hipoparatiroidismo', 'Eclampsia'], recomendaciones: ['CONSULTA VETERINARIA URGENTE si hay temblores'], urgente: true },
+        alto: { causas: ['Linfoma', 'Enfermedad renal', 'Hiperparatiroidismo'], recomendaciones: ['CONSULTA VETERINARIA URGENTE'], urgente: true }
+      }
+    },
+    fosforo: {
+      min: 3.1, max: 6.8, unit: 'mg/dL', nombre: 'Fósforo',
+      descripcion: 'Mineral para huesos y energía',
+      interpretaciones: {
+        bajo: { causas: ['Hiperparatiroidismo'], recomendaciones: ['Consulta veterinaria'] },
+        alto: { causas: ['Enfermedad renal (muy común en gatos mayores)', 'Normal en gatitos'], recomendaciones: ['Dieta baja en fósforo si hay enfermedad renal', 'Consulta veterinaria'] }
+      }
+    },
+    // === Electrolitos (gato) ===
+    sodio: {
+      min: 147, max: 156, unit: 'mEq/L', nombre: 'Sodio',
+      descripcion: 'Electrolito principal extracelular',
+      interpretaciones: {
+        bajo: { causas: ['Vómito/diarrea', 'Enfermedad renal', 'Fluidoterapia excesiva'], recomendaciones: ['CONSULTA VETERINARIA', 'Evaluar hidratación'], urgente: true },
+        alto: { causas: ['Deshidratación severa', 'Diabetes insípida'], recomendaciones: ['Asegurar acceso a agua', 'Consulta veterinaria'] }
+      }
+    },
+    potasio: {
+      min: 3.5, max: 5.8, unit: 'mEq/L', nombre: 'Potasio',
+      descripcion: 'Electrolito esencial para corazón y músculos',
+      interpretaciones: {
+        bajo: { causas: ['Vómito/diarrea', 'Enfermedad renal', 'Anorexia prolongada'], recomendaciones: ['CONSULTA VETERINARIA', 'Suplementación de potasio'], urgente: true },
+        alto: { causas: ['Enfermedad renal', 'Obstrucción urinaria', 'Addison'], recomendaciones: ['CONSULTA VETERINARIA URGENTE - riesgo cardíaco', 'Si es macho y no orina: EMERGENCIA'], urgente: true }
+      }
+    },
+    cloro: {
+      min: 107, max: 120, unit: 'mEq/L', nombre: 'Cloro',
+      descripcion: 'Electrolito para equilibrio ácido-base',
+      interpretaciones: {
+        bajo: { causas: ['Vómito prolongado'], recomendaciones: ['Consulta veterinaria'] },
+        alto: { causas: ['Deshidratación', 'Enfermedad renal'], recomendaciones: ['Mejorar hidratación'] }
       }
     }
   }

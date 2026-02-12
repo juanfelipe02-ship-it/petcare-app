@@ -110,6 +110,8 @@ async function guardarDatosFirestore(estado) {
       pesos: estado.pesos || {},
       recordatorios: estado.recordatorios || {},
       visitas: estado.visitas || {},
+      frecuenciaAlimentacion: estado.frecuenciaAlimentacion || {},
+      checklists: estado.checklists || {},
       tema: estado.tema || 'light',
       veterinariasFavoritas: estado.veterinariasFavoritas || [],
       ultimaActualizacion: firebase.firestore.FieldValue.serverTimestamp()
@@ -268,7 +270,185 @@ function comprimirImagen(file, maxSize, quality) {
 
 // ==================== FUNCIONES DE PDF ====================
 
-// Extraer valores del PDF usando PDF.js
+// Patrones de extracción para cada parámetro
+const PDF_EXTRACTION_PATTERNS = {
+  hemoglobina: [
+    /hemoglobina[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
+    /hgb[\s:.,]*(\d+[.,]?\d*)/i,
+    /hb[\s:.,]*(\d+[.,]?\d*)/i,
+    /hemoglobin[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  hematocrito: [
+    /hematocrito[\s:.,]*(\d+[.,]?\d*)\s*%?/i,
+    /hematocrit[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bhct[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bht[\s:.,]*(\d+[.,]?\d*)\s*%/i,
+    /pcv[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  eritrocitos: [
+    /eritrocitos[\s:.,]*(\d+[.,]?\d*)/i,
+    /red\s*blood\s*cell[\s:.,]*(\d+[.,]?\d*)/i,
+    /\brbc[\s:.,]*(\d+[.,]?\d*)/i,
+    /gl[oó]bulos\s*rojos[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  leucocitos: [
+    /leucocitos[\s:.,]*(\d+[.,]?\d*)/i,
+    /white\s*blood\s*cell[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bwbc[\s:.,]*(\d+[.,]?\d*)/i,
+    /gl[oó]bulos\s*blancos[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  plaquetas: [
+    /plaquetas[\s:.,]*(\d+[.,]?\d*)/i,
+    /platelets?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bplt[\s:.,]*(\d+[.,]?\d*)/i,
+    /trombocitos[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  vcm: [
+    /\bvcm[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bmcv[\s:.,]*(\d+[.,]?\d*)/i,
+    /vol[.\s]*corp[.\s]*medio[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  hcm: [
+    /\bhcm[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bmch[\s:.,]*(\d+[.,]?\d*)\s*(?:pg)?/i
+  ],
+  chcm: [
+    /\bchcm[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bmchc[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  neutrofilos: [
+    /neutr[oó]filos[\s:.,]*(\d+[.,]?\d*)/i,
+    /neutrophils?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bneut[\s:.,]*(\d+[.,]?\d*)/i,
+    /segmentados[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  linfocitos: [
+    /linfocitos[\s:.,]*(\d+[.,]?\d*)/i,
+    /lymphocytes?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\blym[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  monocitos: [
+    /monocitos[\s:.,]*(\d+[.,]?\d*)/i,
+    /monocytes?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bmono[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  eosinofilos: [
+    /eosin[oó]filos[\s:.,]*(\d+[.,]?\d*)/i,
+    /eosinophils?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\beos[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  glucosa: [
+    /glucosa[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
+    /glucose[\s:.,]*(\d+[.,]?\d*)/i,
+    /glicemia[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bglu[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  bun: [
+    /\bbun[\s:.,]*(\d+[.,]?\d*)/i,
+    /nitr[oó]geno\s*ureico[\s:.,]*(\d+[.,]?\d*)/i,
+    /urea\s*nitr[oó]geno[\s:.,]*(\d+[.,]?\d*)/i,
+    /blood\s*urea\s*nitrogen[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  creatinina: [
+    /creatinina[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
+    /creatinine[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bcrea[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  alt: [
+    /\balt[\s:=]+(\d+[.,]?\d*)\s*(?:U\/[Ll])/i,
+    /\balt[\s:=]+(\d+[.,]?\d*)/i,
+    /alanina[\s\w]*[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bgpt[\s:.,]*(\d+[.,]?\d*)/i,
+    /\btgp[\s:.,]*(\d+[.,]?\d*)/i,
+    /alat[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  ast: [
+    /\bast[\s:.,]*(\d+[.,]?\d*)\s*(?:U\/[Ll])?/i,
+    /aspartato[\s\w]*[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bgot[\s:.,]*(\d+[.,]?\d*)/i,
+    /\btgo[\s:.,]*(\d+[.,]?\d*)/i,
+    /asat[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  alp: [
+    /\balp[\s:.,]*(\d+[.,]?\d*)/i,
+    /fosfatasa\s*alcalina[\s:.,]*(\d+[.,]?\d*)/i,
+    /alkaline\s*phosphatase[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bfa[\s:=]+(\d+[.,]?\d*)\s*(?:U\/[Ll])/i
+  ],
+  ggt: [
+    /\bggt[\s:.,]*(\d+[.,]?\d*)/i,
+    /gamma[\s-]*glutamil[\s\w]*[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bγ-?gt[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  bilirrubina: [
+    /bilirrubina\s*total[\s:.,]*(\d+[.,]?\d*)/i,
+    /bilirrubina[\s:.,]*(\d+[.,]?\d*)/i,
+    /bilirubin[\s:.,]*(\d+[.,]?\d*)/i,
+    /\btbil[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  proteinastotales: [
+    /prote[ií]nas?\s*totales?[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
+    /total\s*protein[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bpt[\s:=]+(\d+[.,]?\d*)\s*(?:g\/d[Ll])/i
+  ],
+  albumina: [
+    /alb[uú]mina[\s:.,]*(\d+[.,]?\d*)/i,
+    /albumin[\s:.,]*(\d+[.,]?\d*)/i,
+    /\balb[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  globulinas: [
+    /globulinas?[\s:.,]*(\d+[.,]?\d*)/i,
+    /globulin[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bglob[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  colesterol: [
+    /colesterol[\s:.,]*(\d+[.,]?\d*)/i,
+    /cholesterol[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bchol[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  trigliceridos: [
+    /triglic[eé]ridos[\s:.,]*(\d+[.,]?\d*)/i,
+    /triglycerides?[\s:.,]*(\d+[.,]?\d*)/i,
+    /\btrig[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  amilasa: [
+    /amilasa[\s:.,]*(\d+[.,]?\d*)/i,
+    /amylase[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bamy[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  lipasa: [
+    /lipasa[\s:.,]*(\d+[.,]?\d*)/i,
+    /lipase[\s:.,]*(\d+[.,]?\d*)/i,
+    /\blip[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  calcio: [
+    /calcio[\s:.,]*(\d+[.,]?\d*)/i,
+    /calcium[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bca[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])/i
+  ],
+  fosforo: [
+    /f[oó]sforo[\s:.,]*(\d+[.,]?\d*)/i,
+    /phosphorus[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bphos[\s:.,]*(\d+[.,]?\d*)/i
+  ],
+  sodio: [
+    /sodio[\s:.,]*(\d+[.,]?\d*)/i,
+    /sodium[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bna[\s:=]+(\d+[.,]?\d*)\s*(?:mEq|mmol)/i
+  ],
+  potasio: [
+    /potasio[\s:.,]*(\d+[.,]?\d*)/i,
+    /potassium[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bk[\s:=]+(\d+[.,]?\d*)\s*(?:mEq|mmol)/i
+  ],
+  cloro: [
+    /cloro[\s:.,]*(\d+[.,]?\d*)/i,
+    /chloride[\s:.,]*(\d+[.,]?\d*)/i,
+    /\bcl[\s:=]+(\d+[.,]?\d*)\s*(?:mEq|mmol)/i
+  ]
+};
+
+// Extraer valores del PDF usando PDF.js - extracción dinámica
 async function extraerValoresPDF(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader();
@@ -281,45 +461,68 @@ async function extraerValoresPDF(file) {
         for (let i = 1; i <= pdf.numPages; i++) {
           const page = await pdf.getPage(i);
           const textContent = await page.getTextContent();
-          const pageText = textContent.items.map(item => item.str).join(' ');
+          // Mejorar extracción: detectar cambios de Y para insertar newlines
+          let lastY = null;
+          let pageText = '';
+          textContent.items.forEach(item => {
+            const y = item.transform ? item.transform[5] : null;
+            if (lastY !== null && y !== null && Math.abs(y - lastY) > 2) {
+              pageText += '\n';
+            }
+            pageText += item.str + ' ';
+            lastY = y;
+          });
           textoCompleto += pageText + '\n';
         }
 
         console.log('PDF texto extraído:', textoCompleto.substring(0, 500));
 
-        // Buscar valores con múltiples patrones por parámetro
-        const valores = {
-          hemoglobina: extraerValorMultiple(textoCompleto, [
-            /hemoglobina[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
-            /hgb[\s:.,]*(\d+[.,]?\d*)/i,
-            /hb[\s:.,]*(\d+[.,]?\d*)/i,
-            /hemoglobin[\s:.,]*(\d+[.,]?\d*)/i
-          ]),
-          glucosa: extraerValorMultiple(textoCompleto, [
-            /glucosa[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
-            /glucose[\s:.,]*(\d+[.,]?\d*)/i,
-            /glicemia[\s:.,]*(\d+[.,]?\d*)/i,
-            /glu[\s:.,]*(\d+[.,]?\d*)/i
-          ]),
-          creatinina: extraerValorMultiple(textoCompleto, [
-            /creatinina[\s:.,]*(\d+[.,]?\d*)\s*(?:mg\/d[Ll])?/i,
-            /creatinine[\s:.,]*(\d+[.,]?\d*)/i,
-            /crea[\s:.,]*(\d+[.,]?\d*)/i
-          ]),
-          alt: extraerValorMultiple(textoCompleto, [
-            /\balt[\s:.,]*(\d+[.,]?\d*)\s*(?:U\/[Ll])?/i,
-            /alanina[\s\w]*[\s:.,]*(\d+[.,]?\d*)/i,
-            /\bgpt[\s:.,]*(\d+[.,]?\d*)/i,
-            /\btgp[\s:.,]*(\d+[.,]?\d*)/i,
-            /alat[\s:.,]*(\d+[.,]?\d*)/i
-          ]),
-          proteinas: extraerValorMultiple(textoCompleto, [
-            /prote[ií]nas?\s*totales?[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])?/i,
-            /total\s*protein[\s:.,]*(\d+[.,]?\d*)/i,
-            /pt[\s:.,]*(\d+[.,]?\d*)\s*(?:g\/d[Ll])/i
-          ])
+        // Iterar sobre todos los patrones y extraer solo los valores encontrados
+        const valores = {};
+        for (const [key, patterns] of Object.entries(PDF_EXTRACTION_PATTERNS)) {
+          const val = extraerValorMultiple(textoCompleto, patterns);
+          if (val !== null) {
+            valores[key] = val;
+          }
+        }
+
+        // Compatibilidad: si se encontró "proteinas" como key viejo, mapear a proteinastotales
+        if (valores.proteinas && !valores.proteinastotales) {
+          valores.proteinastotales = valores.proteinas;
+          delete valores.proteinas;
+        }
+
+        // Sanity check: descartar valores fuera de rango fisiológico
+        const SANITY_RANGES = {
+          hemoglobina: { min: 5, max: 25 },
+          hematocrito: { min: 10, max: 65 },
+          eritrocitos: { min: 2, max: 15 },
+          leucocitos: { min: 1, max: 80 },
+          plaquetas: { min: 50, max: 1500 },
+          glucosa: { min: 30, max: 600 },
+          bun: { min: 1, max: 150 },
+          creatinina: { min: 0.1, max: 20 },
+          alt: { min: 1, max: 2000 },
+          ast: { min: 1, max: 2000 },
+          alp: { min: 1, max: 5000 },
+          proteinastotales: { min: 2, max: 15 },
+          albumina: { min: 0.5, max: 8 },
+          sodio: { min: 100, max: 200 },
+          potasio: { min: 1, max: 10 },
+          cloro: { min: 80, max: 140 },
+          calcio: { min: 4, max: 18 },
+          fosforo: { min: 1, max: 20 }
         };
 
+        Object.keys(valores).forEach(key => {
+          const range = SANITY_RANGES[key];
+          if (range && (valores[key] < range.min || valores[key] > range.max)) {
+            console.warn(`PDF sanity check: ${key}=${valores[key]} fuera de rango [${range.min}-${range.max}], descartado`);
+            delete valores[key];
+          }
+        });
+
+        console.log('Valores extraídos del PDF:', valores);
         resolve({ valores, textoCompleto });
       } catch (err) {
         reject(err);

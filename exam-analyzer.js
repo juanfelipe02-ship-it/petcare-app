@@ -21,18 +21,34 @@ function analyzeExam(examData, petProfile) {
   let normales = 0, limites = 0, anormales = 0;
   const ajustesNutricionales = [];
   let requiereAtencion = false;
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
 
-  // Analizar cada parámetro
-  const parametros = ['hemoglobina', 'glucosa', 'creatinina', 'alt', 'proteinastotales'];
-
-  parametros.forEach(param => {
-    // Manejar tanto 'proteinas' como 'proteinastotales'
-    const valorKey = param === 'proteinastotales' ? 'proteinas' : param;
-    const valor = examData.valores[valorKey];
+  // Iterar dinámicamente sobre todos los valores del examen
+  Object.keys(examData.valores).forEach(rawKey => {
+    const valor = examData.valores[rawKey];
     if (valor === null || valor === undefined) return;
 
+    // Normalizar key: proteinas -> proteinastotales
+    const param = rawKey === 'proteinas' ? 'proteinastotales' : rawKey;
     const rango = rangos[param];
-    if (!rango) return;
+
+    if (!rango) {
+      // Valor sin rango de referencia — registrar como sin_referencia
+      const info = catalog[param] || {};
+      resultados.push({
+        parametro: param,
+        nombre: info.nombre || param,
+        valor,
+        unit: info.unit || '',
+        min: null,
+        max: null,
+        clasificacion: 'sin_referencia',
+        porcentajeFuera: 0,
+        descripcion: '',
+        interpretacion: null
+      });
+      return;
+    }
 
     const clasificacion = clasificarValor(valor, rango.min, rango.max);
     const porcentajeFuera = calcularPorcentajeFuera(valor, rango.min, rango.max);
@@ -49,7 +65,7 @@ function analyzeExam(examData, petProfile) {
     // Obtener interpretación según si es alto o bajo
     const esAlto = valor > rango.max;
     const esBajo = valor < rango.min;
-    if (esAlto && rango.interpretaciones.alto) {
+    if (esAlto && rango.interpretaciones && rango.interpretaciones.alto) {
       interpretacion = rango.interpretaciones.alto;
       if (interpretacion.nutricional) {
         ajustesNutricionales.push({
@@ -59,7 +75,7 @@ function analyzeExam(examData, petProfile) {
         });
       }
       if (interpretacion.urgente) requiereAtencion = true;
-    } else if (esBajo && rango.interpretaciones.bajo) {
+    } else if (esBajo && rango.interpretaciones && rango.interpretaciones.bajo) {
       interpretacion = rango.interpretaciones.bajo;
       if (interpretacion.nutricional) {
         ajustesNutricionales.push({
@@ -136,11 +152,20 @@ function compararConAnterior(examenActual, examenes, petId) {
   const comparacion = [];
   const diasDiferencia = Math.round((new Date(examenActual.fecha) - new Date(anterior.fecha)) / (1000 * 60 * 60 * 24));
 
-  const parametros = ['hemoglobina', 'glucosa', 'creatinina', 'alt', 'proteinas'];
+  // Unión de keys de ambos exámenes
+  const allKeys = new Set([
+    ...Object.keys(examenActual.valores || {}),
+    ...Object.keys(anterior.valores || {})
+  ]);
 
-  parametros.forEach(param => {
-    const valorActual = examenActual.valores[param];
-    const valorAnterior = anterior.valores[param];
+  allKeys.forEach(rawKey => {
+    // Normalizar proteinas -> proteinastotales para comparación
+    const param = rawKey === 'proteinas' ? 'proteinastotales' : rawKey;
+    // Buscar valor en ambos exámenes (soportar ambos keys)
+    const valorActual = examenActual.valores[rawKey] !== undefined ? examenActual.valores[rawKey]
+      : (rawKey === 'proteinastotales' ? examenActual.valores['proteinas'] : undefined);
+    const valorAnterior = anterior.valores[rawKey] !== undefined ? anterior.valores[rawKey]
+      : (rawKey === 'proteinastotales' ? anterior.valores['proteinas'] : undefined);
 
     if (valorActual !== null && valorActual !== undefined &&
         valorAnterior !== null && valorAnterior !== undefined) {
@@ -223,7 +248,7 @@ function renderizarAnalisisExamen(analisis, comparacion) {
       <div class="exam-no-values-msg" style="padding:1rem;background:var(--bg-secondary);border-radius:8px;text-align:center">
         <i class="fas fa-info-circle" style="font-size:2rem;color:var(--primary);margin-bottom:0.5rem;display:block"></i>
         <p style="margin-bottom:0.5rem"><strong>No hay valores numéricos para analizar</strong></p>
-        <p style="font-size:0.85rem;color:var(--text-secondary)">Para que el análisis inteligente funcione, necesitas ingresar los valores del examen (hemoglobina, glucosa, creatinina, ALT, proteínas totales) en los campos numéricos al registrar el examen.</p>
+        <p style="font-size:0.85rem;color:var(--text-secondary)">Para que el análisis inteligente funcione, necesitas ingresar los valores del examen en los campos numéricos al registrar el examen, o subir un PDF para extracción automática.</p>
         <p style="font-size:0.85rem;color:var(--text-secondary);margin-top:0.5rem">Si subiste un PDF y no se extrajeron automáticamente, puedes editar los valores manualmente.</p>
       </div>`;
     return html;
@@ -250,19 +275,32 @@ function renderizarAnalisisExamen(analisis, comparacion) {
       <span class="analysis-badge anormal">${anormales} anormales</span>
     </div>`;
 
-  // Cada parámetro
+  // Agrupar resultados por categoría
+  const catalog = typeof PARAM_CATALOG !== 'undefined' ? PARAM_CATALOG : {};
+  const catLabels = typeof CATEGORIAS_LABEL !== 'undefined' ? CATEGORIAS_LABEL : {};
+  const porCategoria = {};
   analisis.resultados.forEach(r => {
-    const statusIcon = r.clasificacion === 'normal' ? 'check-circle'
+    const cat = (catalog[r.parametro] || {}).categoria || 'otros';
+    if (!porCategoria[cat]) porCategoria[cat] = [];
+    porCategoria[cat].push(r);
+  });
+
+  const renderParam = (r) => {
+    const isSinRef = r.clasificacion === 'sin_referencia';
+    const statusIcon = isSinRef ? 'question-circle'
+      : r.clasificacion === 'normal' ? 'check-circle'
       : r.clasificacion.includes('limite') ? 'exclamation-circle'
       : 'times-circle';
-    const statusColor = r.clasificacion === 'normal' ? 'var(--success)'
+    const statusColor = isSinRef ? 'var(--text-secondary)'
+      : r.clasificacion === 'normal' ? 'var(--success)'
       : r.clasificacion.includes('limite') ? 'var(--warning)'
       : 'var(--danger)';
-    const statusClass = r.clasificacion === 'normal' ? 'normal'
+    const statusClass = isSinRef ? 'sin_referencia'
+      : r.clasificacion === 'normal' ? 'normal'
       : r.clasificacion.includes('limite') ? 'limite'
       : 'anormal';
 
-    html += `
+    let paramHtml = `
       <div class="exam-param-card ${statusClass}">
         <div class="exam-param-header" onclick="this.parentElement.classList.toggle('expanded')">
           <div class="exam-param-title">
@@ -271,20 +309,20 @@ function renderizarAnalisisExamen(analisis, comparacion) {
           </div>
           <div class="exam-param-value">
             <span>${r.valor} ${r.unit}</span>
-            <small>(Normal: ${r.min}-${r.max})</small>
+            ${isSinRef ? '<small>(Sin referencia)</small>' : `<small>(Normal: ${r.min}-${r.max})</small>`}
           </div>
           <i class="fas fa-chevron-down exam-param-chevron"></i>
         </div>
         <div class="exam-param-body">
-          <p class="exam-param-desc">${r.descripcion}</p>`;
+          ${r.descripcion ? `<p class="exam-param-desc">${r.descripcion}</p>` : ''}`;
 
     if (r.porcentajeFuera > 0) {
       const direccion = r.valor > r.max ? 'por encima' : 'por debajo';
-      html += `<p class="exam-param-pct"><strong>Valor ${r.porcentajeFuera}% ${direccion} del rango normal</strong></p>`;
+      paramHtml += `<p class="exam-param-pct"><strong>Valor ${r.porcentajeFuera}% ${direccion} del rango normal</strong></p>`;
     }
 
     if (r.interpretacion) {
-      html += `
+      paramHtml += `
           <div class="exam-interp">
             <h5>Posibles causas:</h5>
             <ul>${r.interpretacion.causas.map(c => `<li>${c}</li>`).join('')}</ul>
@@ -293,9 +331,20 @@ function renderizarAnalisisExamen(analisis, comparacion) {
           </div>`;
     }
 
-    html += `
+    paramHtml += `
         </div>
       </div>`;
+    return paramHtml;
+  };
+
+  // Renderizar agrupado por categoría
+  Object.keys(porCategoria).forEach(cat => {
+    const label = catLabels[cat] || cat;
+    html += `<div class="exam-analysis-category"><h5 class="exam-category-title"><i class="fas fa-layer-group"></i> ${label}</h5>`;
+    porCategoria[cat].forEach(r => {
+      html += renderParam(r);
+    });
+    html += '</div>';
   });
 
   // Comparación con anterior
@@ -384,9 +433,12 @@ function generarRecordatoriosCondicionales(analisis, petProfile) {
   if (!analisis || !analisis.resultados) return recordatorios;
 
   analisis.resultados.forEach(r => {
-    if (r.clasificacion.includes('anormal')) {
+    if (r.clasificacion.includes('anormal') && r.max !== null) {
+      const esAlto = r.valor > r.max;
+      const esBajo = r.valor < r.min;
+
       // Glucosa alta -> repetir en 2 semanas
-      if (r.parametro === 'glucosa' && r.valor > r.max) {
+      if (r.parametro === 'glucosa' && esAlto) {
         const fecha = new Date();
         fecha.setDate(fecha.getDate() + 14);
         recordatorios.push({
@@ -400,13 +452,69 @@ function generarRecordatoriosCondicionales(analisis, petProfile) {
       }
 
       // Creatinina alta -> control renal en 1 mes
-      if (r.parametro === 'creatinina' && r.valor > r.max) {
+      if (r.parametro === 'creatinina' && esAlto) {
         const fecha = new Date();
         fecha.setDate(fecha.getDate() + 30);
         recordatorios.push({
           tipo: 'examen',
           titulo: `Control renal para ${petProfile.nombre}`,
           descripcion: 'Creatinina elevada. Monitorear función renal.',
+          fecha: fecha.toISOString().split('T')[0],
+          hora: '09:00',
+          intensidad: 'intensivo'
+        });
+      }
+
+      // ALT o AST alta -> control hepático en 3 semanas
+      if ((r.parametro === 'alt' || r.parametro === 'ast') && esAlto) {
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + 21);
+        recordatorios.push({
+          tipo: 'examen',
+          titulo: `Control hepático para ${petProfile.nombre}`,
+          descripcion: `${r.nombre} elevada. Monitorear función hepática.`,
+          fecha: fecha.toISOString().split('T')[0],
+          hora: '09:00',
+          intensidad: 'intensivo'
+        });
+      }
+
+      // Leucocitos anormales -> control en 1 semana
+      if (r.parametro === 'leucocitos') {
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + 7);
+        recordatorios.push({
+          tipo: 'examen',
+          titulo: `Control de leucocitos para ${petProfile.nombre}`,
+          descripcion: `Leucocitos ${esAlto ? 'elevados (posible infección)' : 'bajos (posible inmunosupresión)'}. Repetir hemograma.`,
+          fecha: fecha.toISOString().split('T')[0],
+          hora: '09:00',
+          intensidad: 'intensivo'
+        });
+      }
+
+      // BUN alta -> control renal en 3 semanas
+      if (r.parametro === 'bun' && esAlto) {
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + 21);
+        recordatorios.push({
+          tipo: 'examen',
+          titulo: `Control de BUN para ${petProfile.nombre}`,
+          descripcion: 'BUN elevado. Monitorear función renal junto con creatinina.',
+          fecha: fecha.toISOString().split('T')[0],
+          hora: '09:00',
+          intensidad: 'intensivo'
+        });
+      }
+
+      // Potasio anormal -> urgente en 3 días
+      if (r.parametro === 'potasio') {
+        const fecha = new Date();
+        fecha.setDate(fecha.getDate() + 3);
+        recordatorios.push({
+          tipo: 'examen',
+          titulo: `Control urgente de potasio para ${petProfile.nombre}`,
+          descripcion: `Potasio ${esAlto ? 'elevado (riesgo cardíaco)' : 'bajo (riesgo muscular)'}. Control urgente.`,
           fecha: fecha.toISOString().split('T')[0],
           hora: '09:00',
           intensidad: 'intensivo'

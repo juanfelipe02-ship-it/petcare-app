@@ -468,7 +468,7 @@ const VET_DATABASE = [
     rangoPrecios: { consultaGeneral:{min:60000,max:90000,moneda:'COP'}, vacuna:{min:30000,max:55000,moneda:'COP'}, cirugia:{min:250000,max:700000,moneda:'COP'} },
     calificacion: 4.7, numeroReseñas: 112, verificada: true
   },
-  // ==================== BUCARAMANGA (4) ====================
+  // ==================== BUCARAMANGA (14) ====================
   {
     id: 'vet_bga_001', nombre: 'Clínica Veterinaria Santander', ciudad: 'Bucaramanga', barrio: 'Cabecera', pais: 'Colombia',
     direccion: 'Carrera 33 #48-25', coordenadas: { lat: 7.1183, lng: -73.1198 },
@@ -508,6 +508,106 @@ const VET_DATABASE = [
     servicios: ['Consulta','Vacunación','Cirugía','Desparasitación','Grooming'],
     rangoPrecios: { consultaGeneral:{min:30000,max:48000,moneda:'COP'}, vacuna:{min:15000,max:32000,moneda:'COP'}, cirugia:{min:100000,max:280000,moneda:'COP'} },
     calificacion: 4.0, numeroReseñas: 35, verificada: false
+  },
+  {
+    id: 'vet_bga_005', nombre: 'Hospital Veterinario Cañaveral', ciudad: 'Bucaramanga', barrio: 'Cañaveral', pais: 'Colombia',
+    direccion: 'Carrera 28 #30-15', coordenadas: { lat: 7.1095, lng: -73.1045 },
+    telefono: '+577 6412345', whatsapp: '+573211234567', email: 'info@vetcanaveral.co', website: 'www.vetcanaveral.co',
+    horarios: { lunes:'7:00 AM - 8:00 PM', martes:'7:00 AM - 8:00 PM', miercoles:'7:00 AM - 8:00 PM', jueves:'7:00 AM - 8:00 PM', viernes:'7:00 AM - 8:00 PM', sabado:'8:00 AM - 4:00 PM', domingo:'9:00 AM - 1:00 PM' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía','Ortopedia','Cardiología'], especies: ['perros','gatos'],
+    servicios: ['Consulta','Vacunación','Cirugía','Laboratorio','Hospitalización','Radiología','Ecografía','Grooming'],
+    rangoPrecios: { consultaGeneral:{min:50000,max:78000,moneda:'COP'}, vacuna:{min:25000,max:48000,moneda:'COP'}, cirugia:{min:200000,max:550000,moneda:'COP'} },
+    calificacion: 4.5, numeroReseñas: 98, verificada: true
+  },
+  {
+    id: 'vet_bga_006', nombre: 'Clínica Veterinaria Provenza', ciudad: 'Bucaramanga', barrio: 'Provenza', pais: 'Colombia',
+    direccion: 'Carrera 35 #42-18', coordenadas: { lat: 7.1155, lng: -73.1230 },
+    telefono: '+577 6527890', whatsapp: '+573222345678', email: 'provenza@vetclinica.co', website: '',
+    horarios: { lunes:'8:00 AM - 6:00 PM', martes:'8:00 AM - 6:00 PM', miercoles:'8:00 AM - 6:00 PM', jueves:'8:00 AM - 6:00 PM', viernes:'8:00 AM - 6:00 PM', sabado:'8:00 AM - 2:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Dermatología','Odontología'], especies: ['perros','gatos','aves'],
+    servicios: ['Consulta','Vacunación','Cirugía menor','Laboratorio','Grooming','Baño medicado'],
+    rangoPrecios: { consultaGeneral:{min:38000,max:60000,moneda:'COP'}, vacuna:{min:18000,max:40000,moneda:'COP'}, cirugia:{min:140000,max:380000,moneda:'COP'} },
+    calificacion: 4.2, numeroReseñas: 47, verificada: true
+  },
+  {
+    id: 'vet_bga_007', nombre: 'Animal Planet Vet 24H', ciudad: 'Bucaramanga', barrio: 'Lagos del Cacique', pais: 'Colombia',
+    direccion: 'Calle 47 #35-60', coordenadas: { lat: 7.1088, lng: -73.1278 },
+    telefono: '+577 6678432', whatsapp: '+573233456789', email: 'emergencias@animalplanetvet.co', website: 'www.animalplanetvet.co',
+    horarios: { lunes:'24 horas', martes:'24 horas', miercoles:'24 horas', jueves:'24 horas', viernes:'24 horas', sabado:'24 horas', domingo:'24 horas' },
+    emergencia24h: true, especialidades: ['Emergencias','Medicina interna','Cirugía','UCI','Cardiología'], especies: ['perros','gatos'],
+    servicios: ['Consulta','Emergencias 24/7','Cirugía','UCI','Laboratorio','Hospitalización','Radiología','Ecografía'],
+    rangoPrecios: { consultaGeneral:{min:55000,max:85000,moneda:'COP'}, vacuna:{min:28000,max:50000,moneda:'COP'}, cirugia:{min:250000,max:700000,moneda:'COP'} },
+    calificacion: 4.6, numeroReseñas: 145, verificada: true
+  },
+  {
+    id: 'vet_bga_008', nombre: 'Veterinaria San Alonso', ciudad: 'Bucaramanga', barrio: 'San Alonso', pais: 'Colombia',
+    direccion: 'Calle 52 #25-40', coordenadas: { lat: 7.1220, lng: -73.1178 },
+    telefono: '+577 6345912', whatsapp: '+573244567890', email: 'sanalonso@vet.co', website: '',
+    horarios: { lunes:'7:30 AM - 6:00 PM', martes:'7:30 AM - 6:00 PM', miercoles:'7:30 AM - 6:00 PM', jueves:'7:30 AM - 6:00 PM', viernes:'7:30 AM - 6:00 PM', sabado:'8:00 AM - 1:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía','Nutrición animal'], especies: ['perros','gatos'],
+    servicios: ['Consulta','Vacunación','Cirugía','Desparasitación','Nutrición','Grooming'],
+    rangoPrecios: { consultaGeneral:{min:35000,max:55000,moneda:'COP'}, vacuna:{min:16000,max:35000,moneda:'COP'}, cirugia:{min:120000,max:320000,moneda:'COP'} },
+    calificacion: 4.1, numeroReseñas: 39, verificada: true
+  },
+  {
+    id: 'vet_bga_009', nombre: 'Clínica Felina Santander', ciudad: 'Bucaramanga', barrio: 'Cabecera', pais: 'Colombia',
+    direccion: 'Carrera 36 #51-22', coordenadas: { lat: 7.1202, lng: -73.1215 },
+    telefono: '+577 6432178', whatsapp: '+573255678901', email: 'felinasantander@vet.co', website: 'www.felinasantander.co',
+    horarios: { lunes:'9:00 AM - 6:00 PM', martes:'9:00 AM - 6:00 PM', miercoles:'9:00 AM - 6:00 PM', jueves:'9:00 AM - 6:00 PM', viernes:'9:00 AM - 6:00 PM', sabado:'9:00 AM - 2:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina felina','Cirugía felina','Odontología felina','Comportamiento felino'], especies: ['gatos'],
+    servicios: ['Consulta felina','Vacunación','Cirugía','Laboratorio','Hospitalización felina','Grooming felino'],
+    rangoPrecios: { consultaGeneral:{min:45000,max:70000,moneda:'COP'}, vacuna:{min:22000,max:45000,moneda:'COP'}, cirugia:{min:180000,max:500000,moneda:'COP'} },
+    calificacion: 4.5, numeroReseñas: 62, verificada: true
+  },
+  {
+    id: 'vet_bga_010', nombre: 'VetPiedecuesta Centro', ciudad: 'Bucaramanga', barrio: 'Piedecuesta', pais: 'Colombia',
+    direccion: 'Carrera 8 #6-32', coordenadas: { lat: 7.0102, lng: -73.0498 },
+    telefono: '+577 6567843', whatsapp: '+573266789012', email: 'piedecuesta@vetcentro.co', website: '',
+    horarios: { lunes:'7:00 AM - 6:00 PM', martes:'7:00 AM - 6:00 PM', miercoles:'7:00 AM - 6:00 PM', jueves:'7:00 AM - 6:00 PM', viernes:'7:00 AM - 6:00 PM', sabado:'7:00 AM - 1:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía'], especies: ['perros','gatos'],
+    servicios: ['Consulta','Vacunación','Cirugía','Desparasitación','Grooming'],
+    rangoPrecios: { consultaGeneral:{min:28000,max:45000,moneda:'COP'}, vacuna:{min:14000,max:30000,moneda:'COP'}, cirugia:{min:100000,max:260000,moneda:'COP'} },
+    calificacion: 4.0, numeroReseñas: 28, verificada: false
+  },
+  {
+    id: 'vet_bga_011', nombre: 'Girón Vet Clínica', ciudad: 'Bucaramanga', barrio: 'Girón', pais: 'Colombia',
+    direccion: 'Calle 30 #25-15', coordenadas: { lat: 7.0685, lng: -73.1705 },
+    telefono: '+577 6461234', whatsapp: '+573277890123', email: 'giron@vetclinica.co', website: '',
+    horarios: { lunes:'7:30 AM - 6:00 PM', martes:'7:30 AM - 6:00 PM', miercoles:'7:30 AM - 6:00 PM', jueves:'7:30 AM - 6:00 PM', viernes:'7:30 AM - 6:00 PM', sabado:'8:00 AM - 2:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía','Odontología'], especies: ['perros','gatos','aves'],
+    servicios: ['Consulta','Vacunación','Cirugía','Desparasitación','Grooming','Tienda'],
+    rangoPrecios: { consultaGeneral:{min:30000,max:48000,moneda:'COP'}, vacuna:{min:15000,max:32000,moneda:'COP'}, cirugia:{min:110000,max:280000,moneda:'COP'} },
+    calificacion: 4.1, numeroReseñas: 32, verificada: true
+  },
+  {
+    id: 'vet_bga_012', nombre: 'Hospital Veterinario UIS', ciudad: 'Bucaramanga', barrio: 'Ciudad Universitaria', pais: 'Colombia',
+    direccion: 'Carrera 27 Calle 9 Campus UIS', coordenadas: { lat: 7.1398, lng: -73.1207 },
+    telefono: '+577 6344000', whatsapp: '+573288901234', email: 'clinicavet@uis.edu.co', website: 'www.uis.edu.co',
+    horarios: { lunes:'7:00 AM - 5:00 PM', martes:'7:00 AM - 5:00 PM', miercoles:'7:00 AM - 5:00 PM', jueves:'7:00 AM - 5:00 PM', viernes:'7:00 AM - 5:00 PM', sabado:'Cerrado', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía','Oncología','Medicina exótica','Laboratorio clínico'], especies: ['perros','gatos','aves','reptiles','equinos'],
+    servicios: ['Consulta','Cirugía','Laboratorio','Hospitalización','Radiología','Ecografía','Docencia'],
+    rangoPrecios: { consultaGeneral:{min:20000,max:40000,moneda:'COP'}, vacuna:{min:12000,max:28000,moneda:'COP'}, cirugia:{min:80000,max:350000,moneda:'COP'} },
+    calificacion: 4.4, numeroReseñas: 112, verificada: true
+  },
+  {
+    id: 'vet_bga_013', nombre: 'Mundo Animal Veterinaria', ciudad: 'Bucaramanga', barrio: 'Cañaveral', pais: 'Colombia',
+    direccion: 'Calle 32 #31-42 Local 3', coordenadas: { lat: 7.1078, lng: -73.1058 },
+    telefono: '+577 6589012', whatsapp: '+573299012345', email: 'mundo.animal@vet.co', website: 'www.mundoanimalvet.co',
+    horarios: { lunes:'8:00 AM - 7:00 PM', martes:'8:00 AM - 7:00 PM', miercoles:'8:00 AM - 7:00 PM', jueves:'8:00 AM - 7:00 PM', viernes:'8:00 AM - 7:00 PM', sabado:'8:00 AM - 4:00 PM', domingo:'9:00 AM - 12:00 PM' },
+    emergencia24h: false, especialidades: ['Medicina general','Dermatología','Rehabilitación','Ecografía'], especies: ['perros','gatos','conejos'],
+    servicios: ['Consulta','Vacunación','Cirugía','Laboratorio','Rehabilitación','Grooming','Tienda','Pensión'],
+    rangoPrecios: { consultaGeneral:{min:40000,max:62000,moneda:'COP'}, vacuna:{min:20000,max:42000,moneda:'COP'}, cirugia:{min:150000,max:400000,moneda:'COP'} },
+    calificacion: 4.3, numeroReseñas: 75, verificada: true
+  },
+  {
+    id: 'vet_bga_014', nombre: 'PetVet Cabecera del Llano', ciudad: 'Bucaramanga', barrio: 'Cabecera del Llano', pais: 'Colombia',
+    direccion: 'Carrera 38 #46-55', coordenadas: { lat: 7.1165, lng: -73.1252 },
+    telefono: '+577 6478523', whatsapp: '+573210123456', email: 'cabecera@petvet.co', website: 'www.petvet.co',
+    horarios: { lunes:'8:00 AM - 7:00 PM', martes:'8:00 AM - 7:00 PM', miercoles:'8:00 AM - 7:00 PM', jueves:'8:00 AM - 7:00 PM', viernes:'8:00 AM - 7:00 PM', sabado:'9:00 AM - 3:00 PM', domingo:'Cerrado' },
+    emergencia24h: false, especialidades: ['Medicina general','Cirugía','Odontología','Nutrición'], especies: ['perros','gatos'],
+    servicios: ['Consulta','Vacunación','Cirugía','Laboratorio','Grooming','Nutrición','Spa canino'],
+    rangoPrecios: { consultaGeneral:{min:42000,max:65000,moneda:'COP'}, vacuna:{min:20000,max:42000,moneda:'COP'}, cirugia:{min:160000,max:420000,moneda:'COP'} },
+    calificacion: 4.4, numeroReseñas: 68, verificada: true
   }
 ];
 

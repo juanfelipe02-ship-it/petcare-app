@@ -64,6 +64,7 @@
       <li><a href="#" class="nav-link" data-section="recordatorios"><i class="fas fa-bell"></i> Recordatorios</a></li>
       <li><a href="#" class="nav-link" data-section="calendario"><i class="fas fa-calendar-alt"></i> Calendario Vet</a></li>
       <li><a href="#" class="nav-link" data-section="veterinarias"><i class="fas fa-map-marker-alt"></i> Veterinarias</a></li>
+      <li><a href="#" class="nav-link" data-section="checklists"><i class="fas fa-tasks"></i> Checklists</a></li>
       <li><a href="#" class="nav-link" data-section="referencias"><i class="fas fa-book-medical"></i> Referencias</a></li>
       <li><a href="#" class="nav-link" data-section="ajustes"><i class="fas fa-cog"></i> Ajustes</a></li>
     </ul>
@@ -434,25 +435,13 @@
                   <label for="exam-results">Resultados principales *</label>
                   <textarea id="exam-results" rows="3" required placeholder="Describe los resultados..."></textarea>
                 </div>
-                <div class="form-group">
-                  <label for="exam-hemoglobina">Hemoglobina (g/dL)</label>
-                  <input type="number" id="exam-hemoglobina" step="0.1" min="0" placeholder="Opcional">
-                </div>
-                <div class="form-group">
-                  <label for="exam-glucosa">Glucosa (mg/dL)</label>
-                  <input type="number" id="exam-glucosa" step="0.1" min="0" placeholder="Opcional">
-                </div>
-                <div class="form-group">
-                  <label for="exam-creatinina">Creatinina (mg/dL)</label>
-                  <input type="number" id="exam-creatinina" step="0.1" min="0" placeholder="Opcional">
-                </div>
-                <div class="form-group">
-                  <label for="exam-alt">ALT (U/L)</label>
-                  <input type="number" id="exam-alt" step="0.1" min="0" placeholder="Opcional">
-                </div>
-                <div class="form-group">
-                  <label for="exam-proteinas">Proteínas totales (g/dL)</label>
-                  <input type="number" id="exam-proteinas" step="0.1" min="0" placeholder="Opcional">
+                <!-- Valores extraídos dinámicamente del PDF o agregados manualmente -->
+                <div class="form-group full-width" id="exam-extracted-container">
+                  <label><i class="fas fa-vials"></i> Valores del examen</label>
+                  <div id="exam-extracted-values"></div>
+                  <button type="button" class="btn btn-outline btn-sm" onclick="agregarParametroManual()" style="margin-top:8px">
+                    <i class="fas fa-plus"></i> Agregar parámetro manualmente
+                  </button>
                 </div>
                 <div class="form-group full-width">
                   <label for="exam-observations">Observaciones del veterinario</label>
@@ -600,6 +589,17 @@
           </div>
         </div>
 
+        <!-- Consejos de salud digestiva -->
+        <div class="card education-tips-card" style="margin-top:1rem">
+          <div class="card-header" style="cursor:pointer" onclick="this.parentElement.classList.toggle('collapsed')">
+            <h3><i class="fas fa-lightbulb"></i> Consejos de Salud Digestiva</h3>
+            <i class="fas fa-chevron-down education-toggle"></i>
+          </div>
+          <div class="card-body" id="education-tips">
+            <p class="empty-list">Cargando consejos...</p>
+          </div>
+        </div>
+
         <!-- Breed info card (aparece al registrar) -->
         <div id="breed-info-popup" class="card card-breed-info hidden" style="margin-top:1rem">
           <div class="card-header"><h3><i class="fas fa-info-circle"></i> <span id="breed-info-title">Info de Raza</span></h3></div>
@@ -624,7 +624,15 @@
                   <option value="350">Croquetas estándar (~350 kcal/100g)</option>
                   <option value="380">Croquetas premium (~380 kcal/100g)</option>
                   <option value="300">Croquetas light (~300 kcal/100g)</option>
-                  <option value="85">Alimento húmedo (~85 kcal/100g)</option>
+                  <option value="400">Croquetas cachorro (~400 kcal/100g)</option>
+                  <option value="320">Croquetas senior (~320 kcal/100g)</option>
+                  <option value="85">Alimento húmedo estándar (~85 kcal/100g)</option>
+                  <option value="100">Alimento húmedo premium (~100 kcal/100g)</option>
+                  <option value="165">Pollo cocido (~165 kcal/100g)</option>
+                  <option value="250">Res cocida (~250 kcal/100g)</option>
+                  <option value="135">Pavo cocido (~135 kcal/100g)</option>
+                  <option value="150">BARF dieta cruda (~150 kcal/100g)</option>
+                  <option value="130">Arroz cocido (~130 kcal/100g)</option>
                 </select>
               </div>
               <div class="portion-result">
@@ -663,6 +671,11 @@
                 <div class="form-group">
                   <label for="meal-food-type">Tipo de alimento</label>
                   <select id="meal-food-type" required></select>
+                </div>
+                <div class="form-group hidden" id="custom-kcal-group">
+                  <label for="meal-custom-kcal">Calorías por 100g (kcal)</label>
+                  <input type="number" id="meal-custom-kcal" min="1" max="900" step="1" placeholder="Ej: 250">
+                  <small style="color:var(--text-secondary)">Ingresa las calorías por cada 100g del alimento</small>
                 </div>
                 <div class="form-group">
                   <label for="meal-brand">Marca</label>
@@ -786,6 +799,14 @@
           <div class="card full-width">
             <div class="card-header"><h3><i class="fas fa-brain"></i> Análisis Inteligente de Peso</h3></div>
             <div class="card-body" id="weight-analysis"></div>
+          </div>
+
+          <!-- Tabla peso por edad -->
+          <div class="card full-width" id="weight-age-table-card">
+            <div class="card-header"><h3><i class="fas fa-table"></i> Peso Esperado por Edad (Raza)</h3></div>
+            <div class="card-body" id="weight-age-table">
+              <p class="empty-list">Cargando tabla de peso por edad...</p>
+            </div>
           </div>
 
           <!-- Gráfico semanal calorías -->
@@ -1066,6 +1087,18 @@
             <li class="empty-list">No tienes veterinarias favoritas</li>
           </ul>
         </div>
+      </div>
+    </section>
+
+    <!-- ==================== CHECKLISTS ==================== -->
+    <section id="section-checklists" class="section">
+      <h2 class="section-title"><i class="fas fa-tasks"></i> Checklists</h2>
+      <div id="checklists-no-pet" class="empty-state">
+        <i class="fas fa-paw empty-icon"></i>
+        <p>Registra una mascota primero</p>
+      </div>
+      <div id="checklists-content" class="hidden">
+        <div id="checklists-grid" class="checklists-grid"></div>
       </div>
     </section>
 

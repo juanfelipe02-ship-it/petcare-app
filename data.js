@@ -132,23 +132,7 @@ const TIPOS_EXAMEN = [
   'Otro'
 ];
 
-// Valores de referencia para exámenes (rangos normales)
-const VALORES_REFERENCIA = {
-  perro: {
-    hemoglobina: { min: 12, max: 18, unidad: 'g/dL', nombre: 'Hemoglobina' },
-    glucosa: { min: 74, max: 143, unidad: 'mg/dL', nombre: 'Glucosa' },
-    creatinina: { min: 0.5, max: 1.8, unidad: 'mg/dL', nombre: 'Creatinina' },
-    alt: { min: 10, max: 125, unidad: 'U/L', nombre: 'ALT (Alanina aminotransferasa)' },
-    proteinas: { min: 5.2, max: 8.2, unidad: 'g/dL', nombre: 'Proteínas totales' }
-  },
-  gato: {
-    hemoglobina: { min: 8, max: 15, unidad: 'g/dL', nombre: 'Hemoglobina' },
-    glucosa: { min: 74, max: 159, unidad: 'mg/dL', nombre: 'Glucosa' },
-    creatinina: { min: 0.8, max: 2.4, unidad: 'mg/dL', nombre: 'Creatinina' },
-    alt: { min: 12, max: 130, unidad: 'U/L', nombre: 'ALT (Alanina aminotransferasa)' },
-    proteinas: { min: 5.7, max: 8.9, unidad: 'g/dL', nombre: 'Proteínas totales' }
-  }
-};
+// VALORES_REFERENCIA eliminado — ahora se usa RANGOS_REFERENCIA de exam-reference-ranges.js
 
 // Consejos del día aleatorios
 const CONSEJOS_DIA = [
@@ -210,6 +194,21 @@ const ALIMENTOS_CALORIAS = {
   'Hígado de res cocido': 191,
   'Pescado cocido': 120,
   'Huevo cocido': 155,
+  'Res cocida': 250,
+  'Cerdo cocido': 242,
+  'Pavo cocido': 135,
+  'Atún enlatado': 116,
+  'Sardina enlatada': 208,
+  'Carne molida cocida': 232,
+  'Batata/camote cocido': 86,
+  'Brócoli cocido': 35,
+  'Manzana': 52,
+  'Plátano/banano': 89,
+  'BARF (dieta cruda mixta)': 150,
+  'Yogur natural': 59,
+  'Queso cottage': 98,
+  'Avena cocida': 71,
+  'Pasta cocida': 131,
   'Otro': 0
 };
 
@@ -640,4 +639,58 @@ const TIMELINE_VIDA = {
     { edadMeses: 84, etapa: 'Senior', kcalFactor: 1.2, proteinaPct: 38, nota: 'Más proteína para preservar músculo' },
     { edadMeses: 132, etapa: 'Geriátrico', kcalFactor: 1.1, proteinaPct: 40, nota: 'Prevenir sarcopenia, monitorear riñones' }
   ]
+};
+
+// ============================================================
+// CHECKLISTS PREDEFINIDAS
+// ============================================================
+const CHECKLIST_TEMPLATES = {
+  paseo: {
+    nombre: 'Paseo',
+    icono: 'fa-walking',
+    items: {
+      perro: ['Collar con identificación', 'Correa resistente', 'Bolsas para recoger heces', 'Botella de agua', 'Treats/premios', 'Placa de identificación', 'Luz reflectante (paseo nocturno)', 'Toalla para limpiar patas'],
+      gato: ['Arnés para gato', 'Correa elástica', 'Carrier de respaldo', 'Bolsas', 'Agua', 'Treats', 'Placa de identificación', 'Toalla']
+    }
+  },
+  viaje: {
+    nombre: 'Viaje',
+    icono: 'fa-car',
+    items: {
+      perro: ['Carrier o jaula de transporte', 'Agua y recipiente', 'Comida suficiente para el viaje', 'Certificado de salud vigente', 'Carné de vacunas', 'Medicamentos (si aplica)', 'Juguete favorito', 'Manta o cobija', 'Bolsas para desechos', 'Correa y collar extra'],
+      gato: ['Carrier seguro', 'Agua y recipiente', 'Comida y plato', 'Certificado de salud vigente', 'Carné de vacunas', 'Medicamentos (si aplica)', 'Juguete familiar', 'Manta con su olor', 'Arena portátil y pala', 'Bolsas']
+    }
+  },
+  dejarsola: {
+    nombre: 'Dejar en casa',
+    icono: 'fa-home',
+    items: {
+      perro: ['Agua suficiente para el tiempo de ausencia', 'Comida servida o programada', 'Lugar seguro y cómodo', 'Temperatura adecuada (ventilación/calefacción)', 'Juguetes interactivos', 'Verificar que no haya peligros accesibles', 'Paseo previo a la salida', 'Música relajante (opcional)'],
+      gato: ['Agua fresca suficiente', 'Comida servida', 'Arenero limpio', 'Ventanas y balcones seguros', 'Temperatura adecuada', 'Juguetes disponibles', 'Verificar que no haya plantas tóxicas accesibles', 'Rascador disponible']
+    }
+  },
+  emergencia: {
+    nombre: 'Emergencia',
+    icono: 'fa-first-aid',
+    items: {
+      perro: ['Números de emergencia veterinaria', 'Botiquín básico (gasas, antiséptico, vendas)', 'Historial médico impreso o digital', 'Carné de vacunas actualizado', 'Lista de medicamentos actuales', 'Foto reciente de la mascota', 'Datos del microchip', 'Carrier de emergencia'],
+      gato: ['Números de emergencia veterinaria', 'Botiquín básico (gasas, antiséptico, vendas)', 'Historial médico impreso o digital', 'Carné de vacunas actualizado', 'Lista de medicamentos actuales', 'Foto reciente de la mascota', 'Datos del microchip', 'Carrier de emergencia']
+    }
+  },
+  grooming: {
+    nombre: 'Grooming',
+    icono: 'fa-shower',
+    items: {
+      perro: ['Shampoo apropiado para su pelaje', 'Toallas absorbentes', 'Cepillo adecuado para su raza', 'Cortauñas para perro', 'Limpiador de oídos', 'Secador (temperatura baja)', 'Algodón para oídos', 'Premios post-baño'],
+      gato: ['Shampoo para gatos (sin perfume fuerte)', 'Toallas absorbentes', 'Cepillo suave / guante de grooming', 'Cortauñas para gato', 'Limpiador de oídos felino', 'Algodón para oídos', 'Treats post-grooming', 'Ambiente tranquilo']
+    }
+  },
+  veterinario: {
+    nombre: 'Visita al veterinario',
+    icono: 'fa-stethoscope',
+    items: {
+      perro: ['Historial médico completo', 'Carné de vacunas', 'Lista de síntomas o cambios observados', 'Muestras (si el vet las solicitó)', 'Carrier o correa firme', 'Treats para reducir estrés', 'Lista de preguntas para el veterinario', 'Resultados de exámenes previos'],
+      gato: ['Historial médico completo', 'Carné de vacunas', 'Lista de síntomas o cambios observados', 'Muestras (si el vet las solicitó)', 'Carrier con manta familiar', 'Treats para reducir estrés', 'Lista de preguntas para el veterinario', 'Spray de feromonas (opcional)']
+    }
+  }
 };
