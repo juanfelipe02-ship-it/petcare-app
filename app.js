@@ -2708,6 +2708,11 @@ function renderizarChecklists() {
   const especie = pet.especie || 'perro';
   const checklistState = estado.checklists[pet.id] || {};
 
+  const tiemposEstimados = {
+    paseo: '~30 min', viaje: '~30 min', dejarsola: '~15 min',
+    emergencia: '~1 hora', grooming: '~45 min', veterinario: '~15 min'
+  };
+
   let html = '';
   Object.keys(CHECKLIST_TEMPLATES).forEach(key => {
     const tmpl = CHECKLIST_TEMPLATES[key];
@@ -2716,12 +2721,58 @@ function renderizarChecklists() {
     const completados = checked.filter(Boolean).length;
     const total = items.length;
     const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
+    const tieneProgreso = completados > 0;
 
     html += `
-      <div class="checklist-card card">
+      <div class="checklist-selector-card card" onclick="mostrarChecklist('${key}')">
+        <div class="checklist-selector-icon">
+          <i class="fas ${tmpl.icono}"></i>
+        </div>
+        <h3 class="checklist-selector-name">${tmpl.nombre}</h3>
+        <div class="checklist-selector-meta">
+          <span><i class="fas fa-tasks"></i> ${total} tareas</span>
+          <span><i class="fas fa-clock"></i> ${tiemposEstimados[key] || ''}</span>
+        </div>
+        ${tieneProgreso ? `
+          <div class="checklist-progress" style="margin-top:0.5rem">
+            <div class="progress-bar-container">
+              <div class="progress-fill" style="width:${pct}%;background:${pct === 100 ? 'var(--success)' : 'var(--primary)'}"></div>
+            </div>
+            <span class="checklist-progress-text">${completados}/${total}${pct === 100 ? ' ✓' : ''}</span>
+          </div>
+        ` : ''}
+      </div>`;
+  });
+
+  grid.innerHTML = html;
+}
+
+function mostrarChecklist(key) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+
+  const grid = document.getElementById('checklists-grid');
+  if (!grid) return;
+
+  const especie = pet.especie || 'perro';
+  const tmpl = CHECKLIST_TEMPLATES[key];
+  if (!tmpl) return;
+
+  const items = tmpl.items[especie] || tmpl.items.perro;
+  const checklistState = estado.checklists[pet.id] || {};
+  const checked = checklistState[key] || new Array(items.length).fill(false);
+  const completados = checked.filter(Boolean).length;
+  const total = items.length;
+  const pct = total > 0 ? Math.round((completados / total) * 100) : 0;
+
+  grid.innerHTML = `
+    <div class="checklist-detail-wrapper">
+      <button class="btn btn-outline checklist-back-btn" onclick="renderizarChecklists()">
+        <i class="fas fa-arrow-left"></i> Volver a checklists
+      </button>
+      <div class="checklist-detail-card card">
         <div class="card-header" style="display:flex;justify-content:space-between;align-items:center">
           <h3><i class="fas ${tmpl.icono}"></i> ${tmpl.nombre}</h3>
-          <button class="btn btn-sm btn-outline" onclick="resetChecklist('${key}')" title="Reiniciar"><i class="fas fa-redo"></i></button>
         </div>
         <div class="card-body">
           <div class="checklist-progress">
@@ -2740,11 +2791,12 @@ function renderizarChecklists() {
               </li>
             `).join('')}
           </ul>
+          <button class="btn btn-outline btn-sm" style="margin-top:1rem" onclick="resetChecklist('${key}')" title="Reiniciar">
+            <i class="fas fa-redo"></i> Reiniciar checklist
+          </button>
         </div>
-      </div>`;
-  });
-
-  grid.innerHTML = html;
+      </div>
+    </div>`;
 }
 
 async function toggleChecklistItem(key, index, checked) {
@@ -2761,7 +2813,7 @@ async function toggleChecklistItem(key, index, checked) {
   }
   estado.checklists[pet.id][key][index] = checked;
   await guardarDatos();
-  renderizarChecklists();
+  mostrarChecklist(key);
 }
 
 async function resetChecklist(key) {
@@ -2774,7 +2826,7 @@ async function resetChecklist(key) {
   const items = tmpl.items[especie] || tmpl.items.perro;
   estado.checklists[pet.id][key] = new Array(items.length).fill(false);
   await guardarDatos();
-  renderizarChecklists();
+  mostrarChecklist(key);
 }
 
 // ==================== VETERINARIAS - DIRECTORIO LOCAL ====================
