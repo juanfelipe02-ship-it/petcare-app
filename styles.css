@@ -892,6 +892,22 @@ body {
 }
 .switch input:checked + .slider { background: var(--primary); }
 .switch input:checked + .slider::before { transform: translateX(22px); }
+.setting-item select {
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+}
+
+/* ==================== MI CUENTA ==================== */
+.cuenta-user-info { display: flex; align-items: center; gap: 1rem; }
+.cuenta-avatar { font-size: 3rem; color: var(--primary); }
+.cuenta-details { flex: 1; }
+.cuenta-name { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.25rem; }
+.cuenta-email, .cuenta-since { font-size: 0.85rem; color: var(--text-secondary); margin: 0.15rem 0; }
+.cuenta-email i, .cuenta-since i { margin-right: 0.4rem; width: 1rem; text-align: center; }
 
 /* ==================== FAB ==================== */
 .fab {
@@ -1318,6 +1334,18 @@ body {
   position: relative;
 }
 .food-rec-card:hover { box-shadow: var(--shadow-sm); }
+.food-rec-best { border-color: var(--primary); border-width: 2px; }
+.food-rec-best-badge {
+  position: absolute;
+  top: -10px;
+  left: 1rem;
+  background: var(--primary);
+  color: white;
+  padding: 0.2rem 0.75rem;
+  border-radius: 12px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
 .food-rec-card .food-score {
   position: absolute;
   top: 0.75rem;
@@ -1333,33 +1361,51 @@ body {
   font-weight: 700;
   font-size: 0.85rem;
 }
-.food-rec-card h4 { font-size: 0.95rem; padding-right: 3rem; }
-.food-rec-card .food-brand { font-size: 0.8rem; color: var(--text-secondary); }
-.food-rec-card .food-macros {
+.food-rec-header { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 0.75rem; }
+.food-rec-rank { font-size: 1.2rem; font-weight: 700; color: var(--primary); min-width: 2rem; }
+.food-rec-info { flex: 1; }
+.food-rec-info h4 { font-size: 0.95rem; margin: 0; }
+.food-rec-info small { color: var(--text-secondary); font-size: 0.78rem; }
+.food-rec-score {
+  background: var(--primary);
+  color: white;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
   display: flex;
-  gap: 0.5rem;
-  margin-top: 0.5rem;
-  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.78rem;
+  flex-shrink: 0;
 }
-.food-rec-card .food-macro-badge {
-  padding: 0.2rem 0.5rem;
+.food-rec-macros { display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.macro-badge {
+  padding: 0.2rem 0.6rem;
   border-radius: 12px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 500;
   background: var(--bg-primary);
 }
-.food-rec-card .food-portions {
-  margin-top: 0.5rem;
-  font-size: 0.8rem;
-  color: var(--text-secondary);
-  line-height: 1.6;
-}
-.food-rec-card .food-price {
-  margin-top: 0.5rem;
-  font-size: 0.85rem;
-  font-weight: 600;
-  color: var(--success-dark);
-}
+.macro-badge.prot { background: rgba(76,175,80,0.15); color: #2e7d32; }
+.macro-badge.fat { background: rgba(255,152,0,0.15); color: #e65100; }
+.macro-badge.carb { background: rgba(33,150,243,0.15); color: #1565c0; }
+.food-rec-price { margin-top: 0.75rem; font-size: 0.9rem; }
+.food-rec-price strong { color: var(--text-primary); }
+.food-rec-price small { color: var(--text-secondary); margin-left: 0.25rem; }
+.food-rec-reasons { margin-top: 0.75rem; }
+.food-rec-reasons h5 { font-size: 0.82rem; margin: 0 0 0.4rem; color: var(--text-secondary); }
+.food-rec-reasons ul { list-style: none; padding: 0; margin: 0; }
+.food-rec-reasons li { font-size: 0.82rem; padding: 0.15rem 0; display: flex; align-items: center; gap: 0.4rem; }
+.food-rec-portions { margin-top: 0.75rem; }
+.food-rec-portions h5 { font-size: 0.82rem; margin: 0 0 0.5rem; }
+.portions-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.5rem; text-align: center; }
+.portions-grid div { background: var(--bg-primary); border-radius: 8px; padding: 0.5rem 0.25rem; }
+.portions-grid strong { display: block; font-size: 1rem; color: var(--primary); }
+.portions-grid small { font-size: 0.7rem; color: var(--text-secondary); }
+.portions-cost { font-size: 0.82rem; color: var(--text-secondary); margin-top: 0.5rem; }
+.food-rec-actions { margin-top: 0.75rem; display: flex; gap: 0.5rem; flex-wrap: wrap; }
+.food-rec-title { margin-bottom: 1rem; }
 @media (min-width: 600px) {
   .food-rec-grid { grid-template-columns: 1fr 1fr; }
 }

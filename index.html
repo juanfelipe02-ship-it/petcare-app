@@ -67,6 +67,7 @@
       <li><a href="#" class="nav-link" data-section="checklists"><i class="fas fa-tasks"></i> Checklists</a></li>
       <li><a href="#" class="nav-link" data-section="referencias"><i class="fas fa-book-medical"></i> Referencias</a></li>
       <li><a href="#" class="nav-link" data-section="ajustes"><i class="fas fa-cog"></i> Ajustes</a></li>
+      <li><a href="#" class="nav-link" data-section="cuenta"><i class="fas fa-user-circle"></i> Mi Cuenta</a></li>
     </ul>
     <div class="sidebar-footer">
       <small>PetCare Pro v3.0</small>
@@ -1108,7 +1109,64 @@
 
       <div class="settings-grid">
         <div class="card">
-          <div class="card-header"><h3><i class="fas fa-database"></i> Datos</h3></div>
+          <div class="card-header"><h3><i class="fas fa-palette"></i> Apariencia</h3></div>
+          <div class="card-body">
+            <div class="setting-item">
+              <span>Modo oscuro</span>
+              <label class="switch">
+                <input type="checkbox" id="dark-mode-toggle">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <span>Tamaño de fuente</span>
+              <select id="font-size-select" onchange="cambiarTamanoFuente(this.value)">
+                <option value="small">Pequeño</option>
+                <option value="normal" selected>Normal</option>
+                <option value="large">Grande</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-bell"></i> Notificaciones</h3></div>
+          <div class="card-body">
+            <div class="setting-item">
+              <span>Recordatorios</span>
+              <label class="switch">
+                <input type="checkbox" id="notif-reminders-toggle" checked onchange="toggleNotificaciones('recordatorios', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+            <div class="setting-item">
+              <span>Alertas de exámenes</span>
+              <label class="switch">
+                <input type="checkbox" id="notif-exams-toggle" checked onchange="toggleNotificaciones('examenes', this.checked)">
+                <span class="slider"></span>
+              </label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== MI CUENTA ==================== -->
+    <section id="section-cuenta" class="section">
+      <h2 class="section-title"><i class="fas fa-user-circle"></i> Mi Cuenta</h2>
+
+      <div class="settings-grid">
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-id-card"></i> Información</h3></div>
+          <div class="card-body">
+            <div id="cuenta-info">
+              <p class="empty-list">Cargando información...</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-database"></i> Mis Datos</h3></div>
           <div class="card-body">
             <div class="settings-actions">
               <button class="btn btn-primary btn-block" onclick="exportarDatos()">
@@ -1120,22 +1178,32 @@
                 </label>
                 <input type="file" id="import-file" accept=".json" style="display:none" onchange="importarDatos(event)">
               </div>
-              <button class="btn btn-danger btn-block" style="margin-top:1rem" onclick="limpiarTodo()">
-                <i class="fas fa-trash-alt"></i> Limpiar Todos los Datos
+            </div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h3><i class="fas fa-shield-alt"></i> Seguridad</h3></div>
+          <div class="card-body">
+            <div class="settings-actions">
+              <button class="btn btn-outline btn-block" onclick="solicitarCambioContrasena()">
+                <i class="fas fa-key"></i> Cambiar Contraseña
+              </button>
+              <button class="btn btn-outline btn-block" style="margin-top:0.75rem" onclick="cerrarSesion()">
+                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
               </button>
             </div>
           </div>
         </div>
 
         <div class="card">
-          <div class="card-header"><h3><i class="fas fa-palette"></i> Apariencia</h3></div>
+          <div class="card-header"><h3><i class="fas fa-exclamation-triangle"></i> Zona de Peligro</h3></div>
           <div class="card-body">
-            <div class="setting-item">
-              <span>Modo oscuro</span>
-              <label class="switch">
-                <input type="checkbox" id="dark-mode-toggle">
-                <span class="slider"></span>
-              </label>
+            <p style="font-size:0.85rem;color:var(--text-secondary);margin-bottom:1rem">Estas acciones no se pueden deshacer.</p>
+            <div class="settings-actions">
+              <button class="btn btn-danger btn-block" onclick="limpiarTodo()">
+                <i class="fas fa-trash-alt"></i> Eliminar Todos los Datos
+              </button>
             </div>
           </div>
         </div>

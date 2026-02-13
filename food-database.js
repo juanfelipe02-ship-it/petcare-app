@@ -9,6 +9,7 @@ const FOOD_DATABASE = {
         marca: 'Royal Canin',
         logo: 'fas fa-crown',
         lineas: {
+          starter: { nombre: 'Mother & Babydog', proteina: 34, grasa: 22, carbohidratos: 30, fibra: 2.0, kcalPorKg: 4250, precio: 105000, tamaño: 12 },
           adulto: { nombre: 'Medium Adult', proteina: 27, grasa: 14, carbohidratos: 45, fibra: 3.2, kcalPorKg: 3700, precio: 85000, tamaño: 15 },
           cachorro: { nombre: 'Medium Puppy', proteina: 32, grasa: 18, carbohidratos: 40, fibra: 2.8, kcalPorKg: 3900, precio: 95000, tamaño: 15 },
           senior: { nombre: 'Medium Aging 10+', proteina: 24, grasa: 12, carbohidratos: 48, fibra: 4.5, kcalPorKg: 3500, precio: 90000, tamaño: 15 },
@@ -23,6 +24,7 @@ const FOOD_DATABASE = {
           { raza: 'Chihuahua', nombre: 'Chihuahua Adult', proteina: 30, grasa: 18, carbohidratos: 38, kcalPorKg: 4000, precio: 55000, tamaño: 3, nota: 'Croqueta miniatura. Alto contenido calórico para metabolismo rápido.' }
         ],
         gatoLineas: {
+          starter: { nombre: 'Mother & Babycat', proteina: 42, grasa: 26, carbohidratos: 18, fibra: 2.0, kcalPorKg: 4300, precio: 95000, tamaño: 4 },
           adulto: { nombre: 'Indoor Adult', proteina: 35, grasa: 22, carbohidratos: 28, fibra: 5.0, kcalPorKg: 3700, precio: 85000, tamaño: 10 },
           cachorro: { nombre: 'Kitten', proteina: 40, grasa: 24, carbohidratos: 22, fibra: 3.0, kcalPorKg: 4000, precio: 88000, tamaño: 10 },
           senior: { nombre: 'Aging 12+', proteina: 33, grasa: 20, carbohidratos: 30, fibra: 4.5, kcalPorKg: 3600, precio: 90000, tamaño: 10 },
@@ -36,6 +38,7 @@ const FOOD_DATABASE = {
         marca: 'Hills Science Diet',
         logo: 'fas fa-flask',
         lineas: {
+          starter: { nombre: 'Puppy Small Bites (Starter)', proteina: 31, grasa: 20, carbohidratos: 35, fibra: 2.0, kcalPorKg: 4000, precio: 98000, tamaño: 12 },
           adulto: { nombre: 'Adult Original', proteina: 25, grasa: 15, carbohidratos: 46, fibra: 3.0, kcalPorKg: 3600, precio: 80000, tamaño: 15 },
           cachorro: { nombre: 'Puppy Large Breed', proteina: 29, grasa: 17, carbohidratos: 42, fibra: 2.5, kcalPorKg: 3700, precio: 88000, tamaño: 15 },
           senior: { nombre: 'Adult 7+', proteina: 23, grasa: 13, carbohidratos: 48, fibra: 4.0, kcalPorKg: 3400, precio: 85000, tamaño: 15 },
@@ -43,6 +46,7 @@ const FOOD_DATABASE = {
           renal: { nombre: 'k/d Kidney Care', proteina: 17, grasa: 18, carbohidratos: 50, fibra: 2.0, kcalPorKg: 3900, precio: 130000, tamaño: 8 }
         },
         gatoLineas: {
+          starter: { nombre: 'Kitten Starter (Mother & Baby)', proteina: 40, grasa: 25, carbohidratos: 22, fibra: 2.0, kcalPorKg: 4100, precio: 88000, tamaño: 3.5 },
           adulto: { nombre: 'Indoor Cat', proteina: 33, grasa: 20, carbohidratos: 32, fibra: 6.0, kcalPorKg: 3500, precio: 80000, tamaño: 7 },
           cachorro: { nombre: 'Kitten', proteina: 38, grasa: 23, carbohidratos: 25, fibra: 2.5, kcalPorKg: 3900, precio: 82000, tamaño: 7 },
           renal: { nombre: 'k/d Feline', proteina: 30, grasa: 24, carbohidratos: 32, fibra: 2.0, kcalPorKg: 3800, precio: 120000, tamaño: 4 }
@@ -55,6 +59,7 @@ const FOOD_DATABASE = {
         marca: 'Pro Plan (Purina)',
         logo: 'fas fa-shield-alt',
         lineas: {
+          starter: { nombre: 'Puppy Starter', proteina: 33, grasa: 21, carbohidratos: 32, fibra: 2.0, kcalPorKg: 4100, precio: 90000, tamaño: 12 },
           adulto: { nombre: 'OptiHealth Adult', proteina: 26, grasa: 16, carbohidratos: 44, fibra: 3.0, kcalPorKg: 3700, precio: 75000, tamaño: 15 },
           cachorro: { nombre: 'OptiStart Puppy', proteina: 30, grasa: 18, carbohidratos: 40, fibra: 2.5, kcalPorKg: 3800, precio: 82000, tamaño: 15 },
           senior: { nombre: 'OptiAge 7+', proteina: 24, grasa: 14, carbohidratos: 46, fibra: 4.0, kcalPorKg: 3500, precio: 78000, tamaño: 15 },

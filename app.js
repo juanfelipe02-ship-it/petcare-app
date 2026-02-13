@@ -97,6 +97,10 @@ function inicializarUI() {
     guardarDatos();
   });
 
+  // Tamaño de fuente y notificaciones
+  aplicarTamanoFuente();
+  aplicarNotificaciones();
+
   // Sidebar
   document.getElementById('menu-toggle').addEventListener('click', () => toggleSidebar(true));
   document.getElementById('sidebar-close').addEventListener('click', () => toggleSidebar(false));
@@ -309,6 +313,7 @@ function navegarA(seccion) {
     case 'calendario': renderizarCalendario(); break;
     case 'veterinarias': renderizarVeterinariasLocal(); renderizarFavoritos(); break;
     case 'checklists': renderizarChecklists(); break;
+    case 'cuenta': renderizarCuenta(); break;
   }
 
   window.scrollTo({ top: 0, behavior: 'smooth' });
@@ -331,6 +336,90 @@ function aplicarTema(tema) {
   const icon = document.querySelector('#theme-toggle i');
   icon.className = tema === 'dark' ? 'fas fa-sun' : 'fas fa-moon';
   document.getElementById('dark-mode-toggle').checked = tema === 'dark';
+}
+
+// ==================== TAMAÑO DE FUENTE ====================
+function cambiarTamanoFuente(size) {
+  const sizes = { small: '14px', normal: '16px', large: '18px' };
+  document.documentElement.style.fontSize = sizes[size] || sizes.normal;
+  estado.tamanoFuente = size;
+  guardarDatos();
+}
+
+function aplicarTamanoFuente() {
+  const size = estado.tamanoFuente || 'normal';
+  const sizes = { small: '14px', normal: '16px', large: '18px' };
+  document.documentElement.style.fontSize = sizes[size] || sizes.normal;
+  const select = document.getElementById('font-size-select');
+  if (select) select.value = size;
+}
+
+// ==================== NOTIFICACIONES ====================
+function toggleNotificaciones(tipo, activo) {
+  if (!estado.notificaciones) estado.notificaciones = { recordatorios: true, examenes: true };
+  estado.notificaciones[tipo] = activo;
+  guardarDatos();
+  mostrarToast(`Notificaciones de ${tipo} ${activo ? 'activadas' : 'desactivadas'}`, 'info');
+}
+
+function aplicarNotificaciones() {
+  const notif = estado.notificaciones || { recordatorios: true, examenes: true };
+  const remToggle = document.getElementById('notif-reminders-toggle');
+  const examToggle = document.getElementById('notif-exams-toggle');
+  if (remToggle) remToggle.checked = notif.recordatorios !== false;
+  if (examToggle) examToggle.checked = notif.examenes !== false;
+}
+
+// ==================== MI CUENTA ====================
+function renderizarCuenta() {
+  const container = document.getElementById('cuenta-info');
+  if (!container) return;
+
+  const user = typeof obtenerUsuarioActual === 'function' ? obtenerUsuarioActual() : null;
+  if (user) {
+    container.innerHTML = `
+      <div class="cuenta-user-info">
+        <div class="cuenta-avatar">
+          <i class="fas fa-user-circle"></i>
+        </div>
+        <div class="cuenta-details">
+          <p class="cuenta-name">${escapeHtml(user.displayName || 'Sin nombre')}</p>
+          <p class="cuenta-email"><i class="fas fa-envelope"></i> ${escapeHtml(user.email || '')}</p>
+          <p class="cuenta-since"><i class="fas fa-calendar"></i> Miembro desde ${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('es-CO') : 'N/A'}</p>
+        </div>
+      </div>
+      <div style="margin-top:1rem">
+        <p style="font-size:0.85rem;color:var(--text-secondary)">
+          <i class="fas fa-paw"></i> ${estado.mascotas.length} mascota${estado.mascotas.length !== 1 ? 's' : ''} registrada${estado.mascotas.length !== 1 ? 's' : ''}
+        </p>
+      </div>`;
+  } else {
+    container.innerHTML = `
+      <p class="empty-list"><i class="fas fa-info-circle"></i> Sesión no iniciada o modo offline.</p>
+      <div style="margin-top:1rem">
+        <p style="font-size:0.85rem;color:var(--text-secondary)">
+          <i class="fas fa-paw"></i> ${estado.mascotas.length} mascota${estado.mascotas.length !== 1 ? 's' : ''} registrada${estado.mascotas.length !== 1 ? 's' : ''}
+        </p>
+      </div>`;
+  }
+}
+
+async function solicitarCambioContrasena() {
+  const user = typeof obtenerUsuarioActual === 'function' ? obtenerUsuarioActual() : null;
+  if (!user || !user.email) {
+    mostrarToast('No se pudo obtener el correo del usuario', 'error');
+    return;
+  }
+  if (typeof recuperarContrasena === 'function') {
+    const result = await recuperarContrasena(user.email);
+    if (result.success) {
+      mostrarToast('Se envió un enlace para cambiar la contraseña a tu correo', 'success');
+    } else {
+      mostrarToast(result.error || 'Error al enviar el correo', 'error');
+    }
+  } else {
+    mostrarToast('Función no disponible en modo offline', 'error');
+  }
 }
 
 // ==================== MASCOTAS - CRUD ====================

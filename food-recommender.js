@@ -7,7 +7,7 @@
  * @param {Object} petProfile - Perfil de la mascota
  * @param {Object} examResults - Último análisis de examen (opcional)
  * @param {string} pais - País del usuario (default: 'colombia')
- * @returns {Array} Top 5 alimentos recomendados con scores
+ * @returns {Array} Top 3 alimentos recomendados con scores
  */
 function recommendFood(petProfile, examResults, pais) {
   pais = pais || 'colombia';
@@ -38,6 +38,7 @@ function recommendFood(petProfile, examResults, pais) {
         // Priorizar línea que coincida con categoría de la mascota
         const esLineaAdecuada = lineaKey === categoria ||
           (categoria === 'adulto' && lineaKey === 'adulto') ||
+          (categoria === 'starter' && (lineaKey === 'starter' || lineaKey === 'cachorro')) ||
           (lineaKey === 'renal' && requerimientos.necesitaRenal) ||
           (lineaKey === 'weight' && requerimientos.necesitaWeight);
 
@@ -99,15 +100,20 @@ function recommendFood(petProfile, examResults, pais) {
       return { ...c, score };
     });
 
-  // Ordenar por score y retornar top 5
-  scoredCandidatos.sort((a, b) => b.score.total - a.score.total);
+  // Ordenar por score, desempate: disponibilidad > precio > marca conocida
+  scoredCandidatos.sort((a, b) => {
+    if (b.score.total !== a.score.total) return b.score.total - a.score.total;
+    if (b.score.disponibilidad !== a.score.disponibilidad) return b.score.disponibilidad - a.score.disponibilidad;
+    if (a.score.precio !== b.score.precio) return b.score.precio - a.score.precio;
+    return 0;
+  });
 
-  // No duplicar marca+línea
+  // No duplicar marca+línea, retornar top 3
   const vistos = new Set();
   const top = [];
   for (const c of scoredCandidatos) {
     const key = `${c.marca}-${c.nombre}`;
-    if (!vistos.has(key) && top.length < 5) {
+    if (!vistos.has(key) && top.length < 3) {
       vistos.add(key);
       // Calcular porciones
       c.porciones = calcularPorcionesAlimento(c, petProfile);
@@ -124,6 +130,7 @@ function recommendFood(petProfile, examResults, pais) {
  */
 function determinarCategoria(edadMeses, condicion) {
   if (parseInt(condicion) >= 4) return 'weight';
+  if (edadMeses <= 4) return 'starter';
   if (edadMeses < 12) return 'cachorro';
   if (edadMeses > 84) return 'senior';
   return 'adulto';
@@ -317,7 +324,8 @@ function renderizarRecomendaciones(recomendaciones, petProfile, pais) {
       rec.score.total >= 60 ? 'var(--warning)' : 'var(--text-secondary)';
 
     html += `
-      <div class="food-rec-card">
+      <div class="food-rec-card ${idx === 0 ? 'food-rec-best' : ''}">
+        ${idx === 0 ? '<div class="food-rec-best-badge"><i class="fas fa-trophy"></i> Mejor opción</div>' : ''}
         <div class="food-rec-header">
           <div class="food-rec-rank">#${idx + 1}</div>
           <div class="food-rec-info">
