@@ -908,6 +908,20 @@ body {
 .cuenta-name { font-size: 1.1rem; font-weight: 600; margin: 0 0 0.25rem; }
 .cuenta-email, .cuenta-since { font-size: 0.85rem; color: var(--text-secondary); margin: 0.15rem 0; }
 .cuenta-email i, .cuenta-since i { margin-right: 0.4rem; width: 1rem; text-align: center; }
+.cuenta-name-row { display: flex; align-items: center; gap: 0.5rem; }
+.cuenta-name-row .btn-icon { font-size: 0.75rem; color: var(--text-secondary); padding: 0.25rem; }
+.cuenta-name-row .btn-icon:hover { color: var(--primary); }
+.cuenta-edit-name { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.5rem; }
+.cuenta-edit-name input {
+  flex: 1;
+  padding: 0.4rem 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--border-radius-sm);
+  font-size: 0.95rem;
+  background: var(--bg-card);
+  color: var(--text-primary);
+}
+.cuenta-edit-name input:focus { border-color: var(--primary); outline: none; }
 
 /* ==================== FAB ==================== */
 .fab {

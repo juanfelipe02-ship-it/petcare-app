@@ -383,7 +383,15 @@ function renderizarCuenta() {
           <i class="fas fa-user-circle"></i>
         </div>
         <div class="cuenta-details">
-          <p class="cuenta-name">${escapeHtml(user.displayName || 'Sin nombre')}</p>
+          <div class="cuenta-name-row">
+            <p class="cuenta-name" id="cuenta-display-name">${escapeHtml(user.displayName || 'Sin nombre')}</p>
+            <button class="btn-icon btn-sm" onclick="mostrarEditarNombre()" title="Editar nombre"><i class="fas fa-pen"></i></button>
+          </div>
+          <div id="cuenta-edit-name" class="cuenta-edit-name hidden">
+            <input type="text" id="cuenta-name-input" value="${escapeHtml(user.displayName || '')}" placeholder="Tu nombre" maxlength="50">
+            <button class="btn btn-sm btn-primary" onclick="guardarNombre()"><i class="fas fa-check"></i></button>
+            <button class="btn btn-sm btn-outline" onclick="cancelarEditarNombre()"><i class="fas fa-times"></i></button>
+          </div>
           <p class="cuenta-email"><i class="fas fa-envelope"></i> ${escapeHtml(user.email || '')}</p>
           <p class="cuenta-since"><i class="fas fa-calendar"></i> Miembro desde ${user.metadata && user.metadata.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('es-CO') : 'N/A'}</p>
         </div>
@@ -401,6 +409,50 @@ function renderizarCuenta() {
           <i class="fas fa-paw"></i> ${estado.mascotas.length} mascota${estado.mascotas.length !== 1 ? 's' : ''} registrada${estado.mascotas.length !== 1 ? 's' : ''}
         </p>
       </div>`;
+  }
+}
+
+function mostrarEditarNombre() {
+  document.getElementById('cuenta-display-name').parentElement.classList.add('hidden');
+  document.getElementById('cuenta-edit-name').classList.remove('hidden');
+  const input = document.getElementById('cuenta-name-input');
+  input.focus();
+  input.select();
+}
+
+function cancelarEditarNombre() {
+  document.getElementById('cuenta-display-name').parentElement.classList.remove('hidden');
+  document.getElementById('cuenta-edit-name').classList.add('hidden');
+}
+
+async function guardarNombre() {
+  const input = document.getElementById('cuenta-name-input');
+  const nuevoNombre = input.value.trim();
+  if (!nuevoNombre) {
+    mostrarToast('El nombre no puede estar vacío', 'error');
+    return;
+  }
+
+  const user = typeof obtenerUsuarioActual === 'function' ? obtenerUsuarioActual() : null;
+  if (!user) {
+    mostrarToast('No se pudo obtener el usuario', 'error');
+    return;
+  }
+
+  try {
+    await user.updateProfile({ displayName: nuevoNombre });
+    // Actualizar en Firestore también
+    if (typeof db !== 'undefined') {
+      await db.collection('users').doc(user.uid).update({ nombre: nuevoNombre });
+    }
+    // Actualizar header
+    const nameEl = document.getElementById('user-display-name');
+    if (nameEl) nameEl.textContent = nuevoNombre;
+    mostrarToast('Nombre actualizado correctamente', 'success');
+    renderizarCuenta();
+  } catch (error) {
+    console.error('Error actualizando nombre:', error);
+    mostrarToast('Error al actualizar el nombre', 'error');
   }
 }
 
