@@ -670,8 +670,16 @@
                   <input type="time" id="meal-time" required>
                 </div>
                 <div class="form-group">
+                  <label for="meal-food-category">Categoría de alimento</label>
+                  <select id="meal-food-category" required>
+                    <option value="" disabled selected>Selecciona categoría...</option>
+                  </select>
+                </div>
+                <div class="form-group">
                   <label for="meal-food-type">Tipo de alimento</label>
-                  <select id="meal-food-type" required></select>
+                  <select id="meal-food-type" required disabled>
+                    <option value="" disabled selected>Primero selecciona categoría...</option>
+                  </select>
                 </div>
                 <div class="form-group hidden" id="custom-kcal-group">
                   <label for="meal-custom-kcal">Calorías por 100g (kcal)</label>

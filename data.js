@@ -179,38 +179,69 @@ const GLOSARIO = [
 ];
 
 // Alimentos comunes con calorías aproximadas por 100g
-const ALIMENTOS_CALORIAS = {
-  'Croquetas estándar': 350,
-  'Croquetas premium': 380,
-  'Croquetas light': 300,
-  'Croquetas cachorro': 400,
-  'Croquetas senior': 320,
-  'Alimento húmedo estándar': 85,
-  'Alimento húmedo premium': 100,
-  'Pollo cocido': 165,
-  'Arroz cocido': 130,
-  'Zanahoria': 41,
-  'Calabaza cocida': 26,
-  'Hígado de res cocido': 191,
-  'Pescado cocido': 120,
-  'Huevo cocido': 155,
-  'Res cocida': 250,
-  'Cerdo cocido': 242,
-  'Pavo cocido': 135,
-  'Atún enlatado': 116,
-  'Sardina enlatada': 208,
-  'Carne molida cocida': 232,
-  'Batata/camote cocido': 86,
-  'Brócoli cocido': 35,
-  'Manzana': 52,
-  'Plátano/banano': 89,
-  'BARF (dieta cruda mixta)': 150,
-  'Yogur natural': 59,
-  'Queso cottage': 98,
-  'Avena cocida': 71,
-  'Pasta cocida': 131,
-  'Otro': 0
+const ALIMENTOS_CATEGORIAS = {
+  'Concentrados (secos)': {
+    icono: 'fa-cookie',
+    items: {
+      'Croquetas estándar': 350,
+      'Croquetas premium': 380,
+      'Croquetas light': 300,
+      'Croquetas cachorro': 400,
+      'Croquetas senior': 320
+    }
+  },
+  'Alimento húmedo': {
+    icono: 'fa-drumstick-bite',
+    items: {
+      'Alimento húmedo estándar': 85,
+      'Alimento húmedo premium': 100,
+      'Atún enlatado': 116,
+      'Sardina enlatada': 208
+    }
+  },
+  'Comida natural / casera': {
+    icono: 'fa-leaf',
+    items: {
+      'Pollo cocido': 165,
+      'Res cocida': 250,
+      'Cerdo cocido': 242,
+      'Pavo cocido': 135,
+      'Pescado cocido': 120,
+      'Hígado de res cocido': 191,
+      'Carne molida cocida': 232,
+      'Huevo cocido': 155,
+      'Arroz cocido': 130,
+      'Pasta cocida': 131,
+      'Avena cocida': 71,
+      'Batata/camote cocido': 86,
+      'Calabaza cocida': 26,
+      'Brócoli cocido': 35,
+      'Zanahoria': 41,
+      'Manzana': 52,
+      'Plátano/banano': 89,
+      'BARF (dieta cruda mixta)': 150
+    }
+  },
+  'Snacks y complementos': {
+    icono: 'fa-cheese',
+    items: {
+      'Yogur natural': 59,
+      'Queso cottage': 98
+    }
+  },
+  'Otro': {
+    icono: 'fa-plus-circle',
+    items: {
+      'Otro': 0
+    }
+  }
 };
+
+// Mapa plano para compatibilidad con código existente
+const ALIMENTOS_CALORIAS = {};
+Object.values(ALIMENTOS_CATEGORIAS).forEach(cat => {
+  Object.assign(ALIMENTOS_CALORIAS, cat.items);
+});
 
 // ============================================================
 // BASE DE DATOS AMPLIADA POR RAZA

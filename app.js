@@ -159,17 +159,49 @@ function inicializarUI() {
     examTypeSelect.appendChild(opt);
   });
 
-  // Llenar alimentos en seguimiento
+  // Llenar categorías de alimentos en seguimiento
+  const mealCatSelect = document.getElementById('meal-food-category');
   const mealFoodSelect = document.getElementById('meal-food-type');
-  Object.keys(ALIMENTOS_CALORIAS).forEach(alimento => {
-    const opt = document.createElement('option');
-    opt.value = alimento;
-    opt.textContent = `${alimento} (${ALIMENTOS_CALORIAS[alimento]} kcal/100g)`;
-    mealFoodSelect.appendChild(opt);
-  });
+
+  if (typeof ALIMENTOS_CATEGORIAS !== 'undefined') {
+    Object.keys(ALIMENTOS_CATEGORIAS).forEach(cat => {
+      const opt = document.createElement('option');
+      opt.value = cat;
+      opt.textContent = cat;
+      mealCatSelect.appendChild(opt);
+    });
+
+    // Al cambiar categoría, llenar alimentos de esa categoría
+    mealCatSelect.addEventListener('change', (e) => {
+      const catKey = e.target.value;
+      const catData = ALIMENTOS_CATEGORIAS[catKey];
+      mealFoodSelect.innerHTML = '<option value="" disabled selected>Selecciona alimento...</option>';
+      if (catData) {
+        Object.keys(catData.items).forEach(alimento => {
+          const opt = document.createElement('option');
+          opt.value = alimento;
+          const kcal = catData.items[alimento];
+          opt.textContent = kcal > 0 ? `${alimento} (${kcal} kcal/100g)` : alimento;
+          mealFoodSelect.appendChild(opt);
+        });
+        mealFoodSelect.disabled = false;
+      }
+      // Reset food selection y custom kcal
+      document.getElementById('custom-kcal-group').classList.add('hidden');
+    });
+  } else {
+    // Fallback si ALIMENTOS_CATEGORIAS no existe
+    Object.keys(ALIMENTOS_CALORIAS).forEach(alimento => {
+      const opt = document.createElement('option');
+      opt.value = alimento;
+      opt.textContent = `${alimento} (${ALIMENTOS_CALORIAS[alimento]} kcal/100g)`;
+      mealFoodSelect.appendChild(opt);
+    });
+    mealFoodSelect.disabled = false;
+  }
 
   // Mostrar/ocultar campo de calorías custom para "Otro"
-  document.getElementById('meal-food-type').addEventListener('change', (e) => {
+  mealFoodSelect.addEventListener('change', (e) => {
     const customGroup = document.getElementById('custom-kcal-group');
     if (customGroup) {
       customGroup.classList.toggle('hidden', e.target.value !== 'Otro');
