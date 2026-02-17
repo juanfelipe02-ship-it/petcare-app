@@ -208,8 +208,10 @@ function inicializarUI() {
     }
   });
 
-  // Hora actual para meal-time
+  // Fecha y hora actual para meal-date y meal-time
   const now = new Date();
+  document.getElementById('meal-date').value = fechaHoy();
+  document.getElementById('meal-date').max = fechaHoy();
   document.getElementById('meal-time').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
 
   // Renderizar referencias y glosario
@@ -1777,16 +1779,20 @@ async function registrarComida(e) {
   }
   const calorias = (calPor100g / 100) * gramos;
 
-  const hoy = fechaHoy();
+  const fecha = document.getElementById('meal-date').value || fechaHoy();
   if (!estado.comidas[pet.id]) estado.comidas[pet.id] = {};
-  if (!estado.comidas[pet.id][hoy]) estado.comidas[pet.id][hoy] = [];
+  if (!estado.comidas[pet.id][fecha]) estado.comidas[pet.id][fecha] = [];
 
-  estado.comidas[pet.id][hoy].push({ hora, tipo, marca, gramos, calorias, calPor100g });
+  estado.comidas[pet.id][fecha].push({ hora, tipo, marca, gramos, calorias, calPor100g });
   await guardarDatos();
 
   document.getElementById('meal-form').reset();
   const now = new Date();
+  document.getElementById('meal-date').value = fechaHoy();
+  document.getElementById('meal-date').max = fechaHoy();
   document.getElementById('meal-time').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  document.getElementById('meal-food-type').disabled = true;
+  document.getElementById('meal-food-type').innerHTML = '<option value="" disabled selected>Primero selecciona categoría...</option>';
 
   renderizarSeguimiento();
   mostrarToast('Comida registrada', 'success');
