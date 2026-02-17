@@ -15,7 +15,7 @@ function recommendFood(petProfile, examResults, pais) {
   if (!db) return [];
 
   const esGato = petProfile.especie === 'gato';
-  const edadMeses = (petProfile.edadAnios * 12) + (petProfile.edadMeses || 0);
+  const edadMeses = typeof obtenerEdadActual === 'function' ? obtenerEdadActual(petProfile).totalMeses : (petProfile.edadAnios * 12) + (petProfile.edadMeses || 0);
   const categoria = determinarCategoria(edadMeses, petProfile.condicion);
 
   // Obtener requerimientos nutricionales
@@ -246,7 +246,7 @@ function calcularPorcionesAlimento(alimento, petProfile) {
   const gramosDiarios = (caloriasDiarias / alimento.kcalPorKg) * 1000;
   const tazas = gramosDiarios / 120; // 1 taza ~120g croquetas
 
-  const edadMeses = (petProfile.edadAnios * 12) + (petProfile.edadMeses || 0);
+  const edadMeses = typeof obtenerEdadActual === 'function' ? obtenerEdadActual(petProfile).totalMeses : (petProfile.edadAnios * 12) + (petProfile.edadMeses || 0);
   let comidas = 2;
   if (edadMeses < 6) comidas = 4;
   else if (edadMeses < 12) comidas = 3;

@@ -689,7 +689,7 @@ function calcularTiempoDigestion(pet, tipoAlimento) {
   const notas = [];
 
   // Factor por edad
-  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const edadMeses = typeof obtenerEdadActual === 'function' ? obtenerEdadActual(pet).totalMeses : (pet.edadAnios * 12) + (pet.edadMeses || 0);
   let edadKey;
   if (especie === 'perro') {
     if (edadMeses < 3) edadKey = 'cachorro_0_3';

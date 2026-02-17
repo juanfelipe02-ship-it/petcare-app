@@ -277,7 +277,7 @@ function generarAlertasPeso(pet, pesos) {
 
   // Verificar si falta registro
   const diasSinRegistro = (new Date() - new Date(ultimo.fecha)) / (1000 * 60 * 60 * 24);
-  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const edadMeses = typeof obtenerEdadActual === 'function' ? obtenerEdadActual(pet).totalMeses : (pet.edadAnios * 12) + (pet.edadMeses || 0);
   let frecuenciaRecomendada = 30; // Mensual por defecto
   if (edadMeses < 6) frecuenciaRecomendada = 7;
   else if (edadMeses < 12) frecuenciaRecomendada = 14;
@@ -367,7 +367,7 @@ function renderizarAnalisisPeso(pet, pesos) {
 
   const sorted = [...pesosArr].sort((a, b) => a.fecha.localeCompare(b.fecha));
   const ultimo = sorted[sorted.length - 1];
-  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const edadMeses = typeof obtenerEdadActual === 'function' ? obtenerEdadActual(pet).totalMeses : (pet.edadAnios * 12) + (pet.edadMeses || 0);
 
   let html = '';
 

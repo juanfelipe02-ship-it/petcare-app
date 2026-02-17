@@ -748,7 +748,7 @@ function renderizarMascotas() {
       ${avatarHtml}
       <div class="pet-card-info" onclick="activarMascota('${pet.id}')">
         <h4>${escapeHtml(pet.nombre)} ${isActive ? '<i class="fas fa-star" style="color:var(--warning);font-size:0.8rem"></i>' : ''}</h4>
-        <p>${pet.especie === 'perro' ? '🐕' : '🐈'} ${escapeHtml(pet.raza)} · ${pet.edadAnios}a ${pet.edadMeses}m · ${pet.peso}kg</p>
+        <p>${pet.especie === 'perro' ? '🐕' : '🐈'} ${escapeHtml(pet.raza)} · ${obtenerEdadActual(pet).edadAnios}a ${obtenerEdadActual(pet).edadMeses}m · ${pet.peso}kg</p>
       </div>
       <div class="pet-card-actions">
         <button class="btn-icon btn-sm" onclick="event.stopPropagation();mostrarFormularioMascota('${pet.id}')" title="Editar"><i class="fas fa-edit"></i></button>
@@ -811,7 +811,8 @@ function actualizarDashboard() {
     dashPhoto.style.display = 'none';
   }
   document.getElementById('dash-pet-name').textContent = pet.nombre;
-  document.getElementById('dash-pet-info').textContent = `${pet.especie === 'perro' ? 'Perro' : 'Gato'} · ${pet.raza} · ${pet.edadAnios}a ${pet.edadMeses}m · ${capitalizarPrimera(pet.genero)}`;
+  const edadDash = obtenerEdadActual(pet);
+  document.getElementById('dash-pet-info').textContent = `${pet.especie === 'perro' ? 'Perro' : 'Gato'} · ${pet.raza} · ${edadDash.edadAnios}a ${edadDash.edadMeses}m · ${capitalizarPrimera(pet.genero)}`;
   document.getElementById('dash-pet-weight').textContent = `Peso: ${pet.peso} kg · Actividad: ${capitalizarPrimera(pet.actividad.replace('_',' '))}`;
 
   // Consejo del día
@@ -1243,7 +1244,7 @@ function calcularCaloriasDiarias(pet) {
   const factorActividad = FACTORES_ACTIVIDAD[pet.actividad] || 1.4;
   let calorias = rer * factorActividad;
 
-  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const edadMeses = obtenerEdadActual(pet).totalMeses;
 
   // Ajustes
   if (edadMeses < 12) calorias *= 1.25; // Cachorro
@@ -1266,7 +1267,8 @@ function renderizarNutricion() {
   // Detalles del cálculo
   const rer = 70 * Math.pow(pet.peso, 0.75);
   const factorActividad = FACTORES_ACTIVIDAD[pet.actividad] || 1.4;
-  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const edadActual = obtenerEdadActual(pet);
+  const edadMeses = edadActual.totalMeses;
   let detalles = `<p>RER base: ${Math.round(rer)} kcal (70 × ${pet.peso}^0.75)</p>`;
   detalles += `<p>Factor actividad (${pet.actividad.replace('_',' ')}): ×${factorActividad}</p>`;
   if (edadMeses < 12) detalles += `<p>Ajuste cachorro: +25%</p>`;
@@ -1312,7 +1314,7 @@ function renderizarNutricion() {
   const frecActual = frecGuardada || frecDefault;
 
   let frecHtml = `<p>Recomendación por edad: <strong>${frecData ? frecData.frecuencia : '2 veces al día'}</strong> (${frecData ? frecData.nota : 'Adulto'})</p>`;
-  frecHtml += `<p>Edad: ${pet.edadAnios} años ${pet.edadMeses} meses (${edadMeses} meses)</p>`;
+  frecHtml += `<p>Edad: ${edadActual.edadAnios} años ${edadActual.edadMeses} meses (${edadMeses} meses)</p>`;
   frecHtml += `<div class="form-group" style="margin-top:0.75rem">
     <label for="feeding-freq-select">Frecuencia personalizada</label>
     <select id="feeding-freq-select" onchange="cambiarFrecuenciaAlimentacion(this.value)">
@@ -1429,7 +1431,7 @@ function renderizarEducacionInline(pet) {
   const container = document.getElementById('education-tips');
   if (!container || !pet) return;
 
-  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const edadMeses = obtenerEdadActual(pet).totalMeses;
   const info = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] : null;
 
   let html = '<div class="education-tips">';
@@ -1522,7 +1524,7 @@ function calcularPorciones() {
   const grams = (calorias / calPor100g) * 100;
   const tazas = grams / 240;
 
-  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const edadMeses = obtenerEdadActual(pet).totalMeses;
   const frecGuardada = estado.frecuenciaAlimentacion[pet.id];
   let comidas;
   if (frecGuardada) {
@@ -1632,7 +1634,7 @@ function renderizarSeguimiento() {
   const pesosArr = estado.pesos[pet.id] || [];
   if (pesosArr.length > 0) {
     const ultimoPeso = pesosArr[pesosArr.length - 1];
-    const edadMesesPeso = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+    const edadMesesPeso = obtenerEdadActual(pet).totalMeses;
     let compHtml = `<p>Último peso registrado: <strong>${ultimoPeso.peso} kg</strong> (${formatearFecha(ultimoPeso.fecha)})</p>`;
 
     // Usar análisis inteligente de peso
@@ -1704,7 +1706,7 @@ function renderizarTablaPesoEdad(pet) {
     cardHeader.innerHTML = `<i class="fas fa-table"></i> Peso por Edad para ${pet.nombre}`;
   }
 
-  const edadMeses = (pet.edadAnios * 12) + (pet.edadMeses || 0);
+  const edadMeses = obtenerEdadActual(pet).totalMeses;
   const especie = pet.especie;
   const edadSenior = especie === 'perro' ? 84 : 120;
 
@@ -2119,7 +2121,7 @@ function renderizarCalendario() {
 
 function renderizarVacunacion(pet) {
   const plan = pet.especie === 'perro' ? VACUNACION_PERRO : VACUNACION_GATO;
-  const edadSemanas = ((pet.edadAnios * 12) + pet.edadMeses) * 4.33;
+  const edadSemanas = obtenerEdadActual(pet).totalMeses * 4.33;
   const container = document.getElementById('vaccination-plan');
 
   container.innerHTML = plan.map(v => {
@@ -2145,12 +2147,13 @@ function renderizarDesparasitacion(pet) {
 }
 
 function renderizarChequeos(pet) {
-  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const edadChequeo = obtenerEdadActual(pet);
+  const edadMeses = edadChequeo.totalMeses;
   const esSenior = edadMeses > 84;
   const container = document.getElementById('checkup-plan');
   container.innerHTML = `
     <p><i class="fas fa-stethoscope" style="color:var(--primary)"></i> <strong>Frecuencia recomendada:</strong> ${esSenior ? 'Cada 6 meses (senior >7 años)' : 'Anual'}</p>
-    <p><strong>Edad actual:</strong> ${pet.edadAnios} años ${pet.edadMeses} meses ${esSenior ? '(Senior)' : '(Adulto)'}</p>
+    <p><strong>Edad actual:</strong> ${edadChequeo.edadAnios} años ${edadChequeo.edadMeses} meses ${esSenior ? '(Senior)' : '(Adulto)'}</p>
     <p style="font-size:0.8rem;color:var(--text-secondary);margin-top:0.5rem">Los chequeos de rutina deben incluir examen físico completo, hemograma y perfil bioquímico.</p>
   `;
 }
@@ -2563,6 +2566,25 @@ function generarId() {
 
 function fechaHoy() {
   return formatearFechaISO(new Date());
+}
+
+/**
+ * Calcula la edad actual de la mascota basándose en la edad al momento del registro
+ * y el tiempo transcurrido desde entonces.
+ * @returns {{ edadAnios: number, edadMeses: number, totalMeses: number }}
+ */
+function obtenerEdadActual(pet) {
+  const mesesAlRegistro = (pet.edadAnios || 0) * 12 + (pet.edadMeses || 0);
+  const fechaReg = pet.fechaRegistro ? new Date(pet.fechaRegistro) : new Date();
+  const hoy = new Date();
+  const diffMs = hoy - fechaReg;
+  const mesesTranscurridos = Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24 * 30.44)));
+  const totalMeses = mesesAlRegistro + mesesTranscurridos;
+  return {
+    edadAnios: Math.floor(totalMeses / 12),
+    edadMeses: totalMeses % 12,
+    totalMeses
+  };
 }
 
 function formatearFechaISO(date) {
@@ -3130,7 +3152,7 @@ function mostrarExplicacion(tipo) {
   const body = document.getElementById('explanation-body');
   const calorias = calcularCaloriasDiarias(pet);
   const rer = 70 * Math.pow(pet.peso, 0.75);
-  const edadMeses = (pet.edadAnios * 12) + pet.edadMeses;
+  const edadMeses = obtenerEdadActual(pet).totalMeses;
   const info = INFO_RAZA_DETALLADA[pet.raza];
 
   let html = '';
