@@ -562,6 +562,22 @@ body {
 .progress-fill.over { background: var(--warning); }
 .progress-fill.danger { background: var(--danger); }
 
+/* Barra segmentada de macronutrientes */
+.macro-stacked-bar { display: flex; height: 16px; border-radius: 8px; }
+.macro-fill { height: 100%; transition: width 0.5s ease; min-width: 0; }
+.macro-fill:first-child { border-radius: 8px 0 0 8px; }
+.macro-fill:last-child { border-radius: 0 8px 8px 0; }
+.macro-fill:only-child { border-radius: 8px; }
+.macro-prot { background: #4CAF50; }
+.macro-fat { background: #FF9800; }
+.macro-carb { background: #2196F3; }
+.macro-legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.5rem; }
+.macro-legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.78rem; color: var(--text-secondary); }
+.macro-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+.macro-dot.macro-prot { background: #4CAF50; }
+.macro-dot.macro-fat { background: #FF9800; }
+.macro-dot.macro-carb { background: #2196F3; }
+
 /* ==================== NUTRITION ==================== */
 .nutrition-bars { display: flex; flex-direction: column; gap: 1rem; }
 .nutrition-bar-item { display: flex; flex-direction: column; gap: 0.3rem; }

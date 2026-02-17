@@ -1554,9 +1554,41 @@ function renderizarSeguimiento() {
   document.getElementById('track-cal-consumed').textContent = Math.round(calConsumidas);
   document.getElementById('track-cal-target').textContent = Math.round(calorias);
   const pct = calorias > 0 ? (calConsumidas / calorias) * 100 : 0;
-  const progressBar = document.getElementById('track-cal-progress');
-  progressBar.style.width = `${Math.min(pct, 100)}%`;
-  progressBar.className = `progress-fill ${pct > 110 ? 'over' : pct > 130 ? 'danger' : ''}`;
+
+  // Calcular desglose de macronutrientes del día
+  let calProt = 0, calFat = 0, calCarb = 0;
+  const macrosMap = typeof MACROS_POR_ALIMENTO !== 'undefined' ? MACROS_POR_ALIMENTO : {};
+  comidasHoy.forEach(c => {
+    const perfil = macrosMap[c.tipo] || { proteina: 33, grasa: 34, carbohidratos: 33 };
+    calProt += c.calorias * (perfil.proteina / 100);
+    calFat += c.calorias * (perfil.grasa / 100);
+    calCarb += c.calorias * (perfil.carbohidratos / 100);
+  });
+
+  // Barra segmentada por macros (ancho relativo al objetivo calórico)
+  const barScale = calorias > 0 ? Math.min(calConsumidas / calorias, 1) : 0;
+  const totalMacro = calProt + calFat + calCarb;
+  const pctProt = totalMacro > 0 ? (calProt / totalMacro) * barScale * 100 : 0;
+  const pctFat = totalMacro > 0 ? (calFat / totalMacro) * barScale * 100 : 0;
+  const pctCarb = totalMacro > 0 ? (calCarb / totalMacro) * barScale * 100 : 0;
+
+  document.getElementById('track-macro-prot').style.width = `${pctProt}%`;
+  document.getElementById('track-macro-fat').style.width = `${pctFat}%`;
+  document.getElementById('track-macro-carb').style.width = `${pctCarb}%`;
+
+  // Leyenda de macros
+  const legendEl = document.getElementById('track-macro-legend');
+  if (calConsumidas > 0) {
+    const pPct = totalMacro > 0 ? Math.round((calProt / totalMacro) * 100) : 0;
+    const fPct = totalMacro > 0 ? Math.round((calFat / totalMacro) * 100) : 0;
+    const cPct = totalMacro > 0 ? Math.round((calCarb / totalMacro) * 100) : 0;
+    legendEl.innerHTML = `
+      <span class="macro-legend-item"><span class="macro-dot macro-prot"></span> Proteína ${pPct}% (${Math.round(calProt)} kcal)</span>
+      <span class="macro-legend-item"><span class="macro-dot macro-fat"></span> Grasa ${fPct}% (${Math.round(calFat)} kcal)</span>
+      <span class="macro-legend-item"><span class="macro-dot macro-carb"></span> Carbos ${cPct}% (${Math.round(calCarb)} kcal)</span>`;
+  } else {
+    legendEl.innerHTML = '';
+  }
 
   const statusEl = document.getElementById('track-cal-status');
   if (pct < 80) {

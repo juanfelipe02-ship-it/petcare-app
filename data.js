@@ -243,6 +243,45 @@ Object.values(ALIMENTOS_CATEGORIAS).forEach(cat => {
   Object.assign(ALIMENTOS_CALORIAS, cat.items);
 });
 
+// Perfil de macronutrientes por alimento (% de calorías totales)
+const MACROS_POR_ALIMENTO = {
+  // Concentrados
+  'Croquetas estándar':       { proteina: 28, grasa: 36, carbohidratos: 36 },
+  'Croquetas premium':        { proteina: 30, grasa: 38, carbohidratos: 32 },
+  'Croquetas light':          { proteina: 32, grasa: 24, carbohidratos: 44 },
+  'Croquetas cachorro':       { proteina: 32, grasa: 40, carbohidratos: 28 },
+  'Croquetas senior':         { proteina: 28, grasa: 30, carbohidratos: 42 },
+  // Húmedos
+  'Alimento húmedo estándar': { proteina: 35, grasa: 45, carbohidratos: 20 },
+  'Alimento húmedo premium':  { proteina: 40, grasa: 42, carbohidratos: 18 },
+  'Atún enlatado':            { proteina: 85, grasa: 12, carbohidratos: 3 },
+  'Sardina enlatada':         { proteina: 50, grasa: 48, carbohidratos: 2 },
+  // Carnes
+  'Pollo cocido':             { proteina: 64, grasa: 34, carbohidratos: 2 },
+  'Res cocida':               { proteina: 44, grasa: 54, carbohidratos: 2 },
+  'Cerdo cocido':             { proteina: 40, grasa: 58, carbohidratos: 2 },
+  'Pavo cocido':              { proteina: 70, grasa: 28, carbohidratos: 2 },
+  'Pescado cocido':           { proteina: 72, grasa: 25, carbohidratos: 3 },
+  'Hígado de res cocido':     { proteina: 58, grasa: 32, carbohidratos: 10 },
+  'Carne molida cocida':      { proteina: 42, grasa: 56, carbohidratos: 2 },
+  'Huevo cocido':             { proteina: 35, grasa: 62, carbohidratos: 3 },
+  // Cereales y vegetales
+  'Arroz cocido':             { proteina: 8, grasa: 2, carbohidratos: 90 },
+  'Pasta cocida':             { proteina: 14, grasa: 4, carbohidratos: 82 },
+  'Avena cocida':             { proteina: 14, grasa: 16, carbohidratos: 70 },
+  'Batata/camote cocido':     { proteina: 5, grasa: 1, carbohidratos: 94 },
+  'Calabaza cocida':          { proteina: 10, grasa: 4, carbohidratos: 86 },
+  'Brócoli cocido':           { proteina: 30, grasa: 8, carbohidratos: 62 },
+  'Zanahoria':                { proteina: 8, grasa: 4, carbohidratos: 88 },
+  'Manzana':                  { proteina: 2, grasa: 3, carbohidratos: 95 },
+  'Plátano/banano':           { proteina: 5, grasa: 3, carbohidratos: 92 },
+  // Otros
+  'BARF (dieta cruda mixta)': { proteina: 50, grasa: 40, carbohidratos: 10 },
+  'Yogur natural':            { proteina: 28, grasa: 42, carbohidratos: 30 },
+  'Queso cottage':            { proteina: 50, grasa: 36, carbohidratos: 14 },
+  'Otro':                     { proteina: 33, grasa: 34, carbohidratos: 33 }
+};
+
 // ============================================================
 // BASE DE DATOS AMPLIADA POR RAZA
 // ============================================================
