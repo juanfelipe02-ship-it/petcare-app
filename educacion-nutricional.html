@@ -675,7 +675,7 @@
       const allBreeds = [];
       ['perro', 'gato'].forEach(sp => {
         RAZAS[sp].forEach(r => {
-          if (r.nombre !== 'Otra' && r.nombre !== 'Mestizo') {
+          if (r.nombre !== 'Otra' && r.nombre !== 'Criollo') {
             allBreeds.push({ nombre: r.nombre, especie: sp });
           }
         });

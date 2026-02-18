@@ -63,10 +63,13 @@ function recommendFood(petProfile, examResults, pais) {
         });
       });
 
-      // Líneas específicas por raza
+      // Líneas específicas por raza (incluye razas del fenotipo Criollo)
       if (!esGato && marca.especificas) {
+        const razasBuscar = petProfile.raza === 'Criollo' && petProfile.razasCriollo
+          ? petProfile.razasCriollo.map(r => r.raza)
+          : [petProfile.raza];
         marca.especificas.forEach(esp => {
-          if (esp.raza === petProfile.raza) {
+          if (razasBuscar.includes(esp.raza)) {
             candidatos.push({
               marca: marca.marca,
               logo: marca.logo,
@@ -182,8 +185,10 @@ function calcularRequerimientosNutricionales(petProfile, examResults) {
     });
   }
 
-  // Ajustes por raza
-  const infoRaza = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[petProfile.raza] : null;
+  // Ajustes por raza (con soporte para Criollo ponderado)
+  const infoRaza = typeof obtenerInfoRazaPonderada === 'function'
+    ? obtenerInfoRazaPonderada(petProfile)
+    : (typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[petProfile.raza] : null);
   if (infoRaza && infoRaza.nutricionEspecifica) {
     const ne = infoRaza.nutricionEspecifica;
     if (ne.proteina) req.proteina = (ne.proteina.min + ne.proteina.max) / 2;

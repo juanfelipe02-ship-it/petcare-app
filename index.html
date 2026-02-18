@@ -277,6 +277,32 @@
                 </select>
                 <span class="form-error">Selecciona la raza</span>
               </div>
+              <div id="criollo-phenotype-section" class="form-group full-width hidden">
+                <label><i class="fas fa-dna"></i> Fenotipo principal</label>
+                <p class="form-hint">Selecciona 1 o 2 razas que más se parezcan a tu mascota</p>
+                <div class="criollo-breed-row">
+                  <select id="criollo-breed-1">
+                    <option value="">Seleccionar raza...</option>
+                  </select>
+                  <div class="criollo-pct-wrapper">
+                    <input type="number" id="criollo-pct-1" min="10" max="100" step="5" value="100">
+                    <span class="criollo-pct-label">%</span>
+                  </div>
+                </div>
+                <div class="criollo-breed-row hidden" id="criollo-row-2">
+                  <select id="criollo-breed-2">
+                    <option value="">Seleccionar raza...</option>
+                  </select>
+                  <div class="criollo-pct-wrapper">
+                    <input type="number" id="criollo-pct-2" min="10" max="90" step="5" value="0" readonly>
+                    <span class="criollo-pct-label">%</span>
+                  </div>
+                </div>
+                <label class="checkbox-label" style="margin-top:0.5rem">
+                  <input type="checkbox" id="criollo-add-second">
+                  <span>Agregar segunda raza</span>
+                </label>
+              </div>
               <div class="form-group form-group-inline">
                 <div>
                   <label for="pet-age-years"><i class="fas fa-birthday-cake"></i> Edad (años) *</label>
@@ -357,12 +383,16 @@
                 <span class="form-error">Selecciona el nivel de actividad</span>
               </div>
               <div class="form-group">
-                <label for="pet-city"><i class="fas fa-map-marker-alt"></i> Ciudad</label>
-                <input type="text" id="pet-city" placeholder="Ciudad" maxlength="50">
+                <label for="pet-country"><i class="fas fa-globe-americas"></i> País</label>
+                <select id="pet-country">
+                  <option value="">Seleccionar país...</option>
+                </select>
               </div>
               <div class="form-group">
-                <label for="pet-country">País</label>
-                <input type="text" id="pet-country" placeholder="País" maxlength="50">
+                <label for="pet-city"><i class="fas fa-map-marker-alt"></i> Ciudad</label>
+                <select id="pet-city" disabled>
+                  <option value="">Primero selecciona país...</option>
+                </select>
               </div>
               <div class="form-group full-width">
                 <label for="pet-conditions"><i class="fas fa-notes-medical"></i> Condiciones de salud existentes</label>

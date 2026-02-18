@@ -14,7 +14,22 @@ const RAZAS = {
     { nombre: 'Yorkshire Terrier', pesoIdeal: { min: 2, max: 3.2 }, esperanzaVida: 14, tamaño: 'mini' },
     { nombre: 'Boxer', pesoIdeal: { min: 25, max: 32 }, esperanzaVida: 10, tamaño: 'grande' },
     { nombre: 'Husky Siberiano', pesoIdeal: { min: 16, max: 27 }, esperanzaVida: 13, tamaño: 'mediano' },
-    { nombre: 'Mestizo', pesoIdeal: { min: 5, max: 35 }, esperanzaVida: 13, tamaño: 'variable' },
+    { nombre: 'Rottweiler', pesoIdeal: { min: 36, max: 60 }, esperanzaVida: 10, tamaño: 'grande' },
+    { nombre: 'Dachshund (Salchicha)', pesoIdeal: { min: 5, max: 14 }, esperanzaVida: 14, tamaño: 'pequeño' },
+    { nombre: 'Schnauzer Miniatura', pesoIdeal: { min: 5, max: 8 }, esperanzaVida: 14, tamaño: 'pequeño' },
+    { nombre: 'Shih Tzu', pesoIdeal: { min: 4, max: 7 }, esperanzaVida: 13, tamaño: 'pequeño' },
+    { nombre: 'Doberman', pesoIdeal: { min: 32, max: 45 }, esperanzaVida: 11, tamaño: 'grande' },
+    { nombre: 'Gran Danés', pesoIdeal: { min: 50, max: 80 }, esperanzaVida: 8, tamaño: 'gigante' },
+    { nombre: 'Cocker Spaniel', pesoIdeal: { min: 12, max: 15 }, esperanzaVida: 13, tamaño: 'mediano' },
+    { nombre: 'Border Collie', pesoIdeal: { min: 14, max: 20 }, esperanzaVida: 13, tamaño: 'mediano' },
+    { nombre: 'Pit Bull Terrier', pesoIdeal: { min: 16, max: 30 }, esperanzaVida: 13, tamaño: 'mediano' },
+    { nombre: 'Maltés', pesoIdeal: { min: 2, max: 4 }, esperanzaVida: 14, tamaño: 'mini' },
+    { nombre: 'Dálmata', pesoIdeal: { min: 24, max: 32 }, esperanzaVida: 12, tamaño: 'grande' },
+    { nombre: 'San Bernardo', pesoIdeal: { min: 54, max: 82 }, esperanzaVida: 9, tamaño: 'gigante' },
+    { nombre: 'Weimaraner', pesoIdeal: { min: 25, max: 40 }, esperanzaVida: 12, tamaño: 'grande' },
+    { nombre: 'Bichón Frisé', pesoIdeal: { min: 3, max: 5 }, esperanzaVida: 14, tamaño: 'pequeño' },
+    { nombre: 'Shar Pei', pesoIdeal: { min: 18, max: 25 }, esperanzaVida: 10, tamaño: 'mediano' },
+    { nombre: 'Criollo', pesoIdeal: { min: 5, max: 35 }, esperanzaVida: 13, tamaño: 'variable' },
     { nombre: 'Otra', pesoIdeal: { min: 1, max: 80 }, esperanzaVida: 12, tamaño: 'variable' }
   ],
   gato: [
@@ -24,7 +39,7 @@ const RAZAS = {
     { nombre: 'Bengalí', pesoIdeal: { min: 3.5, max: 7 }, esperanzaVida: 14, tamaño: 'mediano' },
     { nombre: 'Ragdoll', pesoIdeal: { min: 4, max: 9 }, esperanzaVida: 15, tamaño: 'grande' },
     { nombre: 'Británico de Pelo Corto', pesoIdeal: { min: 4, max: 8 }, esperanzaVida: 15, tamaño: 'mediano' },
-    { nombre: 'Mestizo', pesoIdeal: { min: 3, max: 6 }, esperanzaVida: 15, tamaño: 'variable' },
+    { nombre: 'Criollo', pesoIdeal: { min: 3, max: 6 }, esperanzaVida: 15, tamaño: 'variable' },
     { nombre: 'Otra', pesoIdeal: { min: 2, max: 12 }, esperanzaVida: 14, tamaño: 'variable' }
   ]
 };
@@ -46,7 +61,22 @@ const ADVERTENCIAS_RAZA = {
   'Maine Coon': ['Crecimiento lento; dieta especial hasta los 4 años.', 'Necesita más proteína que el promedio.'],
   'Bengalí': ['Alta energía, requiere más calorías.', 'Prefiere variedad en la alimentación.'],
   'Ragdoll': ['Propenso a cálculos urinarios; hidratación es crucial.', 'Tendencia al sobrepeso en la adultez.'],
-  'Británico de Pelo Corto': ['Propenso a obesidad.', 'Metabolismo lento; controlar porciones cuidadosamente.']
+  'Británico de Pelo Corto': ['Propenso a obesidad.', 'Metabolismo lento; controlar porciones cuidadosamente.'],
+  'Rottweiler': ['Propenso a torsión gástrica; dividir comidas en 2-3 tomas.', 'Tendencia al sobrepeso en la adultez; controlar porciones.'],
+  'Dachshund (Salchicha)': ['Columna vulnerable; el sobrepeso agrava problemas de espalda.', 'Propenso a enfermedad del disco intervertebral (IVDD).'],
+  'Schnauzer Miniatura': ['Propenso a pancreatitis; evitar alimentos altos en grasa.', 'Tendencia a formar cálculos urinarios; buena hidratación es esencial.'],
+  'Shih Tzu': ['Braquicefálico; puede tener dificultad para comer croquetas grandes.', 'Propenso a problemas dentales; cuidado oral regular necesario.'],
+  'Doberman': ['Riesgo de cardiomiopatía dilatada; taurina y L-carnitina importantes.', 'Propenso a torsión gástrica; evitar ejercicio después de comer.'],
+  'Gran Danés': ['Crecimiento extremadamente rápido; dieta controlada en calcio durante desarrollo.', 'Alto riesgo de torsión gástrica; dividir comidas en 2-3 tomas pequeñas.'],
+  'Cocker Spaniel': ['Propenso a otitis y alergias alimentarias.', 'Tendencia a la obesidad; controlar premios y porciones.'],
+  'Border Collie': ['Alta energía; necesita más calorías que razas de su tamaño.', 'Sensibilidad al gen MDR1; consultar veterinario antes de dar suplementos.'],
+  'Pit Bull Terrier': ['Propenso a alergias cutáneas y alimentarias.', 'Alta masa muscular requiere proteína de calidad.'],
+  'Maltés': ['Propenso a hipoglucemia; comidas frecuentes necesarias.', 'Sensibilidad digestiva; cambios de dieta deben ser graduales.'],
+  'Dálmata': ['Metabolismo de purinas alterado; dieta baja en purinas obligatoria.', 'Propenso a cálculos urinarios de urato; hidratación crucial.'],
+  'San Bernardo': ['Crecimiento lento; no sobrealimentar durante desarrollo.', 'Muy propenso a torsión gástrica; nunca dar una sola comida grande al día.'],
+  'Weimaraner': ['Propenso a torsión gástrica; dividir comidas en 2-3 tomas.', 'Alta energía; puede necesitar más calorías en días activos.'],
+  'Bichón Frisé': ['Propenso a alergias alimentarias.', 'Sensible a colorantes y preservantes artificiales.'],
+  'Shar Pei': ['Piel arrugada propensa a infecciones; omega-3 beneficioso.', 'Propenso a amiloidosis y fiebre del Shar Pei; proteína de calidad es esencial.']
 };
 
 // Factores de actividad para cálculo calórico
@@ -515,6 +545,307 @@ const INFO_RAZA_DETALLADA = {
     kcalPorKg: 28
   },
 
+  'Rottweiler': {
+    especie: 'perro',
+    predisposiciones: ['Torsión gástrica (GDV)', 'Displasia de cadera y codo', 'Osteosarcoma', 'Estenosis aórtica subvalvular'],
+    nutricionEspecifica: {
+      proteina: { min: 26, max: 30 },
+      grasa: { min: 14, max: 18 },
+      carbohidratos: { min: 42, max: 48 },
+      fibra: '3-5%',
+      nota: 'Raza grande y musculosa con pecho profundo. Riesgo de torsión gástrica: dividir en 2-3 comidas diarias. No ejercitar después de comer. Tendencia al sobrepeso en la adultez.'
+    },
+    alimentosEvitar: ['Comidas grandes de una sola vez', 'Exceso de calcio en crecimiento', 'Golosinas altas en grasa'],
+    suplementos: ['Glucosamina/Condroitina desde adulto joven', 'Omega-3 para articulaciones', 'Taurina y L-carnitina para corazón'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 5, max: 8 }, { edadMeses: 4, min: 14, max: 20 },
+      { edadMeses: 6, min: 22, max: 33 }, { edadMeses: 9, min: 30, max: 45 },
+      { edadMeses: 12, min: 34, max: 52 }, { edadMeses: 24, min: 36, max: 60 }
+    ],
+    datosCuriosos: 'Los Rottweilers descienden de los perros pastores romanos. Su nombre viene de la ciudad alemana Rottweil, donde se usaban para arrear ganado y tirar carros de carniceros.',
+    kcalPorKg: 30
+  },
+  'Dachshund (Salchicha)': {
+    especie: 'perro',
+    predisposiciones: ['Enfermedad del disco intervertebral (IVDD)', 'Obesidad', 'Diabetes', 'Epilepsia'],
+    nutricionEspecifica: {
+      proteina: { min: 25, max: 28 },
+      grasa: { min: 12, max: 15 },
+      carbohidratos: { min: 47, max: 53 },
+      fibra: '5-7%',
+      nota: 'Columna larga y vulnerable. El sobrepeso es EXTREMADAMENTE peligroso: cada gramo extra de presión sobre los discos vertebrales aumenta el riesgo de parálisis. Alta fibra para saciedad y control de peso.'
+    },
+    alimentosEvitar: ['Comida libre', 'Golosinas frecuentes', 'Alimentos altos en grasa'],
+    suplementos: ['Glucosamina/Condroitina para columna', 'Omega-3 antiinflamatorio', 'L-carnitina para metabolismo'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 1, max: 2 }, { edadMeses: 4, min: 2, max: 4 },
+      { edadMeses: 6, min: 3, max: 7 }, { edadMeses: 9, min: 4, max: 10 },
+      { edadMeses: 12, min: 5, max: 12 }, { edadMeses: 24, min: 5, max: 14 }
+    ],
+    datosCuriosos: 'Los Dachshunds fueron criados para cazar tejones en sus madrigueras. Su forma alargada es una ventaja evolutiva, pero la convierte en la raza con mayor riesgo de problemas de espalda (25% desarrollará IVDD).',
+    kcalPorKg: 35
+  },
+  'Schnauzer Miniatura': {
+    especie: 'perro',
+    predisposiciones: ['Pancreatitis', 'Hiperlipidemia', 'Cálculos urinarios (estruvita)', 'Diabetes mellitus'],
+    nutricionEspecifica: {
+      proteina: { min: 26, max: 30 },
+      grasa: { min: 10, max: 14 },
+      carbohidratos: { min: 46, max: 52 },
+      fibra: '4-6%',
+      nota: 'Propenso a pancreatitis e hiperlipidemia. Dieta BAJA EN GRASA es obligatoria. Nunca dar restos de comida alta en grasa. Monitorear triglicéridos en análisis de sangre.'
+    },
+    alimentosEvitar: ['Alimentos altos en grasa', 'Sobras de la mesa', 'Premios grasos (orejas de cerdo, huesos con tuétano)'],
+    suplementos: ['Probióticos para digestión', 'Omega-3 (en dosis moderadas)', 'Vitamina E antioxidante'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 0.8, max: 1.5 }, { edadMeses: 4, min: 2, max: 3.5 },
+      { edadMeses: 6, min: 3, max: 5 }, { edadMeses: 9, min: 4, max: 6.5 },
+      { edadMeses: 12, min: 4.5, max: 7 }, { edadMeses: 24, min: 5, max: 8 }
+    ],
+    datosCuriosos: 'Los Schnauzers Miniatura tienen la tasa más alta de pancreatitis de todas las razas de perro. Una sola comida alta en grasa puede desencadenar un episodio que requiera hospitalización.',
+    kcalPorKg: 38
+  },
+  'Shih Tzu': {
+    especie: 'perro',
+    predisposiciones: ['Síndrome braquicefálico', 'Problemas dentales', 'Luxación patelar', 'Enfermedad renal'],
+    nutricionEspecifica: {
+      proteina: { min: 26, max: 30 },
+      grasa: { min: 14, max: 18 },
+      carbohidratos: { min: 42, max: 48 },
+      fibra: '3-5%',
+      nota: 'Braquicefálico con mandíbula corta. Croquetas pequeñas o planas. Pelo largo requiere excelente nutrición con ácidos grasos. Propenso a problemas dentales por mandíbula comprimida.'
+    },
+    alimentosEvitar: ['Croquetas grandes', 'Alimentos muy duros', 'Alimentos calientes (dificultad respiratoria)'],
+    suplementos: ['Omega-3 y Omega-6 para pelaje', 'Dental treats miniatura', 'Probióticos'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 0.5, max: 1 }, { edadMeses: 4, min: 1.5, max: 2.5 },
+      { edadMeses: 6, min: 2.5, max: 4 }, { edadMeses: 9, min: 3, max: 5.5 },
+      { edadMeses: 12, min: 3.5, max: 6 }, { edadMeses: 24, min: 4, max: 7 }
+    ],
+    datosCuriosos: 'El Shih Tzu significa "perro león" en chino. Era la raza favorita de la realeza china y no se permitía su exportación. Su pelaje crece continuamente como el cabello humano.',
+    kcalPorKg: 40
+  },
+  'Doberman': {
+    especie: 'perro',
+    predisposiciones: ['Cardiomiopatía dilatada (DCM)', 'Enfermedad de von Willebrand', 'Torsión gástrica', 'Hipotiroidismo'],
+    nutricionEspecifica: {
+      proteina: { min: 28, max: 32 },
+      grasa: { min: 15, max: 18 },
+      carbohidratos: { min: 40, max: 45 },
+      fibra: '3-5%',
+      nota: 'Alto riesgo de cardiomiopatía dilatada (DCM). Taurina y L-carnitina son ESENCIALES en la dieta. Raza atlética con alta necesidad de proteína de calidad. Pecho profundo: riesgo de torsión gástrica.'
+    },
+    alimentosEvitar: ['Comidas grandes de una sola vez', 'Dietas sin granos (asociadas con DCM)', 'Alimentos con bajo contenido de taurina'],
+    suplementos: ['Taurina (obligatorio para salud cardíaca)', 'L-carnitina', 'Omega-3 EPA/DHA', 'Glucosamina para articulaciones'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 4, max: 7 }, { edadMeses: 4, min: 11, max: 18 },
+      { edadMeses: 6, min: 18, max: 28 }, { edadMeses: 9, min: 25, max: 36 },
+      { edadMeses: 12, min: 30, max: 40 }, { edadMeses: 24, min: 32, max: 45 }
+    ],
+    datosCuriosos: 'El Doberman tiene la tasa más alta de cardiomiopatía dilatada de todas las razas: hasta el 58% la desarrollará. Suplementar con taurina puede reducir significativamente el riesgo.',
+    kcalPorKg: 32
+  },
+  'Gran Danés': {
+    especie: 'perro',
+    predisposiciones: ['Torsión gástrica (GDV) - máximo riesgo', 'Cardiomiopatía dilatada', 'Osteosarcoma', 'Wobbler syndrome'],
+    nutricionEspecifica: {
+      proteina: { min: 24, max: 28 },
+      grasa: { min: 12, max: 16 },
+      carbohidratos: { min: 46, max: 52 },
+      fibra: '3-5%',
+      nota: 'Raza GIGANTE con el mayor riesgo de torsión gástrica. NUNCA dar una sola comida al día. Dividir en 3 comidas mínimo. Durante crecimiento: proteína moderada y calcio controlado para evitar problemas óseos. Kcal/kg bajas por metabolismo lento.'
+    },
+    alimentosEvitar: ['Una sola comida al día', 'Exceso de calcio en crecimiento', 'Ejercicio inmediatamente después de comer'],
+    suplementos: ['Glucosamina/Condroitina desde cachorro', 'Taurina y L-carnitina para corazón', 'Omega-3 para articulaciones'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 5, max: 10 }, { edadMeses: 4, min: 15, max: 25 },
+      { edadMeses: 6, min: 25, max: 40 }, { edadMeses: 9, min: 35, max: 55 },
+      { edadMeses: 12, min: 40, max: 65 }, { edadMeses: 24, min: 50, max: 80 }
+    ],
+    datosCuriosos: 'El Gran Danés es la raza con mayor riesgo de torsión gástrica del mundo (42% de probabilidad en su vida). Alimentar desde platos elevados y dividir la comida en 3+ tomas es vital.',
+    kcalPorKg: 25
+  },
+  'Cocker Spaniel': {
+    especie: 'perro',
+    predisposiciones: ['Otitis crónica', 'Alergias alimentarias', 'Obesidad', 'Cataratas'],
+    nutricionEspecifica: {
+      proteina: { min: 25, max: 28 },
+      grasa: { min: 12, max: 16 },
+      carbohidratos: { min: 46, max: 52 },
+      fibra: '4-6%',
+      nota: 'Propenso a otitis y alergias alimentarias. Considerar dietas de ingredientes limitados si hay intolerancias. Tendencia a la obesidad: controlar porciones estrictamente. Orejas largas pueden dificultar comer de platos hondos.'
+    },
+    alimentosEvitar: ['Pollo y res si hay alergia demostrada', 'Alimentos con colorantes artificiales', 'Comida libre'],
+    suplementos: ['Omega-3 para piel y pelaje', 'Probióticos para digestión', 'Biotina para pelaje'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 1.5, max: 2.5 }, { edadMeses: 4, min: 4, max: 6 },
+      { edadMeses: 6, min: 7, max: 10 }, { edadMeses: 9, min: 9, max: 12 },
+      { edadMeses: 12, min: 10, max: 13 }, { edadMeses: 24, min: 12, max: 15 }
+    ],
+    datosCuriosos: 'Los Cocker Spaniels tienen las orejas más largas proporcionalmente de todas las razas. Esto los hace propensos a otitis, y una dieta antiinflamatoria puede reducir significativamente los episodios.',
+    kcalPorKg: 33
+  },
+  'Border Collie': {
+    especie: 'perro',
+    predisposiciones: ['Epilepsia', 'Displasia de cadera', 'Anomalía del ojo del Collie (CEA)', 'Sensibilidad al gen MDR1'],
+    nutricionEspecifica: {
+      proteina: { min: 28, max: 32 },
+      grasa: { min: 16, max: 20 },
+      carbohidratos: { min: 38, max: 44 },
+      fibra: '3-4%',
+      nota: 'Raza de MÁXIMA energía. Necesita más calorías que la mayoría de razas medianas. Dieta alta en proteína y grasa para energía sostenida. Sensibilidad al gen MDR1: consultar veterinario antes de suplementos.'
+    },
+    alimentosEvitar: ['Dietas bajas en calorías (a menos que tenga sobrepeso)', 'Ivermectina y algunos medicamentos (gen MDR1)'],
+    suplementos: ['Omega-3 EPA/DHA para función cerebral', 'Glucosamina para articulaciones', 'Vitamina E antioxidante'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 2, max: 3.5 }, { edadMeses: 4, min: 5, max: 8 },
+      { edadMeses: 6, min: 8, max: 13 }, { edadMeses: 9, min: 11, max: 16 },
+      { edadMeses: 12, min: 13, max: 18 }, { edadMeses: 24, min: 14, max: 20 }
+    ],
+    datosCuriosos: 'El Border Collie es considerado la raza de perro más inteligente del mundo. Su altísimo nivel de actividad mental y física requiere hasta un 20% más de calorías que otras razas medianas.',
+    kcalPorKg: 38
+  },
+  'Pit Bull Terrier': {
+    especie: 'perro',
+    predisposiciones: ['Alergias cutáneas', 'Displasia de cadera', 'Demodex', 'Luxación patelar'],
+    nutricionEspecifica: {
+      proteina: { min: 28, max: 32 },
+      grasa: { min: 14, max: 18 },
+      carbohidratos: { min: 40, max: 46 },
+      fibra: '3-5%',
+      nota: 'Raza muscular y atlética. Alta necesidad de proteína de calidad para mantener masa muscular. Muy propenso a alergias cutáneas: proteínas novedosas (venado, pato, salmón) si hay intolerancia.'
+    },
+    alimentosEvitar: ['Pollo si hay alergia (alergeno más común)', 'Granos si hay intolerancia demostrada', 'Colorantes y preservantes artificiales'],
+    suplementos: ['Omega-3 para piel (antiinflamatorio)', 'Probióticos', 'Biotina para piel y pelaje'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 2.5, max: 4 }, { edadMeses: 4, min: 6, max: 10 },
+      { edadMeses: 6, min: 10, max: 17 }, { edadMeses: 9, min: 13, max: 23 },
+      { edadMeses: 12, min: 15, max: 26 }, { edadMeses: 24, min: 16, max: 30 }
+    ],
+    datosCuriosos: 'Los Pit Bulls tienen una de las tasas más altas de alergias cutáneas de todas las razas. Hasta un 30% desarrollará dermatitis atópica, y la dieta juega un papel crucial en el manejo.',
+    kcalPorKg: 33
+  },
+  'Maltés': {
+    especie: 'perro',
+    predisposiciones: ['Hipoglucemia', 'Luxación patelar', 'Shunt portosistémico', 'Problemas dentales'],
+    nutricionEspecifica: {
+      proteina: { min: 28, max: 32 },
+      grasa: { min: 15, max: 20 },
+      carbohidratos: { min: 38, max: 45 },
+      fibra: '3-4%',
+      nota: 'Raza toy con metabolismo rápido. DEBE comer 3-4 veces al día para evitar hipoglucemia. Croquetas miniatura. Pelaje blanco y largo requiere excelente nutrición con ácidos grasos esenciales.'
+    },
+    alimentosEvitar: ['Croquetas grandes', 'Alimentos que tiñan el pelaje (remolacha)', 'Huesos de cualquier tipo'],
+    suplementos: ['Omega-3 y Omega-6 para pelaje blanco', 'Dental treats miniatura', 'Calcio durante crecimiento'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 0.3, max: 0.6 }, { edadMeses: 4, min: 0.6, max: 1.2 },
+      { edadMeses: 6, min: 1, max: 2 }, { edadMeses: 9, min: 1.5, max: 3 },
+      { edadMeses: 12, min: 1.8, max: 3.5 }, { edadMeses: 24, min: 2, max: 4 }
+    ],
+    datosCuriosos: 'El Maltés es una de las razas más antiguas del mundo, con registros que datan de hace 2800 años. Un Maltés que no come en 6-8 horas puede desarrollar hipoglucemia peligrosa.',
+    kcalPorKg: 45
+  },
+  'Dálmata': {
+    especie: 'perro',
+    predisposiciones: ['Cálculos urinarios de urato', 'Sordera congénita', 'Alergias cutáneas', 'Hiperuricosuria'],
+    nutricionEspecifica: {
+      proteina: { min: 22, max: 25 },
+      grasa: { min: 12, max: 16 },
+      carbohidratos: { min: 49, max: 56 },
+      fibra: '4-6%',
+      nota: 'ÚNICA raza con metabolismo de purinas alterado genéticamente. Convierte purinas en ácido úrico (como humanos) en vez de alantoína. Dieta BAJA EN PURINAS obligatoria. Evitar vísceras, mariscos y carnes ricas en purinas. Hidratación MÁXIMA.'
+    },
+    alimentosEvitar: ['Vísceras (hígado, riñón, corazón)', 'Mariscos', 'Sardinas y anchoas', 'Extractos de carne/caldo concentrado'],
+    suplementos: ['Suplemento alcalinizante urinario (consultando vet)', 'Omega-3 para piel', 'Vitamina C en dosis moderadas'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 3, max: 5 }, { edadMeses: 4, min: 8, max: 13 },
+      { edadMeses: 6, min: 13, max: 20 }, { edadMeses: 9, min: 18, max: 26 },
+      { edadMeses: 12, min: 22, max: 29 }, { edadMeses: 24, min: 24, max: 32 }
+    ],
+    datosCuriosos: 'Los Dálmatas son la ÚNICA raza de perro que excreta ácido úrico en la orina en vez de alantoína, igual que los humanos. Esto los hace extremadamente propensos a cálculos urinarios si no se controla la dieta.',
+    kcalPorKg: 32
+  },
+  'San Bernardo': {
+    especie: 'perro',
+    predisposiciones: ['Torsión gástrica (GDV)', 'Displasia de cadera y codo', 'Osteosarcoma', 'Entropión'],
+    nutricionEspecifica: {
+      proteina: { min: 24, max: 28 },
+      grasa: { min: 12, max: 15 },
+      carbohidratos: { min: 47, max: 52 },
+      fibra: '4-6%',
+      nota: 'Raza GIGANTE de crecimiento muy lento (3-4 años para madurar). Durante crecimiento: proteína moderada, calcio controlado. Kcal/kg muy bajas. Dividir comida en 3 tomas mínimo para prevenir torsión gástrica.'
+    },
+    alimentosEvitar: ['Una sola comida grande al día', 'Exceso de calcio en crecimiento', 'Ejercicio después de comer'],
+    suplementos: ['Glucosamina/Condroitina desde cachorro', 'Omega-3 para articulaciones', 'Vitamina E'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 6, max: 11 }, { edadMeses: 4, min: 18, max: 28 },
+      { edadMeses: 6, min: 30, max: 45 }, { edadMeses: 9, min: 40, max: 58 },
+      { edadMeses: 12, min: 45, max: 65 }, { edadMeses: 24, min: 54, max: 82 }
+    ],
+    datosCuriosos: 'El San Bernardo es una de las razas más grandes del mundo. El récord es un San Bernardo de 166 kg. Su metabolismo es tan lento que necesita solo 25 kcal por kg de peso, casi la mitad que un Chihuahua.',
+    kcalPorKg: 25
+  },
+  'Weimaraner': {
+    especie: 'perro',
+    predisposiciones: ['Torsión gástrica (GDV)', 'Displasia de cadera', 'Hiperuricosuria', 'Enfermedad de von Willebrand'],
+    nutricionEspecifica: {
+      proteina: { min: 27, max: 31 },
+      grasa: { min: 15, max: 19 },
+      carbohidratos: { min: 40, max: 46 },
+      fibra: '3-5%',
+      nota: 'Raza atlética de alta energía. Pecho profundo con riesgo de torsión gástrica. Necesita dieta rica en proteína y grasa para actividad sostenida. Dividir en 2-3 comidas.'
+    },
+    alimentosEvitar: ['Comidas grandes de una sola vez', 'Ejercicio inmediatamente después de comer'],
+    suplementos: ['Glucosamina para articulaciones', 'Omega-3 EPA/DHA', 'Vitamina E antioxidante'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 3, max: 5 }, { edadMeses: 4, min: 9, max: 14 },
+      { edadMeses: 6, min: 15, max: 23 }, { edadMeses: 9, min: 20, max: 32 },
+      { edadMeses: 12, min: 23, max: 36 }, { edadMeses: 24, min: 25, max: 40 }
+    ],
+    datosCuriosos: 'El Weimaraner fue criado originalmente para cazar osos y jabalíes para la nobleza alemana. Su alto nivel de actividad requiere una dieta más calórica que la mayoría de razas de su tamaño.',
+    kcalPorKg: 33
+  },
+  'Bichón Frisé': {
+    especie: 'perro',
+    predisposiciones: ['Alergias cutáneas', 'Luxación patelar', 'Cálculos urinarios (oxalato)', 'Cataratas'],
+    nutricionEspecifica: {
+      proteina: { min: 26, max: 30 },
+      grasa: { min: 14, max: 18 },
+      carbohidratos: { min: 42, max: 48 },
+      fibra: '4-6%',
+      nota: 'Pelaje hipoalergénico que crece continuamente, requiere excelente nutrición con ácidos grasos. Propenso a alergias alimentarias: dietas de ingredientes limitados si hay sensibilidad. Hidratación importante para prevenir cálculos.'
+    },
+    alimentosEvitar: ['Colorantes y preservantes artificiales', 'Alimentos con múltiples fuentes de proteína si hay alergia'],
+    suplementos: ['Omega-3 y Omega-6 para pelaje', 'Probióticos', 'Biotina para pelaje'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 0.4, max: 0.8 }, { edadMeses: 4, min: 1, max: 2 },
+      { edadMeses: 6, min: 1.8, max: 3 }, { edadMeses: 9, min: 2.5, max: 4 },
+      { edadMeses: 12, min: 2.8, max: 4.5 }, { edadMeses: 24, min: 3, max: 5 }
+    ],
+    datosCuriosos: 'El Bichón Frisé tiene un pelaje hipoalergénico que no muda, similar al pelo humano. Para mantenerlo saludable y blanco, la dieta debe ser rica en ácidos grasos omega-3 y omega-6.',
+    kcalPorKg: 40
+  },
+  'Shar Pei': {
+    especie: 'perro',
+    predisposiciones: ['Fiebre familiar del Shar Pei', 'Amiloidosis renal', 'Entropión', 'Infecciones de piel en pliegues'],
+    nutricionEspecifica: {
+      proteina: { min: 26, max: 30 },
+      grasa: { min: 12, max: 16 },
+      carbohidratos: { min: 44, max: 50 },
+      fibra: '4-6%',
+      nota: 'Piel arrugada requiere excelente nutrición antiinflamatoria. Omega-3 es CRUCIAL para mantener la piel sana entre los pliegues. Propenso a amiloidosis renal: proteína de ALTA CALIDAD pero no en exceso.'
+    },
+    alimentosEvitar: ['Proteínas de baja calidad', 'Exceso de proteína (riñones)', 'Alimentos proinflamatorios'],
+    suplementos: ['Omega-3 EPA/DHA (dosis altas para piel)', 'Probióticos', 'Vitamina E antioxidante'],
+    pesoSaludablePorEdad: [
+      { edadMeses: 2, min: 2.5, max: 4 }, { edadMeses: 4, min: 6, max: 10 },
+      { edadMeses: 6, min: 10, max: 16 }, { edadMeses: 9, min: 14, max: 20 },
+      { edadMeses: 12, min: 16, max: 22 }, { edadMeses: 24, min: 18, max: 25 }
+    ],
+    datosCuriosos: 'El Shar Pei tiene una mutación genética única que causa sus arrugas icónicas y también lo predispone a la "fiebre del Shar Pei", una condición inflamatoria que puede dañar los riñones si no se maneja.',
+    kcalPorKg: 32
+  },
+
   // ==================== GATOS ====================
   'Persa': {
     especie: 'gato',
@@ -794,4 +1125,18 @@ const CHECKLIST_TEMPLATES = {
       gato: ['Historial médico completo', 'Carné de vacunas', 'Lista de síntomas o cambios observados', 'Muestras (si el vet las solicitó)', 'Carrier con manta familiar', 'Treats para reducir estrés', 'Lista de preguntas para el veterinario', 'Spray de feromonas (opcional)']
     }
   }
+};
+
+// ============================================================
+// UBICACIONES (País → Ciudades)
+// ============================================================
+const UBICACIONES = {
+  'Colombia': ['Bogotá', 'Medellín', 'Cali', 'Barranquilla', 'Bucaramanga', 'Cartagena', 'Cúcuta', 'Pereira', 'Santa Marta', 'Manizales', 'Ibagué', 'Villavicencio', 'Armenia', 'Neiva', 'Pasto', 'Montería', 'Valledupar', 'Popayán', 'Sincelejo', 'Tunja'],
+  'México': ['Ciudad de México', 'Guadalajara', 'Monterrey', 'Puebla', 'Tijuana', 'León', 'Cancún', 'Mérida', 'Querétaro', 'Toluca', 'Aguascalientes', 'Morelia', 'Chihuahua', 'Saltillo', 'Veracruz'],
+  'Argentina': ['Buenos Aires', 'Córdoba', 'Rosario', 'Mendoza', 'La Plata', 'San Miguel de Tucumán', 'Mar del Plata', 'Salta'],
+  'Chile': ['Santiago', 'Valparaíso', 'Concepción', 'Temuco', 'Antofagasta', 'Viña del Mar'],
+  'Perú': ['Lima', 'Arequipa', 'Trujillo', 'Cusco', 'Piura', 'Chiclayo'],
+  'Ecuador': ['Quito', 'Guayaquil', 'Cuenca', 'Santo Domingo', 'Ambato'],
+  'España': ['Madrid', 'Barcelona', 'Valencia', 'Sevilla', 'Bilbao', 'Málaga', 'Zaragoza'],
+  'Estados Unidos': ['Miami', 'Houston', 'Los Angeles', 'New York', 'Chicago', 'Dallas', 'San Antonio']
 };

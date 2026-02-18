@@ -294,7 +294,8 @@ function generarAlertasPeso(pet, pesos) {
   }
 
   // Comparación con raza
-  const comp = compareWithPercentiles(ultimo.peso, pet.raza, edadMeses);
+  const razaPeso = typeof obtenerRazaParaPeso === 'function' ? obtenerRazaParaPeso(pet) : pet.raza;
+  const comp = compareWithPercentiles(ultimo.peso, razaPeso, edadMeses);
   if (comp && comp.estado === 'sobrepeso') {
     alertas.push({
       tipo: 'warning',
@@ -406,7 +407,8 @@ function renderizarAnalisisPeso(pet, pesos) {
   }
 
   // Comparación con raza
-  const comp = compareWithPercentiles(ultimo.peso, pet.raza, edadMeses);
+  const razaPeso = typeof obtenerRazaParaPeso === 'function' ? obtenerRazaParaPeso(pet) : pet.raza;
+  const comp = compareWithPercentiles(ultimo.peso, razaPeso, edadMeses);
   if (comp) {
     const estadoColor = comp.estado === 'normal' ? 'var(--success)' :
       comp.estado === 'sobrepeso' ? 'var(--danger)' : 'var(--warning)';

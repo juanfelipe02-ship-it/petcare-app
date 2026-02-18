@@ -119,10 +119,41 @@ function inicializarUI() {
   document.getElementById('pet-form').addEventListener('submit', guardarMascota);
   document.getElementById('pet-species').addEventListener('change', actualizarRazas);
   document.getElementById('pet-breed')?.addEventListener('change', (e) => {
+    actualizarSeccionCriollo();
     if (e.target.value && typeof mostrarInfoRaza === 'function') {
       mostrarInfoRaza(e.target.value);
     }
   });
+
+  // Criollo phenotype listeners
+  const criolloCheckbox = document.getElementById('criollo-add-second');
+  if (criolloCheckbox) {
+    criolloCheckbox.addEventListener('change', (e) => {
+      const row2 = document.getElementById('criollo-row-2');
+      if (e.target.checked) {
+        row2.classList.remove('hidden');
+        document.getElementById('criollo-pct-1').value = 60;
+        document.getElementById('criollo-pct-2').value = 40;
+      } else {
+        row2.classList.add('hidden');
+        document.getElementById('criollo-pct-1').value = 100;
+        document.getElementById('criollo-pct-2').value = 0;
+        document.getElementById('criollo-breed-2').value = '';
+      }
+    });
+  }
+  const criolloPct1 = document.getElementById('criollo-pct-1');
+  if (criolloPct1) {
+    criolloPct1.addEventListener('input', () => {
+      const val = Math.min(90, Math.max(10, parseInt(criolloPct1.value) || 50));
+      criolloPct1.value = val;
+      document.getElementById('criollo-pct-2').value = 100 - val;
+    });
+  }
+
+  // Ubicación dropdowns
+  actualizarPaises();
+  document.getElementById('pet-country')?.addEventListener('change', actualizarCiudades);
   document.getElementById('exam-form').addEventListener('submit', guardarExamen);
   document.getElementById('meal-form').addEventListener('submit', registrarComida);
   document.getElementById('water-form').addEventListener('submit', registrarAgua);
@@ -532,12 +563,46 @@ function mostrarFormularioMascota(id) {
     const condRadio = document.querySelector(`input[name="pet-condition"][value="${pet.condicion}"]`);
     if (condRadio) condRadio.checked = true;
     document.getElementById('pet-activity').value = pet.actividad;
-    document.getElementById('pet-city').value = pet.ciudad || '';
-    document.getElementById('pet-country').value = pet.pais || '';
+    // Restaurar ubicación con selects
+    const countryVal = pet.pais || '';
+    const cityVal = pet.ciudad || '';
+    const countrySelect = document.getElementById('pet-country');
+    // Si el país guardado no está en la lista, agregarlo temporalmente
+    if (countryVal && countryVal !== '__otro__' && !countrySelect.querySelector(`option[value="${countryVal}"]`)) {
+      const tmpOpt = document.createElement('option');
+      tmpOpt.value = countryVal;
+      tmpOpt.textContent = countryVal;
+      countrySelect.insertBefore(tmpOpt, countrySelect.lastElementChild);
+    }
+    countrySelect.value = countryVal;
+    actualizarCiudades();
+    const citySelect = document.getElementById('pet-city');
+    if (cityVal && cityVal !== '__otra__' && !citySelect.querySelector(`option[value="${cityVal}"]`)) {
+      const tmpOpt = document.createElement('option');
+      tmpOpt.value = cityVal;
+      tmpOpt.textContent = cityVal;
+      citySelect.insertBefore(tmpOpt, citySelect.lastElementChild);
+    }
+    citySelect.value = cityVal;
+
     document.getElementById('pet-conditions').value = pet.condicionesSalud || '';
     document.querySelectorAll('input[name="pet-allergy"]').forEach(cb => {
       cb.checked = (pet.alergias || []).includes(cb.value);
     });
+
+    // Restaurar fenotipo Criollo
+    actualizarSeccionCriollo();
+    if (pet.raza === 'Criollo' && pet.razasCriollo && pet.razasCriollo.length > 0) {
+      poblarSelectsCriollo();
+      document.getElementById('criollo-breed-1').value = pet.razasCriollo[0].raza;
+      document.getElementById('criollo-pct-1').value = pet.razasCriollo[0].porcentaje;
+      if (pet.razasCriollo.length > 1) {
+        document.getElementById('criollo-add-second').checked = true;
+        document.getElementById('criollo-row-2').classList.remove('hidden');
+        document.getElementById('criollo-breed-2').value = pet.razasCriollo[1].raza;
+        document.getElementById('criollo-pct-2').value = pet.razasCriollo[1].porcentaje;
+      }
+    }
   } else {
     document.getElementById('pet-form-title').innerHTML = '<i class="fas fa-paw"></i> Registrar Mascota';
     document.getElementById('pet-edit-id').value = '';
@@ -565,6 +630,195 @@ function actualizarRazas() {
       breedSelect.appendChild(opt);
     });
   }
+
+  // Ocultar sección Criollo al cambiar especie
+  actualizarSeccionCriollo();
+}
+
+function actualizarSeccionCriollo() {
+  const breedSelect = document.getElementById('pet-breed');
+  const section = document.getElementById('criollo-phenotype-section');
+  if (!section) return;
+
+  if (breedSelect.value === 'Criollo') {
+    section.classList.remove('hidden');
+    poblarSelectsCriollo();
+  } else {
+    section.classList.add('hidden');
+  }
+}
+
+function poblarSelectsCriollo() {
+  const especie = document.getElementById('pet-species').value;
+  if (!especie || !RAZAS[especie]) return;
+
+  const razasFiltradas = RAZAS[especie].filter(r => r.nombre !== 'Criollo' && r.nombre !== 'Otra');
+  ['criollo-breed-1', 'criollo-breed-2'].forEach(id => {
+    const sel = document.getElementById(id);
+    const valorActual = sel.value;
+    sel.innerHTML = '<option value="">Seleccionar raza...</option>';
+    razasFiltradas.forEach(r => {
+      const opt = document.createElement('option');
+      opt.value = r.nombre;
+      opt.textContent = r.nombre;
+      sel.appendChild(opt);
+    });
+    if (valorActual) sel.value = valorActual;
+  });
+}
+
+function actualizarPaises() {
+  const countrySelect = document.getElementById('pet-country');
+  if (!countrySelect || typeof UBICACIONES === 'undefined') return;
+  countrySelect.innerHTML = '<option value="">Seleccionar país...</option>';
+  Object.keys(UBICACIONES).sort().forEach(pais => {
+    const opt = document.createElement('option');
+    opt.value = pais;
+    opt.textContent = pais;
+    countrySelect.appendChild(opt);
+  });
+  // Agregar opción "Otro" al final
+  const optOtro = document.createElement('option');
+  optOtro.value = '__otro__';
+  optOtro.textContent = 'Otro';
+  countrySelect.appendChild(optOtro);
+}
+
+function actualizarCiudades() {
+  const countrySelect = document.getElementById('pet-country');
+  const citySelect = document.getElementById('pet-city');
+  if (!citySelect) return;
+
+  const pais = countrySelect.value;
+  citySelect.innerHTML = '';
+
+  if (!pais || pais === '__otro__') {
+    citySelect.innerHTML = '<option value="">No disponible</option>';
+    citySelect.disabled = true;
+    return;
+  }
+
+  const ciudades = (typeof UBICACIONES !== 'undefined' && UBICACIONES[pais]) || [];
+  citySelect.innerHTML = '<option value="">Seleccionar ciudad...</option>';
+  ciudades.forEach(c => {
+    const opt = document.createElement('option');
+    opt.value = c;
+    opt.textContent = c;
+    citySelect.appendChild(opt);
+  });
+  // Agregar opción "Otra" al final
+  const optOtra = document.createElement('option');
+  optOtra.value = '__otra__';
+  optOtra.textContent = 'Otra';
+  citySelect.appendChild(optOtra);
+  citySelect.disabled = false;
+}
+
+// Calcula datos nutricionales ponderados para mascotas Criollo
+function obtenerInfoRazaPonderada(pet) {
+  if (pet.raza !== 'Criollo' || !pet.razasCriollo || !pet.razasCriollo.length) {
+    return typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] || null : null;
+  }
+
+  const razasInfo = pet.razasCriollo
+    .map(rc => ({ info: INFO_RAZA_DETALLADA[rc.raza], pct: rc.porcentaje / 100 }))
+    .filter(r => r.info);
+
+  if (!razasInfo.length) return null;
+  if (razasInfo.length === 1) return razasInfo[0].info;
+
+  // Promedio ponderado
+  const resultado = {
+    especie: razasInfo[0].info.especie,
+    predisposiciones: [],
+    nutricionEspecifica: {
+      proteina: { min: 0, max: 0 },
+      grasa: { min: 0, max: 0 },
+      carbohidratos: { min: 0, max: 0 },
+      fibra: '',
+      nota: ''
+    },
+    alimentosEvitar: [],
+    suplementos: [],
+    pesoSaludablePorEdad: [],
+    datosCuriosos: '',
+    kcalPorKg: 0
+  };
+
+  // Promediar valores numéricos
+  razasInfo.forEach(r => {
+    const ne = r.info.nutricionEspecifica;
+    resultado.nutricionEspecifica.proteina.min += ne.proteina.min * r.pct;
+    resultado.nutricionEspecifica.proteina.max += ne.proteina.max * r.pct;
+    resultado.nutricionEspecifica.grasa.min += ne.grasa.min * r.pct;
+    resultado.nutricionEspecifica.grasa.max += ne.grasa.max * r.pct;
+    resultado.nutricionEspecifica.carbohidratos.min += ne.carbohidratos.min * r.pct;
+    resultado.nutricionEspecifica.carbohidratos.max += ne.carbohidratos.max * r.pct;
+    resultado.kcalPorKg += r.info.kcalPorKg * r.pct;
+  });
+
+  // Redondear
+  ['proteina', 'grasa', 'carbohidratos'].forEach(key => {
+    resultado.nutricionEspecifica[key].min = Math.round(resultado.nutricionEspecifica[key].min);
+    resultado.nutricionEspecifica[key].max = Math.round(resultado.nutricionEspecifica[key].max);
+  });
+  resultado.kcalPorKg = Math.round(resultado.kcalPorKg);
+
+  // Combinar listas únicas
+  const predSet = new Set();
+  const evitarSet = new Set();
+  const suplSet = new Set();
+  const notasArr = [];
+  const curiososArr = [];
+
+  razasInfo.forEach(r => {
+    r.info.predisposiciones.forEach(p => predSet.add(p));
+    r.info.alimentosEvitar.forEach(a => evitarSet.add(a));
+    r.info.suplementos.forEach(s => suplSet.add(s));
+    notasArr.push(`${r.info.nutricionEspecifica.nota} (${Math.round(r.pct * 100)}% ${pet.razasCriollo.find(rc => INFO_RAZA_DETALLADA[rc.raza] === r.info)?.raza || ''})`);
+    curiososArr.push(r.info.datosCuriosos);
+  });
+
+  resultado.predisposiciones = [...predSet];
+  resultado.alimentosEvitar = [...evitarSet];
+  resultado.suplementos = [...suplSet];
+  resultado.nutricionEspecifica.nota = notasArr.join(' | ');
+  resultado.nutricionEspecifica.fibra = razasInfo[0].info.nutricionEspecifica.fibra;
+  resultado.datosCuriosos = curiososArr.join(' | ');
+
+  // Promediar pesoSaludablePorEdad
+  const edadesSet = new Set();
+  razasInfo.forEach(r => r.info.pesoSaludablePorEdad.forEach(p => edadesSet.add(p.edadMeses)));
+  const edades = [...edadesSet].sort((a, b) => a - b);
+
+  edades.forEach(edad => {
+    let min = 0, max = 0, totalPct = 0;
+    razasInfo.forEach(r => {
+      const punto = r.info.pesoSaludablePorEdad.find(p => p.edadMeses === edad);
+      if (punto) {
+        min += punto.min * r.pct;
+        max += punto.max * r.pct;
+        totalPct += r.pct;
+      }
+    });
+    if (totalPct > 0) {
+      resultado.pesoSaludablePorEdad.push({
+        edadMeses: edad,
+        min: parseFloat((min / totalPct).toFixed(1)),
+        max: parseFloat((max / totalPct).toFixed(1))
+      });
+    }
+  });
+
+  return resultado;
+}
+
+// Para Criollo: retorna la primera raza del fenotipo (para funciones que necesitan un nombre de raza)
+function obtenerRazaParaPeso(pet) {
+  if (pet.raza === 'Criollo' && pet.razasCriollo && pet.razasCriollo.length > 0) {
+    return pet.razasCriollo[0].raza;
+  }
+  return pet.raza;
 }
 
 async function guardarMascota(e) {
@@ -588,12 +842,31 @@ async function guardarMascota(e) {
     genero: document.getElementById('pet-gender').value,
     condicion: condicion ? condicion.value : '3',
     actividad: document.getElementById('pet-activity').value,
-    ciudad: document.getElementById('pet-city').value.trim(),
-    pais: document.getElementById('pet-country').value.trim(),
+    ciudad: document.getElementById('pet-city').value,
+    pais: document.getElementById('pet-country').value,
     condicionesSalud: document.getElementById('pet-conditions').value.trim(),
     alergias: alergias,
     fechaRegistro: editId ? (estado.mascotas.find(p => p.id === editId)?.fechaRegistro || fechaHoy()) : fechaHoy()
   };
+
+  // Guardar fenotipo Criollo
+  if (mascota.raza === 'Criollo') {
+    const breed1 = document.getElementById('criollo-breed-1').value;
+    const pct1 = parseInt(document.getElementById('criollo-pct-1').value) || 100;
+    const addSecond = document.getElementById('criollo-add-second').checked;
+    const breed2 = document.getElementById('criollo-breed-2').value;
+    const pct2 = parseInt(document.getElementById('criollo-pct-2').value) || 0;
+
+    mascota.razasCriollo = [];
+    if (breed1) {
+      mascota.razasCriollo.push({ raza: breed1, porcentaje: addSecond && breed2 ? pct1 : 100 });
+    }
+    if (addSecond && breed2) {
+      mascota.razasCriollo.push({ raza: breed2, porcentaje: pct2 });
+    }
+  } else {
+    delete mascota.razasCriollo;
+  }
 
   // Subir foto a Firebase Storage si hay archivo pendiente
   if (currentPhotoFile && mascota.foto === '__pending_upload__') {
@@ -1348,8 +1621,15 @@ function renderizarNutricion() {
     `<li><i class="fas fa-check"></i> ${escapeHtml(m)}</li>`
   ).join('');
 
-  // Advertencias de raza
-  const warnings = ADVERTENCIAS_RAZA[pet.raza] || [];
+  // Advertencias de raza (combinar para Criollo)
+  let warnings = ADVERTENCIAS_RAZA[pet.raza] || [];
+  if (pet.raza === 'Criollo' && pet.razasCriollo && pet.razasCriollo.length) {
+    const warnSet = new Set();
+    pet.razasCriollo.forEach(rc => {
+      (ADVERTENCIAS_RAZA[rc.raza] || []).forEach(w => warnSet.add(w));
+    });
+    warnings = [...warnSet];
+  }
   const warnCard = document.getElementById('nutri-warnings-card');
   if (warnings.length > 0) {
     warnCard.classList.remove('hidden');
@@ -1372,7 +1652,8 @@ function renderizarNutricion() {
   if (foodRecsContainer && typeof recommendFood === 'function') {
     const ultimoExamen = (estado.examenes[pet.id] || []).sort((a, b) => b.fecha.localeCompare(a.fecha))[0];
     const examResults = ultimoExamen ? ultimoExamen.valores : null;
-    const pais = (pet.pais || 'Colombia').toLowerCase().includes('colomb') ? 'colombia' : 'mexico';
+    const paisRaw = (pet.pais || 'Colombia').toLowerCase();
+    const pais = paisRaw.includes('colomb') ? 'colombia' : paisRaw.includes('méx') || paisRaw.includes('mex') ? 'mexico' : 'colombia';
     const recomendaciones = recommendFood(pet, examResults, pais);
     if (recomendaciones.length > 0 && typeof renderizarRecomendaciones === 'function') {
       foodRecsContainer.innerHTML = renderizarRecomendaciones(recomendaciones, pet, pais);
@@ -1407,14 +1688,18 @@ function renderizarNutricion() {
   // Peso ideal dinámico según edad
   const idealWeightContainer = document.getElementById('ideal-weight-info');
   if (idealWeightContainer && typeof predictIdealWeight === 'function') {
-    const prediccion = predictIdealWeight(pet.raza, edadMeses);
+    const razaParaPeso = obtenerRazaParaPeso(pet);
+    const prediccion = predictIdealWeight(razaParaPeso, edadMeses);
     if (prediccion) {
-      const comp = typeof compareWithPercentiles === 'function' ? compareWithPercentiles(pet.peso, pet.raza, edadMeses) : null;
+      const comp = typeof compareWithPercentiles === 'function' ? compareWithPercentiles(pet.peso, razaParaPeso, edadMeses) : null;
       const estadoColor = comp ? (comp.estado === 'normal' ? 'var(--success)' : comp.estado === 'sobrepeso' ? 'var(--danger)' : 'var(--warning)') : 'var(--primary)';
+      const labelRaza = pet.raza === 'Criollo' && pet.razasCriollo && pet.razasCriollo.length
+        ? 'Criollo (' + pet.razasCriollo.map(r => r.porcentaje + '% ' + r.raza).join(' + ') + ')'
+        : pet.raza;
       idealWeightContainer.innerHTML = `
         <div class="ideal-weight-display">
           <div class="ideal-weight-range">
-            <span class="ideal-label">Peso ideal para ${escapeHtml(pet.raza)} (${prediccion.etapa}):</span>
+            <span class="ideal-label">Peso ideal para ${escapeHtml(labelRaza)} (${prediccion.etapa}):</span>
             <span class="ideal-values">${prediccion.min} - ${prediccion.max} kg</span>
             <span class="ideal-current" style="color:${estadoColor}">Peso actual: ${pet.peso} kg ${comp ? '- ' + comp.mensaje : ''}</span>
           </div>
@@ -1432,7 +1717,7 @@ function renderizarEducacionInline(pet) {
   if (!container || !pet) return;
 
   const edadMeses = obtenerEdadActual(pet).totalMeses;
-  const info = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] : null;
+  const info = obtenerInfoRazaPonderada(pet);
 
   let html = '<div class="education-tips">';
 
@@ -1639,7 +1924,8 @@ function renderizarSeguimiento() {
 
     // Usar análisis inteligente de peso
     if (typeof compareWithPercentiles === 'function') {
-      const comp = compareWithPercentiles(ultimoPeso.peso, pet.raza, edadMesesPeso);
+      const razaParaPesoComp = obtenerRazaParaPeso(pet);
+      const comp = compareWithPercentiles(ultimoPeso.peso, razaParaPesoComp, edadMesesPeso);
       if (comp) {
         const estadoColor = comp.estado === 'normal' ? 'var(--success)' : comp.estado === 'sobrepeso' ? 'var(--danger)' : 'var(--warning)';
         compHtml += `<p>Peso ideal para ${pet.raza} (${comp.etapa}): <strong>${comp.rangoIdeal.min} - ${comp.rangoIdeal.max} kg</strong></p>`;
@@ -1647,7 +1933,7 @@ function renderizarSeguimiento() {
         if (comp.percentil) compHtml += `<p style="font-size:0.8rem;color:var(--text-secondary)">Percentil ${comp.percentil} para su raza</p>`;
       }
     } else {
-      const razaInfo = RAZAS[pet.especie].find(r => r.nombre === pet.raza);
+      const razaInfo = RAZAS[pet.especie].find(r => r.nombre === obtenerRazaParaPeso(pet));
       if (razaInfo) {
         compHtml += `<p>Peso ideal para ${pet.raza}: <strong>${razaInfo.pesoIdeal.min} - ${razaInfo.pesoIdeal.max} kg</strong></p>`;
       }
@@ -1713,7 +1999,7 @@ function renderizarTablaPesoEdad(pet) {
   // Usar edades reales de INFO_RAZA_DETALLADA si disponibles
   let edadesClave;
   let usaDatosLiteratura = false;
-  const infoRaza = typeof INFO_RAZA_DETALLADA !== 'undefined' ? INFO_RAZA_DETALLADA[pet.raza] : null;
+  const infoRaza = obtenerInfoRazaPonderada(pet);
 
   if (infoRaza && infoRaza.pesoSaludablePorEdad && infoRaza.pesoSaludablePorEdad.length > 0) {
     edadesClave = infoRaza.pesoSaludablePorEdad.map(p => p.edadMeses);
@@ -1763,7 +2049,7 @@ function renderizarTablaPesoEdad(pet) {
     </tr></thead><tbody>`;
 
   edadesClave.forEach((edad, idx) => {
-    const pred = predictIdealWeight(pet.raza, edad);
+    const pred = predictIdealWeight(obtenerRazaParaPeso(pet), edad);
     if (!pred) return;
 
     const esCurrent = idx === filaActualIdx;
@@ -3153,7 +3439,7 @@ function mostrarExplicacion(tipo) {
   const calorias = calcularCaloriasDiarias(pet);
   const rer = 70 * Math.pow(pet.peso, 0.75);
   const edadMeses = obtenerEdadActual(pet).totalMeses;
-  const info = INFO_RAZA_DETALLADA[pet.raza];
+  const info = obtenerInfoRazaPonderada(pet);
 
   let html = '';
 
@@ -3283,8 +3569,13 @@ function crearRecordatorioPesaje(dias) {
 
 // ==================== INFO DE RAZA EN NUTRICIÓN ====================
 function mostrarInfoRaza(raza) {
-  const info = INFO_RAZA_DETALLADA[raza];
   const card = document.getElementById('breed-info-popup');
+  // Para Criollo, no mostrar info directa (se mostrará al guardar con fenotipo)
+  if (raza === 'Criollo') {
+    card.classList.add('hidden');
+    return;
+  }
+  const info = INFO_RAZA_DETALLADA[raza];
   if (!info) {
     card.classList.add('hidden');
     return;
