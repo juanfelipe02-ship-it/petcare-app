@@ -687,6 +687,16 @@
       </div>
 
       <div id="track-content" class="hidden">
+        <!-- Comidas rápidas (presets) -->
+        <div id="preset-meals-section" class="card preset-meals-card hidden">
+          <div class="card-header">
+            <h3><i class="fas fa-bolt"></i> Comidas Rápidas</h3>
+          </div>
+          <div class="card-body">
+            <div id="preset-meals-grid" class="preset-meals-grid"></div>
+          </div>
+        </div>
+
         <div class="dashboard-grid">
           <!-- Registro de comida -->
           <div class="card">
@@ -731,6 +741,9 @@
                   <input type="number" id="meal-grams" min="1" max="2000" required placeholder="Ej: 150">
                 </div>
                 <button type="submit" class="btn btn-primary btn-block"><i class="fas fa-plus"></i> Agregar</button>
+                <button type="button" id="btn-save-preset" class="btn btn-outline btn-block btn-sm" style="margin-top:0.5rem" onclick="guardarComoPreset()">
+                  <i class="fas fa-bolt"></i> Guardar como comida rápida
+                </button>
               </form>
             </div>
           </div>

@@ -13,6 +13,7 @@ let estado = {
   recordatorios: {},  // { petId: [...] }
   visitas: {},        // { petId: [...] }
   frecuenciaAlimentacion: {}, // { petId: number }
+  comidasPreset: {},  // { petId: [{ id, nombre, alimento, marca, gramos, calPor100g }] }
   checklists: {},     // { petId: { checklistKey: [bool] } }
   tema: 'light',
   veterinariasFavoritas: []
@@ -1832,6 +1833,9 @@ function renderizarSeguimiento() {
   document.getElementById('track-content').classList.toggle('hidden', !pet);
   if (!pet) return;
 
+  // Renderizar presets de comida rápida
+  renderizarPresets();
+
   const hoy = fechaHoy();
   const calorias = calcularCaloriasDiarias(pet);
   const comidasHoy = estado.comidas[pet.id]?.[hoy] || [];
@@ -2125,6 +2129,145 @@ async function eliminarComida(fecha, idx) {
     estado.comidas[pet.id][fecha].splice(idx, 1);
     await guardarDatos();
     renderizarSeguimiento();
+  }
+}
+
+// ==================== COMIDAS RÁPIDAS (PRESETS) ====================
+function guardarComoPreset() {
+  const pet = obtenerMascotaActiva();
+  if (!pet) { mostrarToast('Selecciona una mascota primero', 'warning'); return; }
+
+  const tipo = document.getElementById('meal-food-type').value;
+  const gramos = parseFloat(document.getElementById('meal-grams').value);
+
+  if (!tipo || !gramos) {
+    mostrarToast('Primero llena el tipo de alimento y los gramos', 'warning');
+    return;
+  }
+
+  if (!estado.comidasPreset[pet.id]) estado.comidasPreset[pet.id] = [];
+  if (estado.comidasPreset[pet.id].length >= 3) {
+    mostrarToast('Máximo 3 comidas rápidas. Elimina una para agregar otra.', 'warning');
+    return;
+  }
+
+  let calPor100g = ALIMENTOS_CALORIAS[tipo] || 0;
+  if (tipo === 'Otro') {
+    const customKcal = parseFloat(document.getElementById('meal-custom-kcal')?.value);
+    if (!customKcal || customKcal <= 0) {
+      mostrarToast('Ingresa las calorías por 100g del alimento', 'warning');
+      return;
+    }
+    calPor100g = customKcal;
+  }
+
+  const marca = document.getElementById('meal-brand').value.trim();
+  const calorias = Math.round((calPor100g / 100) * gramos);
+
+  // Sugerir nombre automático
+  const numPresets = estado.comidasPreset[pet.id].length;
+  const nombresDefault = ['Desayuno', 'Almuerzo', 'Cena'];
+  const nombreSugerido = nombresDefault[numPresets] || `Comida ${numPresets + 1}`;
+
+  const nombre = prompt('Nombre para esta comida rápida:', nombreSugerido);
+  if (!nombre) return;
+
+  estado.comidasPreset[pet.id].push({
+    id: generarId(),
+    nombre: nombre.trim().substring(0, 20),
+    alimento: tipo,
+    marca,
+    gramos,
+    calPor100g
+  });
+
+  guardarDatos();
+  renderizarPresets();
+  mostrarToast(`Comida rápida "${nombre}" creada (${calorias} kcal)`, 'success');
+}
+
+async function usarPreset(presetId) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+
+  const presets = estado.comidasPreset[pet.id] || [];
+  const preset = presets.find(p => p.id === presetId);
+  if (!preset) return;
+
+  const now = new Date();
+  const hora = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+  const fecha = fechaHoy();
+  const calorias = (preset.calPor100g / 100) * preset.gramos;
+
+  if (!estado.comidas[pet.id]) estado.comidas[pet.id] = {};
+  if (!estado.comidas[pet.id][fecha]) estado.comidas[pet.id][fecha] = [];
+
+  estado.comidas[pet.id][fecha].push({
+    hora,
+    tipo: preset.alimento,
+    marca: preset.marca,
+    gramos: preset.gramos,
+    calorias,
+    calPor100g: preset.calPor100g
+  });
+
+  await guardarDatos();
+  renderizarSeguimiento();
+  mostrarToast(`${preset.nombre}: +${Math.round(calorias)} kcal registradas`, 'success');
+}
+
+function eliminarPreset(presetId) {
+  const pet = obtenerMascotaActiva();
+  if (!pet) return;
+
+  if (!estado.comidasPreset[pet.id]) return;
+  estado.comidasPreset[pet.id] = estado.comidasPreset[pet.id].filter(p => p.id !== presetId);
+  guardarDatos();
+  renderizarPresets();
+  mostrarToast('Comida rápida eliminada', 'info');
+}
+
+function renderizarPresets() {
+  const pet = obtenerMascotaActiva();
+  const section = document.getElementById('preset-meals-section');
+  const grid = document.getElementById('preset-meals-grid');
+  if (!section || !grid) return;
+
+  const presets = pet ? (estado.comidasPreset[pet.id] || []) : [];
+
+  if (presets.length === 0) {
+    section.classList.add('hidden');
+    return;
+  }
+
+  section.classList.remove('hidden');
+  grid.innerHTML = presets.map(p => {
+    const kcal = Math.round((p.calPor100g / 100) * p.gramos);
+    const label = p.alimento.length > 20 ? p.alimento.substring(0, 18) + '...' : p.alimento;
+    return `
+      <div class="preset-meal-btn" onclick="usarPreset('${p.id}')">
+        <div class="preset-meal-top">
+          <span class="preset-meal-name">${escapeHtml(p.nombre)}</span>
+          <button class="btn-icon btn-sm preset-delete" onclick="event.stopPropagation();eliminarPreset('${p.id}')" title="Eliminar">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        <span class="preset-meal-detail">${escapeHtml(label)}${p.marca ? ' (' + escapeHtml(p.marca) + ')' : ''}</span>
+        <div class="preset-meal-bottom">
+          <span class="preset-meal-grams">${p.gramos}g</span>
+          <span class="preset-meal-kcal">${kcal} kcal</span>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Mostrar slot vacío si quedan espacios
+  const restantes = 3 - presets.length;
+  if (restantes > 0) {
+    grid.innerHTML += `
+      <div class="preset-meal-btn preset-meal-empty" onclick="document.getElementById('meal-food-category').focus()">
+        <i class="fas fa-plus"></i>
+        <span>Llena el formulario y presiona "Guardar como comida rápida"</span>
+      </div>`;
   }
 }
 

@@ -1676,6 +1676,98 @@ body {
   line-height: 1.4;
 }
 
+/* Preset meals (comidas rápidas) */
+.preset-meals-card {
+  margin-bottom: 1rem;
+}
+.preset-meals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 0.75rem;
+}
+.preset-meal-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.75rem;
+  border: 2px solid var(--primary-light);
+  border-radius: var(--border-radius-sm);
+  background: var(--bg-input);
+  cursor: pointer;
+  transition: all var(--transition);
+  position: relative;
+}
+.preset-meal-btn:hover {
+  border-color: var(--primary);
+  background: rgba(74, 144, 226, 0.06);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
+}
+.preset-meal-btn:active {
+  transform: translateY(0);
+}
+.preset-meal-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.preset-meal-name {
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: var(--primary);
+}
+.preset-delete {
+  opacity: 0.4;
+  font-size: 0.7rem;
+}
+.preset-delete:hover {
+  opacity: 1;
+  color: var(--danger);
+}
+.preset-meal-detail {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.preset-meal-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.15rem;
+}
+.preset-meal-grams {
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+.preset-meal-kcal {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--success-dark);
+  background: rgba(126, 211, 33, 0.1);
+  padding: 0.15rem 0.5rem;
+  border-radius: 10px;
+}
+.preset-meal-empty {
+  border-style: dashed;
+  border-color: var(--border-color);
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: var(--text-light);
+  font-size: 0.8rem;
+  min-height: 80px;
+  gap: 0.5rem;
+}
+.preset-meal-empty i {
+  font-size: 1.2rem;
+}
+.preset-meal-empty:hover {
+  border-color: var(--primary-light);
+  color: var(--text-secondary);
+}
+
 /* Print styles */
 @media print {
   .app-header, .sidebar, .fab, .fab-menu, .toast-container { display: none !important; }
