@@ -111,6 +111,7 @@ async function guardarDatosFirestore(estado) {
       recordatorios: estado.recordatorios || {},
       visitas: estado.visitas || {},
       frecuenciaAlimentacion: estado.frecuenciaAlimentacion || {},
+      comidasPreset: estado.comidasPreset || {},
       checklists: estado.checklists || {},
       tema: estado.tema || 'light',
       veterinariasFavoritas: estado.veterinariasFavoritas || [],

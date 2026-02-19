@@ -221,6 +221,17 @@
     @media(min-width:768px) {
       .edu-header h1 { font-size: 2.5rem; }
     }
+    .macros-ref-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
+    .macros-ref-table th, .macros-ref-table td { padding: 0.5rem 0.75rem; text-align: left; border-bottom: 1px solid var(--border, #e0e0e0); }
+    .macros-ref-table th { background: var(--primary); color: white; position: sticky; top: 0; }
+    .macros-ref-table td:nth-child(n+2) { text-align: center; }
+    .macros-ref-table th:nth-child(n+2) { text-align: center; }
+    .macros-cat-row td { background: var(--bg-secondary, #f5f5f5); font-size: 0.85rem; letter-spacing: 0.03em; }
+    .macros-ref-table tr:hover:not(.macros-cat-row) { background: rgba(74,144,226,0.06); }
+    @media(max-width:599px) {
+      .macros-ref-table { font-size: 0.8rem; }
+      .macros-ref-table th, .macros-ref-table td { padding: 0.35rem 0.4rem; }
+    }
   </style>
 </head>
 <body>
@@ -240,6 +251,7 @@
       <a href="#gatos">Gatos</a>
       <a href="#calculadora">Calculadora</a>
       <a href="#comparador">Comparador</a>
+      <a href="#macros-tabla">Macros</a>
       <a href="#timeline">Timeline</a>
       <a href="#mitos">Mitos</a>
       <a href="#referencias">Referencias</a>
@@ -587,6 +599,13 @@
       <div id="compare-result" style="margin-top:1rem"></div>
     </section>
 
+    <!-- ==================== MACROS POR ALIMENTO ==================== -->
+    <section id="macros-tabla" class="edu-section">
+      <h2><i class="fas fa-th-list"></i> Tabla de Macronutrientes por Alimento</h2>
+      <p class="edu-text">Valores expresados como <strong>% del peso total</strong> del alimento, tal como se indica en los empaques y fichas nutricionales.</p>
+      <div id="macros-table-container"></div>
+    </section>
+
     <!-- ==================== TIMELINE ==================== -->
     <section id="timeline" class="edu-section">
       <h2><i class="fas fa-stream"></i> Timeline de Vida: Necesidades por Etapa</h2>
@@ -626,6 +645,7 @@
     document.addEventListener('DOMContentLoaded', () => {
       renderRERChart();
       populateBreedSelects();
+      renderMacrosTable();
       renderMyths();
       renderReferences();
       renderTimelineChart('perro');
@@ -919,6 +939,46 @@
           <p>${r.descripcion}</p>
         </div>
       `).join('');
+    }
+
+    // ==================== TABLA DE MACROS ====================
+    function renderMacrosTable() {
+      const container = document.getElementById('macros-table-container');
+      if (!container || typeof MACROS_POR_ALIMENTO === 'undefined') return;
+
+      const categorias = {
+        'Concentrados (secos)': ['Croquetas estándar', 'Croquetas premium', 'Croquetas light', 'Croquetas cachorro', 'Croquetas senior'],
+        'Alimento húmedo': ['Alimento húmedo estándar', 'Alimento húmedo premium'],
+        'Pescados enlatados': ['Atún enlatado', 'Sardina enlatada'],
+        'Carnes y proteínas': ['Pollo cocido', 'Res cocida', 'Cerdo cocido', 'Pavo cocido', 'Pescado cocido', 'Hígado de res cocido', 'Carne molida cocida', 'Huevo cocido'],
+        'Cereales y vegetales': ['Arroz cocido', 'Pasta cocida', 'Avena cocida', 'Batata/camote cocido', 'Calabaza cocida', 'Brócoli cocido', 'Zanahoria', 'Manzana', 'Plátano/banano'],
+        'Dietas especiales y complementos': ['BARF (dieta cruda mixta)', 'Yogur natural', 'Queso cottage']
+      };
+
+      const kcalMap = typeof ALIMENTOS_CALORIAS !== 'undefined' ? ALIMENTOS_CALORIAS : {};
+
+      let html = '<table class="macros-ref-table"><thead><tr>' +
+        '<th>Alimento</th><th>Proteína (%)</th><th>Grasa (%)</th><th>Carbos (%)</th><th>kcal/100g</th>' +
+        '</tr></thead><tbody>';
+
+      for (const [catName, items] of Object.entries(categorias)) {
+        html += `<tr class="macros-cat-row"><td colspan="5"><strong>${catName}</strong></td></tr>`;
+        for (const nombre of items) {
+          const m = MACROS_POR_ALIMENTO[nombre];
+          if (!m) continue;
+          const kcal = kcalMap[nombre] || '—';
+          html += `<tr>` +
+            `<td>${nombre}</td>` +
+            `<td>${m.proteina}</td>` +
+            `<td>${m.grasa}</td>` +
+            `<td>${m.carbohidratos}</td>` +
+            `<td>${kcal}</td>` +
+            `</tr>`;
+        }
+      }
+
+      html += '</tbody></table>';
+      container.innerHTML = html;
     }
   </script>
 </body>

@@ -1846,14 +1846,20 @@ function renderizarSeguimiento() {
   document.getElementById('track-cal-target').textContent = Math.round(calorias);
   const pct = calorias > 0 ? (calConsumidas / calorias) * 100 : 0;
 
-  // Calcular desglose de macronutrientes del día
+  // Calcular desglose de macronutrientes del día (MACROS_POR_ALIMENTO es % por peso)
+  let gProt = 0, gFat = 0, gCarb = 0;
   let calProt = 0, calFat = 0, calCarb = 0;
   const macrosMap = typeof MACROS_POR_ALIMENTO !== 'undefined' ? MACROS_POR_ALIMENTO : {};
   comidasHoy.forEach(c => {
-    const perfil = macrosMap[c.tipo] || { proteina: 33, grasa: 34, carbohidratos: 33 };
-    calProt += c.calorias * (perfil.proteina / 100);
-    calFat += c.calorias * (perfil.grasa / 100);
-    calCarb += c.calorias * (perfil.carbohidratos / 100);
+    const perfil = macrosMap[c.tipo] || { proteina: 10, grasa: 5, carbohidratos: 10 };
+    const gr = c.gramos || 0;
+    const pG = gr * perfil.proteina / 100;
+    const fG = gr * perfil.grasa / 100;
+    const cG = gr * perfil.carbohidratos / 100;
+    gProt += pG; gFat += fG; gCarb += cG;
+    calProt += pG * 4;
+    calFat += fG * 9;
+    calCarb += cG * 4;
   });
 
   // Barra segmentada por macros (ancho relativo al objetivo calórico)
@@ -1867,16 +1873,13 @@ function renderizarSeguimiento() {
   document.getElementById('track-macro-fat').style.width = `${pctFat}%`;
   document.getElementById('track-macro-carb').style.width = `${pctCarb}%`;
 
-  // Leyenda de macros
+  // Leyenda de macros (muestra gramos, coincide con empaques)
   const legendEl = document.getElementById('track-macro-legend');
   if (calConsumidas > 0) {
-    const pPct = totalMacro > 0 ? Math.round((calProt / totalMacro) * 100) : 0;
-    const fPct = totalMacro > 0 ? Math.round((calFat / totalMacro) * 100) : 0;
-    const cPct = totalMacro > 0 ? Math.round((calCarb / totalMacro) * 100) : 0;
     legendEl.innerHTML = `
-      <span class="macro-legend-item"><span class="macro-dot macro-prot"></span> Proteína ${pPct}% (${Math.round(calProt)} kcal)</span>
-      <span class="macro-legend-item"><span class="macro-dot macro-fat"></span> Grasa ${fPct}% (${Math.round(calFat)} kcal)</span>
-      <span class="macro-legend-item"><span class="macro-dot macro-carb"></span> Carbos ${cPct}% (${Math.round(calCarb)} kcal)</span>`;
+      <span class="macro-legend-item"><span class="macro-dot macro-prot"></span> Proteína ${Math.round(gProt)}g</span>
+      <span class="macro-legend-item"><span class="macro-dot macro-fat"></span> Grasa ${Math.round(gFat)}g</span>
+      <span class="macro-legend-item"><span class="macro-dot macro-carb"></span> Carbos ${Math.round(gCarb)}g</span>`;
   } else {
     legendEl.innerHTML = '';
   }

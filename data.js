@@ -273,74 +273,47 @@ Object.values(ALIMENTOS_CATEGORIAS).forEach(cat => {
   Object.assign(ALIMENTOS_CALORIAS, cat.items);
 });
 
-// Perfil de macronutrientes por alimento (% de CALORÍAS totales)
-// Calculado: proteína×4kcal/g, grasa×9kcal/g, carbos×4kcal/g
+// Perfil de macronutrientes por alimento (% por PESO, como en empaques)
 // Fuentes: USDA FoodData Central, análisis garantizado de marcas comerciales
+// El cálculo interno convierte a calorías: proteína×4kcal/g, grasa×9kcal/g, carbos×4kcal/g
 const MACROS_POR_ALIMENTO = {
-  // Concentrados (secos) — conversión desde análisis garantizado por peso
-  // Estándar: ~22% prot, ~10% grasa, ~54% carbs por peso
-  'Croquetas estándar':       { proteina: 22, grasa: 23, carbohidratos: 55 },
-  // Premium: ~27% prot, ~15% grasa, ~45% carbs por peso
-  'Croquetas premium':        { proteina: 26, grasa: 32, carbohidratos: 42 },
-  // Light: ~28% prot, ~8% grasa, ~48% carbs por peso
-  'Croquetas light':          { proteina: 30, grasa: 19, carbohidratos: 51 },
-  // Cachorro: ~32% prot, ~20% grasa, ~36% carbs por peso
-  'Croquetas cachorro':       { proteina: 28, grasa: 40, carbohidratos: 32 },
-  // Senior: ~24% prot, ~10% grasa, ~50% carbs por peso
-  'Croquetas senior':         { proteina: 25, grasa: 23, carbohidratos: 52 },
-  // Alimento húmedo — alto contenido de agua, macros sobre materia seca
-  // Estándar: ~8% prot, ~5% grasa, ~4% carbs por peso
-  'Alimento húmedo estándar': { proteina: 34, grasa: 48, carbohidratos: 18 },
-  // Premium: ~10% prot, ~6% grasa, ~3% carbs por peso
-  'Alimento húmedo premium':  { proteina: 38, grasa: 51, carbohidratos: 11 },
-  // Atún enlatado en agua: ~26% prot, ~1% grasa, ~0% carbs (USDA 15121)
-  'Atún enlatado':            { proteina: 92, grasa: 8, carbohidratos: 0 },
-  // Sardina enlatada: ~25% prot, ~11% grasa, ~0% carbs (USDA 15088)
-  'Sardina enlatada':         { proteina: 50, grasa: 50, carbohidratos: 0 },
+  // Concentrados (secos)
+  'Croquetas estándar':       { proteina: 22, grasa: 10, carbohidratos: 54 },
+  'Croquetas premium':        { proteina: 27, grasa: 15, carbohidratos: 45 },
+  'Croquetas light':          { proteina: 28, grasa: 8, carbohidratos: 48 },
+  'Croquetas cachorro':       { proteina: 32, grasa: 20, carbohidratos: 36 },
+  'Croquetas senior':         { proteina: 24, grasa: 10, carbohidratos: 50 },
+  // Alimento húmedo (sobre peso total incluyendo agua)
+  'Alimento húmedo estándar': { proteina: 8, grasa: 5, carbohidratos: 4 },
+  'Alimento húmedo premium':  { proteina: 10, grasa: 6, carbohidratos: 3 },
+  // Atún enlatado en agua (USDA 15121)
+  'Atún enlatado':            { proteina: 26, grasa: 1, carbohidratos: 0 },
+  // Sardina enlatada (USDA 15088)
+  'Sardina enlatada':         { proteina: 25, grasa: 11, carbohidratos: 0 },
   // Carnes — USDA FoodData Central
-  // Pollo cocido mixto: ~25% prot, ~7.5% grasa (USDA 05009)
-  'Pollo cocido':             { proteina: 60, grasa: 40, carbohidratos: 0 },
-  // Res cocida magra+grasa: ~26% prot, ~17% grasa (USDA 23557)
-  'Res cocida':               { proteina: 40, grasa: 60, carbohidratos: 0 },
-  // Cerdo cocido lomo: ~27% prot, ~14% grasa (USDA 10225)
-  'Cerdo cocido':             { proteina: 46, grasa: 54, carbohidratos: 0 },
-  // Pavo cocido pechuga: ~29% prot, ~1.8% grasa (USDA 05186)
-  'Pavo cocido':              { proteina: 88, grasa: 12, carbohidratos: 0 },
-  // Pescado blanco cocido (tilapia): ~26% prot, ~1.5% grasa (USDA 15261)
-  'Pescado cocido':           { proteina: 88, grasa: 12, carbohidratos: 0 },
-  // Hígado de res cocido: ~26% prot, ~5.5% grasa, ~4% carbs (USDA 13327)
-  'Hígado de res cocido':     { proteina: 61, grasa: 29, carbohidratos: 10 },
-  // Carne molida cocida regular: ~26% prot, ~15% grasa (USDA 23557)
-  'Carne molida cocida':      { proteina: 44, grasa: 56, carbohidratos: 0 },
-  // Huevo cocido entero: ~13% prot, ~11% grasa, ~1% carbs (USDA 01129)
-  'Huevo cocido':             { proteina: 34, grasa: 63, carbohidratos: 3 },
+  'Pollo cocido':             { proteina: 25, grasa: 7.5, carbohidratos: 0 },   // USDA 05009
+  'Res cocida':               { proteina: 26, grasa: 17, carbohidratos: 0 },    // USDA 23557
+  'Cerdo cocido':             { proteina: 27, grasa: 14, carbohidratos: 0 },    // USDA 10225
+  'Pavo cocido':              { proteina: 29, grasa: 1.8, carbohidratos: 0 },   // USDA 05186
+  'Pescado cocido':           { proteina: 26, grasa: 1.5, carbohidratos: 0 },   // USDA 15261
+  'Hígado de res cocido':     { proteina: 26, grasa: 5.5, carbohidratos: 4 },   // USDA 13327
+  'Carne molida cocida':      { proteina: 26, grasa: 15, carbohidratos: 0 },    // USDA 23557
+  'Huevo cocido':             { proteina: 13, grasa: 11, carbohidratos: 1 },    // USDA 01129
   // Cereales y vegetales — USDA FoodData Central
-  // Arroz blanco cocido: ~2.7% prot, ~0.3% grasa, ~28% carbs (USDA 20051)
-  'Arroz cocido':             { proteina: 9, grasa: 2, carbohidratos: 89 },
-  // Pasta cocida: ~5% prot, ~1% grasa, ~25% carbs (USDA 20120)
-  'Pasta cocida':             { proteina: 16, grasa: 7, carbohidratos: 77 },
-  // Avena cocida: ~2.5% prot, ~1.5% grasa, ~12% carbs (USDA 08120)
-  'Avena cocida':             { proteina: 14, grasa: 19, carbohidratos: 67 },
-  // Batata cocida: ~1.6% prot, ~0.1% grasa, ~20% carbs (USDA 11508)
-  'Batata/camote cocido':     { proteina: 7, grasa: 1, carbohidratos: 92 },
-  // Calabaza cocida: ~1% prot, ~0.1% grasa, ~5% carbs (USDA 11424)
-  'Calabaza cocida':          { proteina: 16, grasa: 4, carbohidratos: 80 },
-  // Brócoli cocido: ~2.4% prot, ~0.4% grasa, ~7% carbs (USDA 11091)
-  'Brócoli cocido':           { proteina: 23, grasa: 9, carbohidratos: 68 },
-  // Zanahoria cruda: ~0.9% prot, ~0.2% grasa, ~10% carbs (USDA 11124)
-  'Zanahoria':                { proteina: 8, grasa: 4, carbohidratos: 88 },
-  // Manzana: ~0.3% prot, ~0.2% grasa, ~14% carbs (USDA 09003)
-  'Manzana':                  { proteina: 2, grasa: 3, carbohidratos: 95 },
-  // Plátano: ~1.1% prot, ~0.3% grasa, ~23% carbs (USDA 09040)
-  'Plátano/banano':           { proteina: 4, grasa: 3, carbohidratos: 93 },
+  'Arroz cocido':             { proteina: 2.7, grasa: 0.3, carbohidratos: 28 }, // USDA 20051
+  'Pasta cocida':             { proteina: 5, grasa: 1, carbohidratos: 25 },     // USDA 20120
+  'Avena cocida':             { proteina: 2.5, grasa: 1.5, carbohidratos: 12 }, // USDA 08120
+  'Batata/camote cocido':     { proteina: 1.6, grasa: 0.1, carbohidratos: 20 }, // USDA 11508
+  'Calabaza cocida':          { proteina: 1, grasa: 0.1, carbohidratos: 5 },    // USDA 11424
+  'Brócoli cocido':           { proteina: 2.4, grasa: 0.4, carbohidratos: 7 },  // USDA 11091
+  'Zanahoria':                { proteina: 0.9, grasa: 0.2, carbohidratos: 10 }, // USDA 11124
+  'Manzana':                  { proteina: 0.3, grasa: 0.2, carbohidratos: 14 }, // USDA 09003
+  'Plátano/banano':           { proteina: 1.1, grasa: 0.3, carbohidratos: 23 }, // USDA 09040
   // Dietas especiales y complementos
-  // BARF crudo mixto: ~14% prot, ~10% grasa, ~1% carbs (estimado 60% carne)
-  'BARF (dieta cruda mixta)': { proteina: 37, grasa: 60, carbohidratos: 3 },
-  // Yogur natural entero: ~3.5% prot, ~3.3% grasa, ~4.7% carbs (USDA 01116)
-  'Yogur natural':            { proteina: 22, grasa: 48, carbohidratos: 30 },
-  // Queso cottage bajo en grasa: ~11% prot, ~4.3% grasa, ~3.4% carbs (USDA 01015)
-  'Queso cottage':            { proteina: 46, grasa: 40, carbohidratos: 14 },
-  'Otro':                     { proteina: 33, grasa: 34, carbohidratos: 33 }
+  'BARF (dieta cruda mixta)': { proteina: 14, grasa: 10, carbohidratos: 1 },
+  'Yogur natural':            { proteina: 3.5, grasa: 3.3, carbohidratos: 4.7 },  // USDA 01116
+  'Queso cottage':            { proteina: 11, grasa: 4.3, carbohidratos: 3.4 },   // USDA 01015
+  'Otro':                     { proteina: 10, grasa: 5, carbohidratos: 10 }
 };
 
 // ============================================================
