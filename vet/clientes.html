@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare VET - Clientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vet-styles.css">
+</head>
+<body>
+  <div class="vet-layout">
+    <!-- Sidebar -->
+    <aside class="vet-sidebar">
+      <div class="vet-sidebar-logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>PetCare VET</span>
+      </div>
+      <nav id="vet-sidebar-nav" class="vet-sidebar-nav"></nav>
+      <div class="vet-sidebar-footer">
+        <span id="clinic-name-footer"></span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="vet-main">
+      <header class="vet-header">
+        <div class="vet-header-left">
+          <button class="vet-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h1 id="vet-header-title" class="vet-header-title">Clientes</h1>
+        </div>
+        <div id="vet-header-right" class="vet-header-right"></div>
+      </header>
+
+      <div class="vet-content">
+        <!-- Search bar -->
+        <div class="vet-search-bar">
+          <div class="vet-search-input">
+            <input type="text" id="search-clients" placeholder="Buscar por nombre, email o teléfono..." oninput="filterClients()">
+            <i class="fas fa-search"></i>
+          </div>
+          <select id="filter-status" class="vet-select" style="width:auto;min-width:140px" onchange="loadClients()">
+            <option value="active">Activos</option>
+            <option value="all">Todos</option>
+          </select>
+          <button class="vet-btn vet-btn-primary" onclick="openClientModal()">
+            <i class="fas fa-plus"></i> Nuevo cliente
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="clients-loading" class="vet-loading"><div class="vet-spinner"></div></div>
+
+        <!-- Table -->
+        <div id="clients-card" class="vet-card" style="display:none">
+          <div class="vet-table-wrapper">
+            <table class="vet-table">
+              <thead>
+                <tr>
+                  <th>Nombre</th>
+                  <th>Email</th>
+                  <th>Teléfono</th>
+                  <th>Ciudad</th>
+                  <th># Mascotas</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="clients-tbody"></tbody>
+            </table>
+          </div>
+          <div id="clients-empty" class="vet-empty" style="display:none">
+            <i class="fas fa-users"></i>
+            <h4>Sin clientes aún</h4>
+            <p>Registra tu primer cliente para comenzar</p>
+            <button class="vet-btn vet-btn-primary" onclick="openClientModal()">
+              <i class="fas fa-plus"></i> Registrar cliente
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Crear/Editar Cliente -->
+  <div id="client-modal" class="vet-modal-overlay">
+    <div class="vet-modal">
+      <div class="vet-modal-header">
+        <h3 id="modal-title"><i class="fas fa-user-plus" style="color:var(--vet-primary)"></i> Nuevo cliente</h3>
+        <button class="vet-modal-close" onclick="closeClientModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body">
+        <input type="hidden" id="edit-client-id">
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Nombre *</label>
+            <input type="text" class="vet-input" id="client-firstName" placeholder="Nombre" required>
+          </div>
+          <div class="vet-form-group">
+            <label>Apellido *</label>
+            <input type="text" class="vet-input" id="client-lastName" placeholder="Apellido" required>
+          </div>
+        </div>
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Email</label>
+            <input type="email" class="vet-input" id="client-email" placeholder="correo@ejemplo.com">
+          </div>
+          <div class="vet-form-group">
+            <label>Teléfono *</label>
+            <input type="tel" class="vet-input" id="client-phone" placeholder="3001234567">
+          </div>
+        </div>
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Cédula / Documento</label>
+            <input type="text" class="vet-input" id="client-idNumber" placeholder="Número de identificación">
+          </div>
+          <div class="vet-form-group">
+            <label>Ciudad</label>
+            <input type="text" class="vet-input" id="client-city" placeholder="Ciudad">
+          </div>
+        </div>
+        <div class="vet-form-group">
+          <label>Dirección</label>
+          <input type="text" class="vet-input" id="client-address" placeholder="Dirección completa">
+        </div>
+        <div class="vet-form-group">
+          <label>Notas privadas</label>
+          <textarea class="vet-textarea" id="client-notes" placeholder="Notas internas sobre el cliente (no visibles para el cliente)" rows="2"></textarea>
+        </div>
+      </div>
+      <div class="vet-modal-footer">
+        <button class="vet-btn vet-btn-outline" onclick="closeClientModal()">Cancelar</button>
+        <button class="vet-btn vet-btn-primary" id="save-client-btn" onclick="saveClient()">
+          <i class="fas fa-save"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="vet-firestore.js"></script>
+  <script src="vet-app.js"></script>
+
+  <script>
+    let allClients = [];
+    let petCounts = {};
+
+    (async () => {
+      await vetAuthGuard();
+      renderVetSidebar('clientes');
+      renderVetHeader('Clientes');
+
+      const clinic = await getClinic();
+      const footerEl = document.getElementById('clinic-name-footer');
+      if (footerEl && clinic) footerEl.textContent = clinic.name;
+
+      await loadClients();
+
+      // Auto-open modal if ?action=new
+      if (new URLSearchParams(window.location.search).get('action') === 'new') {
+        openClientModal();
+      }
+    })();
+
+    async function loadClients() {
+      const includeInactive = document.getElementById('filter-status').value === 'all';
+      try {
+        allClients = await getAllClients(includeInactive);
+
+        // Count pets per client
+        const patients = await getPatients();
+        petCounts = {};
+        patients.forEach(p => {
+          if (p.clientId) petCounts[p.clientId] = (petCounts[p.clientId] || 0) + 1;
+        });
+
+        renderClients(allClients);
+      } catch (err) {
+        console.error('Error loading clients:', err);
+        vetToast('Error cargando clientes', 'error');
+      }
+
+      document.getElementById('clients-loading').style.display = 'none';
+      document.getElementById('clients-card').style.display = '';
+    }
+
+    function renderClients(clients) {
+      const tbody = document.getElementById('clients-tbody');
+      const empty = document.getElementById('clients-empty');
+
+      if (clients.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      tbody.innerHTML = clients.map(c => `
+        <tr>
+          <td>
+            <div style="display:flex;align-items:center;gap:0.5rem">
+              <div class="vet-avatar-placeholder"><i class="fas fa-user"></i></div>
+              <div>
+                <strong>${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</strong>
+                ${!c.active ? '<span class="vet-badge vet-badge-red" style="margin-left:0.5rem">Inactivo</span>' : ''}
+              </div>
+            </div>
+          </td>
+          <td>${escapeHtml(c.email) || '—'}</td>
+          <td>${escapeHtml(c.phone) || '—'}</td>
+          <td>${escapeHtml(c.city) || '—'}</td>
+          <td>${petCounts[c.id] || 0}</td>
+          <td>
+            <div style="display:flex;gap:0.4rem">
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="event.stopPropagation();editClient('${c.id}')" title="Editar">
+                <i class="fas fa-pen"></i>
+              </button>
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="event.stopPropagation();viewClientPets('${c.id}')" title="Ver mascotas">
+                <i class="fas fa-paw"></i>
+              </button>
+            </div>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function filterClients() {
+      const q = document.getElementById('search-clients').value.toLowerCase().trim();
+      if (!q) { renderClients(allClients); return; }
+      const filtered = allClients.filter(c =>
+        (c.firstName + ' ' + c.lastName).toLowerCase().includes(q) ||
+        (c.email || '').toLowerCase().includes(q) ||
+        (c.phone || '').includes(q)
+      );
+      renderClients(filtered);
+    }
+
+    function openClientModal(client) {
+      const modal = document.getElementById('client-modal');
+      const title = document.getElementById('modal-title');
+
+      if (client) {
+        title.innerHTML = '<i class="fas fa-user-edit" style="color:var(--vet-primary)"></i> Editar cliente';
+        document.getElementById('edit-client-id').value = client.id;
+        document.getElementById('client-firstName').value = client.firstName || '';
+        document.getElementById('client-lastName').value = client.lastName || '';
+        document.getElementById('client-email').value = client.email || '';
+        document.getElementById('client-phone').value = client.phone || '';
+        document.getElementById('client-idNumber').value = client.idNumber || '';
+        document.getElementById('client-city').value = client.city || '';
+        document.getElementById('client-address').value = client.address || '';
+        document.getElementById('client-notes').value = client.notes || '';
+      } else {
+        title.innerHTML = '<i class="fas fa-user-plus" style="color:var(--vet-primary)"></i> Nuevo cliente';
+        document.getElementById('edit-client-id').value = '';
+        document.querySelectorAll('#client-modal .vet-input, #client-modal .vet-textarea').forEach(el => el.value = '');
+      }
+
+      modal.classList.add('active');
+    }
+
+    function closeClientModal() {
+      document.getElementById('client-modal').classList.remove('active');
+    }
+
+    async function editClient(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (client) openClientModal(client);
+    }
+
+    function viewClientPets(clientId) {
+      window.location.href = `pacientes.html?clientId=${clientId}`;
+    }
+
+    async function saveClient() {
+      const firstName = document.getElementById('client-firstName').value.trim();
+      const lastName = document.getElementById('client-lastName').value.trim();
+      const phone = document.getElementById('client-phone').value.trim();
+
+      if (!firstName || !lastName) {
+        vetToast('Nombre y apellido son obligatorios', 'error');
+        return;
+      }
+
+      const data = {
+        firstName,
+        lastName,
+        email: document.getElementById('client-email').value.trim(),
+        phone,
+        idNumber: document.getElementById('client-idNumber').value.trim(),
+        city: document.getElementById('client-city').value.trim(),
+        address: document.getElementById('client-address').value.trim(),
+        notes: document.getElementById('client-notes').value.trim()
+      };
+
+      const btn = document.getElementById('save-client-btn');
+      btn.disabled = true;
+
+      try {
+        const editId = document.getElementById('edit-client-id').value;
+        if (editId) {
+          await updateClient(editId, data);
+          vetToast('Cliente actualizado', 'success');
+        } else {
+          await createClient(data);
+          vetToast('Cliente creado', 'success');
+        }
+        closeClientModal();
+        await loadClients();
+      } catch (err) {
+        console.error('Error saving client:', err);
+        vetToast('Error guardando cliente', 'error');
+      }
+
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,666 @@
+/* ============================================================
+   PetCare VET - Professional Veterinary Interface
+   Colores: Azul #1E40AF, Blanco, Grises
+   Desktop-first, professional, clean
+   ============================================================ */
+
+:root {
+  --vet-primary: #1E40AF;
+  --vet-primary-light: #3B82F6;
+  --vet-primary-dark: #1E3A8A;
+  --vet-primary-bg: rgba(30,64,175,0.06);
+  --vet-success: #059669;
+  --vet-success-bg: rgba(5,150,105,0.08);
+  --vet-warning: #D97706;
+  --vet-warning-bg: rgba(217,119,6,0.08);
+  --vet-danger: #DC2626;
+  --vet-danger-bg: rgba(220,38,38,0.08);
+  --vet-info: #0891B2;
+
+  --vet-bg: #F1F5F9;
+  --vet-bg-card: #FFFFFF;
+  --vet-text: #1E293B;
+  --vet-text-secondary: #64748B;
+  --vet-text-light: #94A3B8;
+  --vet-border: #E2E8F0;
+  --vet-border-hover: #CBD5E1;
+  --vet-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  --vet-shadow-lg: 0 4px 16px rgba(0,0,0,0.1);
+  --vet-radius: 8px;
+  --vet-radius-lg: 12px;
+
+  --vet-sidebar-width: 240px;
+  --vet-header-height: 56px;
+}
+
+/* ==================== RESET & BASE ==================== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Inter', 'Roboto', -apple-system, sans-serif;
+  background: var(--vet-bg);
+  color: var(--vet-text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+
+a { color: var(--vet-primary-light); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ==================== LAYOUT ==================== */
+.vet-layout {
+  display: flex;
+  min-height: 100vh;
+}
+
+/* ==================== SIDEBAR ==================== */
+.vet-sidebar {
+  width: var(--vet-sidebar-width);
+  background: var(--vet-primary-dark);
+  color: white;
+  display: flex;
+  flex-direction: column;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
+  transition: transform 0.3s;
+}
+
+.vet-sidebar-logo {
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.vet-sidebar-logo i { font-size: 1.5rem; }
+.vet-sidebar-logo span { font-size: 1.1rem; font-weight: 700; letter-spacing: -0.02em; }
+
+.vet-sidebar-nav {
+  flex: 1;
+  padding: 0.75rem 0;
+  overflow-y: auto;
+}
+
+.vet-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.65rem 1.25rem;
+  color: rgba(255,255,255,0.7);
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+
+.vet-nav-item:hover {
+  background: rgba(255,255,255,0.08);
+  color: white;
+  text-decoration: none;
+}
+
+.vet-nav-item.active {
+  background: rgba(255,255,255,0.12);
+  color: white;
+  border-left-color: var(--vet-primary-light);
+}
+
+.vet-nav-item i { width: 20px; text-align: center; font-size: 1rem; }
+
+.vet-sidebar-footer {
+  padding: 1rem 1.25rem;
+  border-top: 1px solid rgba(255,255,255,0.1);
+  font-size: 0.8rem;
+  color: rgba(255,255,255,0.5);
+}
+
+/* ==================== HEADER ==================== */
+.vet-header {
+  height: var(--vet-header-height);
+  background: var(--vet-bg-card);
+  border-bottom: 1px solid var(--vet-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 1.5rem;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+
+.vet-header-left {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.vet-header-title {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--vet-text);
+}
+
+.vet-header-right {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.vet-menu-toggle {
+  display: none;
+  background: none;
+  border: none;
+  font-size: 1.25rem;
+  color: var(--vet-text);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.vet-user-info {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--vet-text-secondary);
+  cursor: pointer;
+  padding: 0.4rem 0.75rem;
+  border-radius: var(--vet-radius);
+  transition: background 0.2s;
+}
+
+.vet-user-info:hover { background: var(--vet-bg); }
+.vet-user-info .user-avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--vet-primary);
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 600;
+  font-size: 0.8rem;
+}
+
+/* ==================== MAIN CONTENT ==================== */
+.vet-main {
+  flex: 1;
+  margin-left: var(--vet-sidebar-width);
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+}
+
+.vet-content {
+  flex: 1;
+  padding: 1.5rem;
+  max-width: 1400px;
+}
+
+/* ==================== CARDS ==================== */
+.vet-card {
+  background: var(--vet-bg-card);
+  border: 1px solid var(--vet-border);
+  border-radius: var(--vet-radius-lg);
+  box-shadow: var(--vet-shadow);
+}
+
+.vet-card-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--vet-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vet-card-header h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vet-card-body { padding: 1.25rem; }
+
+/* ==================== STATS GRID ==================== */
+.vet-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.vet-stat-card {
+  background: var(--vet-bg-card);
+  border: 1px solid var(--vet-border);
+  border-radius: var(--vet-radius-lg);
+  padding: 1.25rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  box-shadow: var(--vet-shadow);
+}
+
+.vet-stat-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+.vet-stat-icon.blue { background: var(--vet-primary-bg); color: var(--vet-primary); }
+.vet-stat-icon.green { background: var(--vet-success-bg); color: var(--vet-success); }
+.vet-stat-icon.orange { background: var(--vet-warning-bg); color: var(--vet-warning); }
+.vet-stat-icon.red { background: var(--vet-danger-bg); color: var(--vet-danger); }
+
+.vet-stat-info h4 { font-size: 1.5rem; font-weight: 700; line-height: 1.2; }
+.vet-stat-info p { font-size: 0.8rem; color: var(--vet-text-secondary); margin-top: 0.15rem; }
+
+/* ==================== TABLES ==================== */
+.vet-table-wrapper {
+  overflow-x: auto;
+}
+
+.vet-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.vet-table thead th {
+  background: var(--vet-bg);
+  padding: 0.65rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--vet-text-secondary);
+  border-bottom: 1px solid var(--vet-border);
+  white-space: nowrap;
+}
+
+.vet-table tbody td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid var(--vet-border);
+  vertical-align: middle;
+}
+
+.vet-table tbody tr:hover { background: var(--vet-primary-bg); }
+.vet-table tbody tr { cursor: pointer; transition: background 0.15s; }
+
+/* ==================== BUTTONS ==================== */
+.vet-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: var(--vet-radius);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  border: none;
+  transition: all 0.2s;
+  white-space: nowrap;
+}
+
+.vet-btn-primary { background: var(--vet-primary); color: white; }
+.vet-btn-primary:hover { background: var(--vet-primary-dark); }
+
+.vet-btn-outline { background: transparent; border: 1px solid var(--vet-border); color: var(--vet-text); }
+.vet-btn-outline:hover { border-color: var(--vet-primary); color: var(--vet-primary); }
+
+.vet-btn-danger { background: var(--vet-danger); color: white; }
+.vet-btn-danger:hover { background: #B91C1C; }
+
+.vet-btn-success { background: var(--vet-success); color: white; }
+.vet-btn-success:hover { background: #047857; }
+
+.vet-btn-sm { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+.vet-btn-lg { padding: 0.65rem 1.5rem; font-size: 0.95rem; }
+
+.vet-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+/* ==================== FORMS ==================== */
+.vet-form-group {
+  margin-bottom: 1rem;
+}
+
+.vet-form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--vet-text-secondary);
+  margin-bottom: 0.35rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+
+.vet-input, .vet-select, .vet-textarea {
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: 1px solid var(--vet-border);
+  border-radius: var(--vet-radius);
+  font-size: 0.9rem;
+  color: var(--vet-text);
+  background: white;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.vet-input:focus, .vet-select:focus, .vet-textarea:focus {
+  outline: none;
+  border-color: var(--vet-primary-light);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.vet-textarea { resize: vertical; min-height: 80px; }
+
+.vet-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+/* ==================== BADGES ==================== */
+.vet-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding: 0.2rem 0.6rem;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.vet-badge-blue { background: var(--vet-primary-bg); color: var(--vet-primary); }
+.vet-badge-green { background: var(--vet-success-bg); color: var(--vet-success); }
+.vet-badge-orange { background: var(--vet-warning-bg); color: var(--vet-warning); }
+.vet-badge-red { background: var(--vet-danger-bg); color: var(--vet-danger); }
+.vet-badge-gray { background: #F1F5F9; color: #64748B; }
+
+/* ==================== MODAL ==================== */
+.vet-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15,23,42,0.5);
+  display: none;
+  align-items: flex-start;
+  justify-content: center;
+  z-index: 200;
+  padding: 2rem;
+  overflow-y: auto;
+}
+
+.vet-modal-overlay.active { display: flex; }
+
+.vet-modal {
+  background: var(--vet-bg-card);
+  border-radius: var(--vet-radius-lg);
+  width: 100%;
+  max-width: 560px;
+  box-shadow: var(--vet-shadow-lg);
+  margin-top: 2rem;
+}
+
+.vet-modal-header {
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--vet-border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.vet-modal-header h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.vet-modal-close {
+  background: none;
+  border: none;
+  font-size: 1.2rem;
+  color: var(--vet-text-light);
+  cursor: pointer;
+  padding: 0.25rem;
+}
+
+.vet-modal-close:hover { color: var(--vet-text); }
+
+.vet-modal-body { padding: 1.5rem; }
+
+.vet-modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid var(--vet-border);
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+/* ==================== SEARCH BAR ==================== */
+.vet-search-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.vet-search-input {
+  flex: 1;
+  position: relative;
+}
+
+.vet-search-input input {
+  width: 100%;
+  padding: 0.55rem 0.75rem 0.55rem 2.25rem;
+  border: 1px solid var(--vet-border);
+  border-radius: var(--vet-radius);
+  font-size: 0.9rem;
+  background: white;
+}
+
+.vet-search-input input:focus {
+  outline: none;
+  border-color: var(--vet-primary-light);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.1);
+}
+
+.vet-search-input i {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--vet-text-light);
+  font-size: 0.9rem;
+}
+
+/* ==================== TOAST ==================== */
+.vet-toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 300;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.vet-toast {
+  padding: 0.75rem 1.25rem;
+  border-radius: var(--vet-radius);
+  color: white;
+  font-size: 0.85rem;
+  font-weight: 500;
+  box-shadow: var(--vet-shadow-lg);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  animation: vet-toast-in 0.3s ease;
+  max-width: 380px;
+}
+
+.vet-toast.success { background: var(--vet-success); }
+.vet-toast.error { background: var(--vet-danger); }
+.vet-toast.info { background: var(--vet-primary); }
+
+@keyframes vet-toast-in {
+  from { opacity: 0; transform: translateX(1rem); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+/* ==================== EMPTY STATE ==================== */
+.vet-empty {
+  text-align: center;
+  padding: 3rem 1.5rem;
+  color: var(--vet-text-secondary);
+}
+
+.vet-empty i { font-size: 2.5rem; margin-bottom: 0.75rem; display: block; color: var(--vet-text-light); }
+.vet-empty h4 { font-size: 1rem; margin-bottom: 0.4rem; color: var(--vet-text); }
+.vet-empty p { font-size: 0.85rem; margin-bottom: 1rem; }
+
+/* ==================== LOADING ==================== */
+.vet-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.vet-spinner {
+  width: 32px;
+  height: 32px;
+  border: 3px solid var(--vet-border);
+  border-top-color: var(--vet-primary);
+  border-radius: 50%;
+  animation: vet-spin 0.7s linear infinite;
+}
+
+@keyframes vet-spin { to { transform: rotate(360deg); } }
+
+/* ==================== APPOINTMENT LIST ==================== */
+.vet-appointment-item {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--vet-border);
+}
+
+.vet-appointment-item:last-child { border-bottom: none; }
+
+.vet-appointment-time {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--vet-primary);
+  min-width: 65px;
+}
+
+.vet-appointment-info { flex: 1; }
+.vet-appointment-info strong { font-size: 0.9rem; }
+.vet-appointment-info span { font-size: 0.8rem; color: var(--vet-text-secondary); display: block; }
+
+/* ==================== RESPONSIVE ==================== */
+@media (max-width: 1024px) {
+  .vet-stats-grid { grid-template-columns: repeat(2, 1fr); }
+}
+
+@media (max-width: 768px) {
+  .vet-sidebar {
+    transform: translateX(-100%);
+  }
+  .vet-sidebar.open { transform: translateX(0); }
+
+  .vet-main { margin-left: 0; }
+  .vet-menu-toggle { display: block; }
+
+  .vet-stats-grid { grid-template-columns: 1fr; }
+  .vet-form-row { grid-template-columns: 1fr; }
+  .vet-content { padding: 1rem; }
+
+  .vet-modal { margin-top: 1rem; }
+}
+
+/* ==================== DASHBOARD GRID ==================== */
+.vet-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+@media (max-width: 1024px) {
+  .vet-dashboard-grid { grid-template-columns: 1fr; }
+}
+
+/* ==================== PET/CLIENT AVATAR ==================== */
+.vet-avatar {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  object-fit: cover;
+  background: var(--vet-border);
+}
+
+.vet-avatar-placeholder {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--vet-primary-bg);
+  color: var(--vet-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.9rem;
+  flex-shrink: 0;
+}
+
+/* ==================== USER DROPDOWN ==================== */
+.vet-user-dropdown {
+  position: relative;
+}
+
+.vet-dropdown-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--vet-bg-card);
+  border: 1px solid var(--vet-border);
+  border-radius: var(--vet-radius);
+  box-shadow: var(--vet-shadow-lg);
+  min-width: 180px;
+  display: none;
+  z-index: 60;
+}
+
+.vet-dropdown-menu.active { display: block; }
+
+.vet-dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  font-size: 0.85rem;
+  color: var(--vet-text);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.vet-dropdown-item:hover { background: var(--vet-bg); }
+.vet-dropdown-item.danger { color: var(--vet-danger); }
+.vet-dropdown-divider { border-top: 1px solid var(--vet-border); margin: 0.25rem 0; }

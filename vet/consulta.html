@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare VET - Consulta</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vet-styles.css">
+  <style>
+    .soap-section { margin-bottom: 1.5rem; }
+    .soap-section h3 {
+      font-size: 0.9rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em;
+      margin-bottom: 0.75rem; display: flex; align-items: center; gap: 0.5rem;
+    }
+    .soap-section h3 .letter {
+      width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+      color: white; font-size: 0.85rem; font-weight: 700;
+    }
+    .soap-s .letter { background: var(--vet-primary); }
+    .soap-o .letter { background: var(--vet-success); }
+    .soap-a .letter { background: var(--vet-warning); }
+    .soap-p .letter { background: var(--vet-danger); }
+
+    .vitals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 0.75rem; }
+    .vital-item { background: var(--vet-bg); border-radius: var(--vet-radius); padding: 0.75rem; text-align: center; }
+    .vital-item label { display: block; font-size: 0.7rem; text-transform: uppercase; color: var(--vet-text-secondary); margin-bottom: 0.3rem; }
+    .vital-item input { width: 100%; text-align: center; border: 1px solid var(--vet-border); border-radius: 6px; padding: 0.4rem; font-size: 1rem; font-weight: 600; }
+    .vital-item input:focus { outline: none; border-color: var(--vet-primary-light); }
+
+    .patient-banner {
+      background: var(--vet-bg-card); border: 1px solid var(--vet-border); border-radius: var(--vet-radius-lg);
+      padding: 1rem 1.25rem; margin-bottom: 1.5rem;
+      display: flex; align-items: center; gap: 1rem; box-shadow: var(--vet-shadow);
+    }
+    .patient-banner .pet-icon {
+      width: 48px; height: 48px; border-radius: 50%; background: var(--vet-primary-bg); color: var(--vet-primary);
+      display: flex; align-items: center; justify-content: center; font-size: 1.3rem;
+    }
+    .patient-banner-info h2 { font-size: 1.1rem; margin-bottom: 0.1rem; }
+    .patient-banner-info p { font-size: 0.8rem; color: var(--vet-text-secondary); }
+
+    .medication-list { margin-top: 0.75rem; }
+    .medication-item {
+      background: var(--vet-bg); border-radius: var(--vet-radius); padding: 0.75rem 1rem;
+      margin-bottom: 0.5rem; display: flex; align-items: center; justify-content: space-between;
+    }
+    .medication-item strong { font-size: 0.9rem; }
+    .medication-item span { font-size: 0.8rem; color: var(--vet-text-secondary); }
+
+    .consult-actions {
+      position: sticky; bottom: 0; background: var(--vet-bg-card); padding: 1rem 0; border-top: 1px solid var(--vet-border);
+      display: flex; justify-content: flex-end; gap: 0.75rem; margin-top: 2rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="vet-layout">
+    <aside class="vet-sidebar">
+      <div class="vet-sidebar-logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>PetCare VET</span>
+      </div>
+      <nav id="vet-sidebar-nav" class="vet-sidebar-nav"></nav>
+      <div class="vet-sidebar-footer"><span id="clinic-name-footer"></span></div>
+    </aside>
+
+    <main class="vet-main">
+      <header class="vet-header">
+        <div class="vet-header-left">
+          <button class="vet-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h1 id="vet-header-title" class="vet-header-title">Consulta médica</h1>
+        </div>
+        <div id="vet-header-right" class="vet-header-right"></div>
+      </header>
+
+      <div class="vet-content">
+        <div id="consult-loading" class="vet-loading"><div class="vet-spinner"></div></div>
+
+        <div id="consult-form" style="display:none">
+          <!-- Patient Banner -->
+          <div class="patient-banner" id="patient-banner"></div>
+
+          <!-- Signos vitales -->
+          <div class="soap-section">
+            <h3>Signos vitales</h3>
+            <div class="vitals-grid">
+              <div class="vital-item">
+                <label>Temperatura (°C)</label>
+                <input type="number" id="vital-temp" step="0.1" placeholder="38.5">
+              </div>
+              <div class="vital-item">
+                <label>FC (bpm)</label>
+                <input type="number" id="vital-hr" placeholder="120">
+              </div>
+              <div class="vital-item">
+                <label>FR (rpm)</label>
+                <input type="number" id="vital-rr" placeholder="20">
+              </div>
+              <div class="vital-item">
+                <label>Peso (kg)</label>
+                <input type="number" id="vital-weight" step="0.1" placeholder="10.5">
+              </div>
+              <div class="vital-item">
+                <label>CC (1-9)</label>
+                <input type="number" id="vital-bcs" min="1" max="9" placeholder="5">
+              </div>
+            </div>
+          </div>
+
+          <!-- S - Subjective -->
+          <div class="soap-section soap-s">
+            <h3><span class="letter">S</span> Subjetivo — Motivo de consulta</h3>
+            <textarea class="vet-textarea" id="soap-subjective" rows="4" placeholder="¿Qué reporta el dueño? Síntomas, duración, cambios observados..."></textarea>
+          </div>
+
+          <!-- O - Objective -->
+          <div class="soap-section soap-o">
+            <h3><span class="letter">O</span> Objetivo — Examen físico</h3>
+            <div style="margin-bottom:0.5rem;display:flex;gap:0.5rem;flex-wrap:wrap">
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="insertTemplate('objective','Sistema digestivo: sin anomalías. ')">GI normal</button>
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="insertTemplate('objective','Sistema respiratorio: sin anomalías. ')">Resp normal</button>
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="insertTemplate('objective','Piel y pelaje: saludable, sin lesiones. ')">Piel normal</button>
+              <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="insertTemplate('objective','Mucosas rosadas, TRC <2s, linfonodos normales. ')">General normal</button>
+            </div>
+            <textarea class="vet-textarea" id="soap-objective" rows="5" placeholder="Hallazgos del examen físico, observaciones clínicas..."></textarea>
+          </div>
+
+          <!-- A - Assessment -->
+          <div class="soap-section soap-a">
+            <h3><span class="letter">A</span> Evaluación — Diagnóstico</h3>
+            <div class="vet-form-group">
+              <label>Diagnóstico principal</label>
+              <input type="text" class="vet-input" id="diagnosis-primary" placeholder="Diagnóstico principal">
+            </div>
+            <textarea class="vet-textarea" id="soap-assessment" rows="3" placeholder="Diagnósticos diferenciales, consideraciones adicionales..."></textarea>
+          </div>
+
+          <!-- P - Plan -->
+          <div class="soap-section soap-p">
+            <h3><span class="letter">P</span> Plan — Tratamiento</h3>
+            <textarea class="vet-textarea" id="soap-plan" rows="4" placeholder="Plan de tratamiento, indicaciones, dieta recomendada..."></textarea>
+
+            <div style="margin-top:1rem">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.5rem">
+                <label style="font-weight:600;font-size:0.85rem">Medicamentos</label>
+                <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="addMedication()"><i class="fas fa-plus"></i> Agregar</button>
+              </div>
+              <div id="medications-list" class="medication-list"></div>
+            </div>
+          </div>
+
+          <!-- Follow-up -->
+          <div class="soap-section">
+            <h3><i class="fas fa-calendar-check" style="color:var(--vet-info)"></i> Seguimiento</h3>
+            <div class="vet-form-row">
+              <div class="vet-form-group">
+                <label>Fecha control</label>
+                <input type="date" class="vet-input" id="followup-date">
+              </div>
+              <div class="vet-form-group">
+                <label>Motivo del control</label>
+                <input type="text" class="vet-input" id="followup-reason" placeholder="Ej: Verificar respuesta al tratamiento">
+              </div>
+            </div>
+          </div>
+
+          <!-- Actions -->
+          <div class="consult-actions">
+            <button class="vet-btn vet-btn-outline" onclick="saveDraft()">
+              <i class="fas fa-save"></i> Guardar borrador
+            </button>
+            <button class="vet-btn vet-btn-success vet-btn-lg" onclick="completeVisit()">
+              <i class="fas fa-check-circle"></i> Completar consulta
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Medication Modal -->
+  <div id="med-modal" class="vet-modal-overlay">
+    <div class="vet-modal" style="max-width:480px">
+      <div class="vet-modal-header">
+        <h3><i class="fas fa-pills" style="color:var(--vet-primary)"></i> Agregar medicamento</h3>
+        <button class="vet-modal-close" onclick="closeMedModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body">
+        <div class="vet-form-group">
+          <label>Medicamento *</label>
+          <input type="text" class="vet-input" id="med-name" placeholder="Ej: Metoclopramida">
+        </div>
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Dosis</label>
+            <input type="text" class="vet-input" id="med-dose" placeholder="Ej: 0.5 mg/kg">
+          </div>
+          <div class="vet-form-group">
+            <label>Vía</label>
+            <select class="vet-select" id="med-route">
+              <option value="oral">Oral</option>
+              <option value="injectable">Inyectable</option>
+              <option value="topical">Tópica</option>
+            </select>
+          </div>
+        </div>
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Frecuencia</label>
+            <input type="text" class="vet-input" id="med-frequency" placeholder="Ej: Cada 8 horas">
+          </div>
+          <div class="vet-form-group">
+            <label>Duración</label>
+            <input type="text" class="vet-input" id="med-duration" placeholder="Ej: 5 días">
+          </div>
+        </div>
+        <div class="vet-form-group">
+          <label>Instrucciones especiales</label>
+          <textarea class="vet-textarea" id="med-instructions" rows="2" placeholder="Ej: Administrar con alimento"></textarea>
+        </div>
+      </div>
+      <div class="vet-modal-footer">
+        <button class="vet-btn vet-btn-outline" onclick="closeMedModal()">Cancelar</button>
+        <button class="vet-btn vet-btn-primary" onclick="confirmMedication()"><i class="fas fa-plus"></i> Agregar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="vet-firestore.js"></script>
+  <script src="vet-app.js"></script>
+
+  <script>
+    let currentPetId = null;
+    let currentClientId = null;
+    let currentVisitId = null;
+    let medications = [];
+
+    (async () => {
+      await vetAuthGuard();
+      renderVetSidebar('');
+      renderVetHeader('Consulta médica');
+
+      const clinic = await getClinic();
+      const footerEl = document.getElementById('clinic-name-footer');
+      if (footerEl && clinic) footerEl.textContent = clinic.name;
+
+      const params = new URLSearchParams(window.location.search);
+      currentPetId = params.get('petId');
+      currentClientId = params.get('clientId');
+      currentVisitId = params.get('visitId');
+
+      if (!currentPetId) {
+        vetToast('No se especificó paciente', 'error');
+        setTimeout(() => window.location.href = 'pacientes.html', 1500);
+        return;
+      }
+
+      // Load patient info
+      const pet = await getPatient(currentPetId);
+      if (!pet) {
+        vetToast('Paciente no encontrado', 'error');
+        return;
+      }
+
+      const client = currentClientId ? await getClient(currentClientId) : null;
+      const ownerName = client ? `${client.firstName} ${client.lastName}` : '—';
+      const phone = client?.phone || '';
+
+      document.getElementById('patient-banner').innerHTML = `
+        <div class="pet-icon"><i class="fas ${speciesIcon(pet.species)}"></i></div>
+        <div class="patient-banner-info">
+          <h2>${escapeHtml(pet.name)}</h2>
+          <p>${speciesLabel(pet.species)} ${pet.breed ? '· ' + escapeHtml(pet.breed) : ''} · ${calcAge(pet.birthDate)} · ${pet.weight ? pet.weight + ' kg' : '—'}</p>
+          <p>Dueño: <strong>${escapeHtml(ownerName)}</strong> ${phone ? '· <i class="fas fa-phone" style="font-size:0.75rem"></i> ' + escapeHtml(phone) : ''}</p>
+        </div>
+      `;
+
+      if (pet.weight) document.getElementById('vital-weight').value = pet.weight;
+
+      // If editing existing visit, load it
+      if (currentVisitId) {
+        const snap = await db.collection('visits').doc(currentVisitId).get();
+        if (snap.exists) {
+          const v = snap.data();
+          if (v.vitals) {
+            if (v.vitals.temperature) document.getElementById('vital-temp').value = v.vitals.temperature;
+            if (v.vitals.heartRate) document.getElementById('vital-hr').value = v.vitals.heartRate;
+            if (v.vitals.respiratoryRate) document.getElementById('vital-rr').value = v.vitals.respiratoryRate;
+            if (v.vitals.weight) document.getElementById('vital-weight').value = v.vitals.weight;
+            if (v.vitals.bodyConditionScore) document.getElementById('vital-bcs').value = v.vitals.bodyConditionScore;
+          }
+          if (v.soap) {
+            document.getElementById('soap-subjective').value = v.soap.subjective || '';
+            document.getElementById('soap-objective').value = v.soap.objective || '';
+            document.getElementById('soap-assessment').value = v.soap.assessment || '';
+            document.getElementById('soap-plan').value = v.soap.plan || '';
+          }
+          if (v.diagnoses && v.diagnoses[0]) {
+            document.getElementById('diagnosis-primary').value = v.diagnoses[0].description || '';
+          }
+          if (v.treatments) {
+            medications = v.treatments.filter(t => t.type === 'medication').map(t => t.medication || {});
+            renderMedications();
+          }
+        }
+      }
+
+      document.getElementById('consult-loading').style.display = 'none';
+      document.getElementById('consult-form').style.display = '';
+    })();
+
+    function insertTemplate(field, text) {
+      const el = document.getElementById(`soap-${field}`);
+      el.value += text;
+      el.focus();
+    }
+
+    function collectVisitData(status) {
+      const diagPrimary = document.getElementById('diagnosis-primary').value.trim();
+      return {
+        petId: currentPetId,
+        clientId: currentClientId,
+        date: new Date(),
+        status,
+        vitals: {
+          temperature: parseFloat(document.getElementById('vital-temp').value) || null,
+          heartRate: parseInt(document.getElementById('vital-hr').value) || null,
+          respiratoryRate: parseInt(document.getElementById('vital-rr').value) || null,
+          weight: parseFloat(document.getElementById('vital-weight').value) || null,
+          bodyConditionScore: parseInt(document.getElementById('vital-bcs').value) || null
+        },
+        soap: {
+          subjective: document.getElementById('soap-subjective').value.trim(),
+          objective: document.getElementById('soap-objective').value.trim(),
+          assessment: document.getElementById('soap-assessment').value.trim(),
+          plan: document.getElementById('soap-plan').value.trim()
+        },
+        diagnoses: diagPrimary ? [{ description: diagPrimary, isPrimary: true }] : [],
+        treatments: medications.map(m => ({ type: 'medication', description: m.name, medication: m })),
+        followUp: document.getElementById('followup-date').value ? {
+          recommended: true,
+          reason: document.getElementById('followup-reason').value.trim(),
+          scheduledDate: document.getElementById('followup-date').value
+        } : null
+      };
+    }
+
+    async function saveDraft() {
+      const data = collectVisitData('in_progress');
+      try {
+        if (currentVisitId) {
+          await updateVisit(currentVisitId, data);
+        } else {
+          currentVisitId = await createVisit(data);
+        }
+        vetToast('Borrador guardado', 'success');
+      } catch (err) {
+        console.error(err);
+        vetToast('Error guardando borrador', 'error');
+      }
+    }
+
+    async function completeVisit() {
+      const data = collectVisitData('completed');
+      try {
+        if (currentVisitId) {
+          await updateVisit(currentVisitId, data);
+        } else {
+          currentVisitId = await createVisit(data);
+        }
+
+        // Update patient weight if entered
+        const w = data.vitals.weight;
+        if (w && w > 0) {
+          await updatePatient(currentPetId, { weight: w });
+        }
+
+        vetToast('Consulta completada', 'success');
+        setTimeout(() => window.location.href = `pacientes.html?id=${currentPetId}`, 1500);
+      } catch (err) {
+        console.error(err);
+        vetToast('Error completando consulta', 'error');
+      }
+    }
+
+    // ==================== MEDICATIONS ====================
+
+    function addMedication() {
+      document.querySelectorAll('#med-modal .vet-input, #med-modal .vet-textarea').forEach(el => el.value = '');
+      document.getElementById('med-route').value = 'oral';
+      document.getElementById('med-modal').classList.add('active');
+    }
+
+    function closeMedModal() {
+      document.getElementById('med-modal').classList.remove('active');
+    }
+
+    function confirmMedication() {
+      const name = document.getElementById('med-name').value.trim();
+      if (!name) { vetToast('Ingresa el nombre del medicamento', 'error'); return; }
+      medications.push({
+        name,
+        dose: document.getElementById('med-dose').value.trim(),
+        route: document.getElementById('med-route').value,
+        frequency: document.getElementById('med-frequency').value.trim(),
+        duration: document.getElementById('med-duration').value.trim(),
+        instructions: document.getElementById('med-instructions').value.trim()
+      });
+      renderMedications();
+      closeMedModal();
+    }
+
+    function renderMedications() {
+      const list = document.getElementById('medications-list');
+      if (medications.length === 0) {
+        list.innerHTML = '<p style="font-size:0.85rem;color:var(--vet-text-secondary)">Sin medicamentos agregados</p>';
+        return;
+      }
+      list.innerHTML = medications.map((m, i) => `
+        <div class="medication-item">
+          <div>
+            <strong>${escapeHtml(m.name)}</strong>
+            <span>${[m.dose, m.route, m.frequency, m.duration].filter(Boolean).join(' · ')}</span>
+          </div>
+          <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="removeMedication(${i})" style="color:var(--vet-danger)">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>
+      `).join('');
+    }
+
+    function removeMedication(index) {
+      medications.splice(index, 1);
+      renderMedications();
+    }
+  </script>
+</body>
+</html>

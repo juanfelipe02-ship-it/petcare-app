@@ -1,0 +1,71 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Users: read/write own document only
+    match /users/{userId} {
+      allow read, write: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Clinics: members can read, admin can write
+    match /clinics/{clinicId} {
+      allow read: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == clinicId;
+      allow write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == clinicId &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'clinic_admin';
+      // Allow create for new clinic (during registration, user doc may not exist yet)
+      allow create: if request.auth != null;
+    }
+
+    // Clients: clinic members can CRUD
+    match /clients/{clientId} {
+      allow read, write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == request.resource.data.clinicId;
+    }
+
+    // Pets: owner or clinic vet can read/write
+    match /pets/{petId} {
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId
+      );
+      allow write: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId
+      );
+      allow create: if request.auth != null;
+    }
+
+    // Visits: clinic members only
+    match /visits/{visitId} {
+      allow read, write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == request.resource.data.clinicId;
+    }
+
+    // Appointments: clinic members only
+    match /appointments/{appointmentId} {
+      allow read, write: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId;
+      allow create: if request.auth != null &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == request.resource.data.clinicId;
+    }
+
+    // OwnerLinks: both sides can read, create, update
+    match /ownerLinks/{linkId} {
+      allow read: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId
+      );
+      allow create: if request.auth != null;
+      allow update: if request.auth != null && (
+        resource.data.ownerId == request.auth.uid ||
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.clinicId == resource.data.clinicId
+      );
+    }
+  }
+}

@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare VET - Pacientes</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vet-styles.css">
+  <style>
+    /* Patient detail panel */
+    .patient-detail-panel {
+      display: none;
+      position: fixed;
+      right: 0; top: 0; bottom: 0;
+      width: 420px;
+      max-width: 90vw;
+      background: var(--vet-bg-card);
+      border-left: 1px solid var(--vet-border);
+      box-shadow: -4px 0 16px rgba(0,0,0,0.1);
+      z-index: 150;
+      overflow-y: auto;
+    }
+    .patient-detail-panel.active { display: block; }
+    .panel-header {
+      padding: 1rem 1.25rem;
+      border-bottom: 1px solid var(--vet-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky; top: 0;
+      background: var(--vet-bg-card);
+      z-index: 5;
+    }
+    .panel-header h3 { font-size: 1rem; font-weight: 600; }
+    .panel-body { padding: 1.25rem; }
+    .panel-pet-header { text-align: center; padding: 1rem 0 1.5rem; }
+    .panel-pet-header .pet-icon {
+      width: 64px; height: 64px; border-radius: 50%;
+      background: var(--vet-primary-bg); color: var(--vet-primary);
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.8rem; margin: 0 auto 0.75rem;
+    }
+    .panel-pet-header h2 { font-size: 1.2rem; margin-bottom: 0.25rem; }
+    .panel-pet-header p { font-size: 0.85rem; color: var(--vet-text-secondary); }
+    .panel-info-grid {
+      display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1.25rem;
+    }
+    .panel-info-item label { font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vet-text-light); display: block; }
+    .panel-info-item span { font-size: 0.9rem; font-weight: 500; }
+    .panel-section-title { font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em; color: var(--vet-text-secondary); margin: 1.25rem 0 0.5rem; }
+    .panel-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.3); z-index: 149; display: none; }
+    .panel-overlay.active { display: block; }
+  </style>
+</head>
+<body>
+  <div class="vet-layout">
+    <!-- Sidebar -->
+    <aside class="vet-sidebar">
+      <div class="vet-sidebar-logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>PetCare VET</span>
+      </div>
+      <nav id="vet-sidebar-nav" class="vet-sidebar-nav"></nav>
+      <div class="vet-sidebar-footer">
+        <span id="clinic-name-footer"></span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="vet-main">
+      <header class="vet-header">
+        <div class="vet-header-left">
+          <button class="vet-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h1 id="vet-header-title" class="vet-header-title">Pacientes</h1>
+        </div>
+        <div id="vet-header-right" class="vet-header-right"></div>
+      </header>
+
+      <div class="vet-content">
+        <!-- Search bar -->
+        <div class="vet-search-bar">
+          <div class="vet-search-input">
+            <input type="text" id="search-patients" placeholder="Buscar por nombre de paciente o dueño..." oninput="filterPatients()">
+            <i class="fas fa-search"></i>
+          </div>
+          <select id="filter-species" class="vet-select" style="width:auto;min-width:120px" onchange="filterPatients()">
+            <option value="all">Todas</option>
+            <option value="dog">Perros</option>
+            <option value="cat">Gatos</option>
+          </select>
+          <button class="vet-btn vet-btn-primary" onclick="openPatientModal()">
+            <i class="fas fa-plus"></i> Nuevo paciente
+          </button>
+        </div>
+
+        <!-- Loading -->
+        <div id="patients-loading" class="vet-loading"><div class="vet-spinner"></div></div>
+
+        <!-- Table -->
+        <div id="patients-card" class="vet-card" style="display:none">
+          <div class="vet-table-wrapper">
+            <table class="vet-table">
+              <thead>
+                <tr>
+                  <th>Paciente</th>
+                  <th>Especie / Raza</th>
+                  <th>Edad</th>
+                  <th>Peso</th>
+                  <th>Dueño</th>
+                  <th>Acciones</th>
+                </tr>
+              </thead>
+              <tbody id="patients-tbody"></tbody>
+            </table>
+          </div>
+          <div id="patients-empty" class="vet-empty" style="display:none">
+            <i class="fas fa-paw"></i>
+            <h4>Sin pacientes aún</h4>
+            <p>Registra tu primer paciente para comenzar</p>
+            <button class="vet-btn vet-btn-primary" onclick="openPatientModal()">
+              <i class="fas fa-plus"></i> Registrar paciente
+            </button>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Detail panel overlay -->
+  <div id="panel-overlay" class="panel-overlay" onclick="closeDetailPanel()"></div>
+
+  <!-- Patient detail panel -->
+  <div id="patient-detail-panel" class="patient-detail-panel">
+    <div class="panel-header">
+      <h3>Detalle del paciente</h3>
+      <button class="vet-modal-close" onclick="closeDetailPanel()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="panel-body" id="panel-body"></div>
+  </div>
+
+  <!-- Modal Crear/Editar Paciente -->
+  <div id="patient-modal" class="vet-modal-overlay">
+    <div class="vet-modal">
+      <div class="vet-modal-header">
+        <h3 id="patient-modal-title"><i class="fas fa-paw" style="color:var(--vet-primary)"></i> Nuevo paciente</h3>
+        <button class="vet-modal-close" onclick="closePatientModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body">
+        <input type="hidden" id="edit-patient-id">
+
+        <div class="vet-form-group">
+          <label>Dueño (cliente) *</label>
+          <select class="vet-select" id="patient-clientId" required>
+            <option value="">Seleccionar cliente...</option>
+          </select>
+        </div>
+
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Nombre del paciente *</label>
+            <input type="text" class="vet-input" id="patient-name" placeholder="Nombre de la mascota" required>
+          </div>
+          <div class="vet-form-group">
+            <label>Especie *</label>
+            <select class="vet-select" id="patient-species" required>
+              <option value="dog">Perro</option>
+              <option value="cat">Gato</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Raza</label>
+            <input type="text" class="vet-input" id="patient-breed" placeholder="Raza">
+          </div>
+          <div class="vet-form-group">
+            <label>Sexo</label>
+            <select class="vet-select" id="patient-gender">
+              <option value="">—</option>
+              <option value="macho">Macho</option>
+              <option value="hembra">Hembra</option>
+              <option value="macho_castrado">Macho castrado</option>
+              <option value="hembra_esterilizada">Hembra esterilizada</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Fecha de nacimiento</label>
+            <input type="date" class="vet-input" id="patient-birthDate">
+          </div>
+          <div class="vet-form-group">
+            <label>Peso (kg)</label>
+            <input type="number" class="vet-input" id="patient-weight" placeholder="0.0" step="0.1" min="0">
+          </div>
+        </div>
+
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Microchip</label>
+            <input type="text" class="vet-input" id="patient-microchip" placeholder="Número de microchip">
+          </div>
+          <div class="vet-form-group">
+            <label>Tipo de sangre</label>
+            <input type="text" class="vet-input" id="patient-bloodType" placeholder="Ej: DEA 1.1+">
+          </div>
+        </div>
+
+        <div class="vet-form-group">
+          <label>Alergias conocidas</label>
+          <input type="text" class="vet-input" id="patient-allergies" placeholder="Separar con comas: penicilina, pollo">
+        </div>
+      </div>
+      <div class="vet-modal-footer">
+        <button class="vet-btn vet-btn-outline" onclick="closePatientModal()">Cancelar</button>
+        <button class="vet-btn vet-btn-primary" id="save-patient-btn" onclick="savePatient()">
+          <i class="fas fa-save"></i> Guardar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="vet-firestore.js"></script>
+  <script src="vet-app.js"></script>
+
+  <script>
+    let allPatients = [];
+    let allClientsMap = {};
+    let preselectedClientId = null;
+
+    (async () => {
+      await vetAuthGuard();
+      renderVetSidebar('pacientes');
+      renderVetHeader('Pacientes');
+
+      const clinic = await getClinic();
+      const footerEl = document.getElementById('clinic-name-footer');
+      if (footerEl && clinic) footerEl.textContent = clinic.name;
+
+      const params = new URLSearchParams(window.location.search);
+      preselectedClientId = params.get('clientId');
+
+      await loadPatients();
+
+      // Auto-open modal if ?action=new
+      if (params.get('action') === 'new') openPatientModal();
+      // Auto-open detail if ?id=xxx
+      const detailId = params.get('id');
+      if (detailId) openDetailPanel(detailId);
+    })();
+
+    async function loadPatients() {
+      try {
+        // Load clients for mapping
+        const clients = await getAllClients(false);
+        allClientsMap = {};
+        clients.forEach(c => { allClientsMap[c.id] = c; });
+
+        // Load patients (filtered by client if URL has clientId)
+        if (preselectedClientId) {
+          allPatients = await getPatientsByClient(preselectedClientId);
+          const cl = allClientsMap[preselectedClientId];
+          if (cl) {
+            document.getElementById('vet-header-title').textContent = `Pacientes de ${cl.firstName} ${cl.lastName}`;
+          }
+        } else {
+          allPatients = await getPatients();
+        }
+
+        renderPatients(allPatients);
+      } catch (err) {
+        console.error('Error loading patients:', err);
+        vetToast('Error cargando pacientes', 'error');
+      }
+
+      document.getElementById('patients-loading').style.display = 'none';
+      document.getElementById('patients-card').style.display = '';
+    }
+
+    function renderPatients(patients) {
+      const tbody = document.getElementById('patients-tbody');
+      const empty = document.getElementById('patients-empty');
+
+      if (patients.length === 0) {
+        tbody.innerHTML = '';
+        empty.style.display = '';
+        return;
+      }
+
+      empty.style.display = 'none';
+      tbody.innerHTML = patients.map(p => {
+        const client = allClientsMap[p.clientId];
+        const ownerName = client ? `${client.firstName} ${client.lastName}` : '—';
+        const genderLabels = { macho: 'M', hembra: 'H', macho_castrado: 'M/C', hembra_esterilizada: 'H/E' };
+        return `
+          <tr onclick="openDetailPanel('${p.id}')">
+            <td>
+              <div style="display:flex;align-items:center;gap:0.5rem">
+                <div class="vet-avatar-placeholder"><i class="fas ${speciesIcon(p.species)}"></i></div>
+                <div>
+                  <strong>${escapeHtml(p.name)}</strong>
+                  ${p.gender ? `<span class="vet-badge vet-badge-gray" style="margin-left:0.3rem">${genderLabels[p.gender] || p.gender}</span>` : ''}
+                </div>
+              </div>
+            </td>
+            <td>${speciesLabel(p.species)} ${p.breed ? '· ' + escapeHtml(p.breed) : ''}</td>
+            <td>${calcAge(p.birthDate)}</td>
+            <td>${p.weight ? p.weight + ' kg' : '—'}</td>
+            <td>${escapeHtml(ownerName)}</td>
+            <td>
+              <div style="display:flex;gap:0.4rem">
+                <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="event.stopPropagation();editPatient('${p.id}')" title="Editar">
+                  <i class="fas fa-pen"></i>
+                </button>
+                <button class="vet-btn vet-btn-sm vet-btn-primary" onclick="event.stopPropagation();openDetailPanel('${p.id}')" title="Ver detalle">
+                  <i class="fas fa-eye"></i>
+                </button>
+              </div>
+            </td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function filterPatients() {
+      const q = document.getElementById('search-patients').value.toLowerCase().trim();
+      const species = document.getElementById('filter-species').value;
+      let filtered = allPatients;
+
+      if (species !== 'all') {
+        filtered = filtered.filter(p => p.species === species);
+      }
+
+      if (q) {
+        filtered = filtered.filter(p => {
+          const client = allClientsMap[p.clientId];
+          const ownerName = client ? `${client.firstName} ${client.lastName}` : '';
+          return p.name.toLowerCase().includes(q) ||
+                 ownerName.toLowerCase().includes(q) ||
+                 (p.breed || '').toLowerCase().includes(q);
+        });
+      }
+
+      renderPatients(filtered);
+    }
+
+    async function openPatientModal(patient) {
+      // Populate client dropdown
+      const select = document.getElementById('patient-clientId');
+      const clients = Object.values(allClientsMap);
+      select.innerHTML = '<option value="">Seleccionar cliente...</option>' +
+        clients.map(c => `<option value="${c.id}">${escapeHtml(c.firstName)} ${escapeHtml(c.lastName)}</option>`).join('');
+
+      const title = document.getElementById('patient-modal-title');
+
+      if (patient) {
+        title.innerHTML = '<i class="fas fa-paw" style="color:var(--vet-primary)"></i> Editar paciente';
+        document.getElementById('edit-patient-id').value = patient.id;
+        document.getElementById('patient-clientId').value = patient.clientId || '';
+        document.getElementById('patient-name').value = patient.name || '';
+        document.getElementById('patient-species').value = patient.species || 'dog';
+        document.getElementById('patient-breed').value = patient.breed || '';
+        document.getElementById('patient-gender').value = patient.gender || '';
+        document.getElementById('patient-birthDate').value = patient.birthDate || '';
+        document.getElementById('patient-weight').value = patient.weight || '';
+        document.getElementById('patient-microchip').value = patient.microchipId || '';
+        document.getElementById('patient-bloodType').value = patient.bloodType || '';
+        document.getElementById('patient-allergies').value = (patient.allergies || []).join(', ');
+      } else {
+        title.innerHTML = '<i class="fas fa-paw" style="color:var(--vet-primary)"></i> Nuevo paciente';
+        document.getElementById('edit-patient-id').value = '';
+        document.querySelectorAll('#patient-modal .vet-input, #patient-modal .vet-select, #patient-modal .vet-textarea').forEach(el => {
+          if (el.id === 'patient-species') el.value = 'dog';
+          else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+          else el.value = '';
+        });
+        if (preselectedClientId) {
+          document.getElementById('patient-clientId').value = preselectedClientId;
+        }
+      }
+
+      document.getElementById('patient-modal').classList.add('active');
+    }
+
+    function closePatientModal() {
+      document.getElementById('patient-modal').classList.remove('active');
+    }
+
+    function editPatient(patientId) {
+      const patient = allPatients.find(p => p.id === patientId);
+      if (patient) openPatientModal(patient);
+    }
+
+    async function savePatient() {
+      const name = document.getElementById('patient-name').value.trim();
+      const clientId = document.getElementById('patient-clientId').value;
+
+      if (!name) { vetToast('El nombre del paciente es obligatorio', 'error'); return; }
+      if (!clientId) { vetToast('Selecciona un cliente (dueño)', 'error'); return; }
+
+      const allergiesRaw = document.getElementById('patient-allergies').value.trim();
+      const data = {
+        clientId,
+        name,
+        species: document.getElementById('patient-species').value,
+        breed: document.getElementById('patient-breed').value.trim(),
+        gender: document.getElementById('patient-gender').value,
+        birthDate: document.getElementById('patient-birthDate').value,
+        weight: parseFloat(document.getElementById('patient-weight').value) || 0,
+        microchipId: document.getElementById('patient-microchip').value.trim(),
+        bloodType: document.getElementById('patient-bloodType').value.trim(),
+        allergies: allergiesRaw ? allergiesRaw.split(',').map(a => a.trim()).filter(Boolean) : []
+      };
+
+      const btn = document.getElementById('save-patient-btn');
+      btn.disabled = true;
+
+      try {
+        const editId = document.getElementById('edit-patient-id').value;
+        if (editId) {
+          await updatePatient(editId, data);
+          vetToast('Paciente actualizado', 'success');
+        } else {
+          await createPatient(data);
+          vetToast('Paciente registrado', 'success');
+        }
+        closePatientModal();
+        await loadPatients();
+      } catch (err) {
+        console.error('Error saving patient:', err);
+        vetToast('Error guardando paciente', 'error');
+      }
+
+      btn.disabled = false;
+    }
+
+    // ==================== DETAIL PANEL ====================
+
+    async function openDetailPanel(patientId) {
+      const panel = document.getElementById('patient-detail-panel');
+      const overlay = document.getElementById('panel-overlay');
+      const body = document.getElementById('panel-body');
+
+      body.innerHTML = '<div class="vet-loading"><div class="vet-spinner"></div></div>';
+      panel.classList.add('active');
+      overlay.classList.add('active');
+
+      const p = await getPatient(patientId);
+      if (!p) {
+        body.innerHTML = '<p>Paciente no encontrado</p>';
+        return;
+      }
+
+      const client = p.clientId ? allClientsMap[p.clientId] || await getClient(p.clientId) : null;
+      const ownerName = client ? `${client.firstName} ${client.lastName}` : '—';
+      const genderLabels = { macho: 'Macho', hembra: 'Hembra', macho_castrado: 'Macho castrado', hembra_esterilizada: 'Hembra esterilizada' };
+
+      body.innerHTML = `
+        <div class="panel-pet-header">
+          <div class="pet-icon"><i class="fas ${speciesIcon(p.species)}"></i></div>
+          <h2>${escapeHtml(p.name)}</h2>
+          <p>${speciesLabel(p.species)} ${p.breed ? '· ' + escapeHtml(p.breed) : ''}</p>
+        </div>
+
+        <div class="panel-info-grid">
+          <div class="panel-info-item">
+            <label>Edad</label>
+            <span>${calcAge(p.birthDate)}</span>
+          </div>
+          <div class="panel-info-item">
+            <label>Peso</label>
+            <span>${p.weight ? p.weight + ' kg' : '—'}</span>
+          </div>
+          <div class="panel-info-item">
+            <label>Sexo</label>
+            <span>${genderLabels[p.gender] || '—'}</span>
+          </div>
+          <div class="panel-info-item">
+            <label>Dueño</label>
+            <span>${escapeHtml(ownerName)}</span>
+          </div>
+          <div class="panel-info-item">
+            <label>Microchip</label>
+            <span>${escapeHtml(p.microchipId) || '—'}</span>
+          </div>
+          <div class="panel-info-item">
+            <label>Tipo de sangre</label>
+            <span>${escapeHtml(p.bloodType) || '—'}</span>
+          </div>
+        </div>
+
+        ${p.allergies && p.allergies.length > 0 ? `
+          <div class="panel-section-title">Alergias</div>
+          <div style="display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:1rem">
+            ${p.allergies.map(a => `<span class="vet-badge vet-badge-red">${escapeHtml(a)}</span>`).join('')}
+          </div>
+        ` : ''}
+
+        <div class="panel-section-title">Historia clínica</div>
+        <div id="panel-visits" style="margin-bottom:1rem">
+          <div class="vet-loading" style="padding:1rem"><div class="vet-spinner"></div></div>
+        </div>
+
+        <div style="display:flex;gap:0.5rem;flex-wrap:wrap">
+          <button class="vet-btn vet-btn-primary" onclick="editPatient('${p.id}');closeDetailPanel()">
+            <i class="fas fa-pen"></i> Editar
+          </button>
+          <button class="vet-btn vet-btn-success" onclick="startConsultation('${p.id}','${p.clientId || ''}')">
+            <i class="fas fa-stethoscope"></i> Nueva consulta
+          </button>
+        </div>
+      `;
+
+      // Load visits
+      try {
+        const visits = await getVisitsByPatient(patientId);
+        const visitsContainer = document.getElementById('panel-visits');
+        if (visits.length === 0) {
+          visitsContainer.innerHTML = '<p style="font-size:0.85rem;color:var(--vet-text-secondary)">Sin consultas registradas</p>';
+        } else {
+          visitsContainer.innerHTML = visits.slice(0, 10).map(v => `
+            <div style="padding:0.6rem 0;border-bottom:1px solid var(--vet-border)">
+              <div style="display:flex;justify-content:space-between;align-items:center">
+                <strong style="font-size:0.85rem">${formatDate(v.date)}</strong>
+                <span class="vet-badge vet-badge-${v.status === 'completed' ? 'green' : 'blue'}">${v.type || 'consulta'}</span>
+              </div>
+              ${v.soap?.assessment ? `<p style="font-size:0.8rem;color:var(--vet-text-secondary);margin-top:0.2rem">${escapeHtml(v.soap.assessment)}</p>` : ''}
+            </div>
+          `).join('');
+        }
+      } catch (err) {
+        document.getElementById('panel-visits').innerHTML = '<p style="font-size:0.85rem;color:var(--vet-danger)">Error cargando historial</p>';
+      }
+    }
+
+    function closeDetailPanel() {
+      document.getElementById('patient-detail-panel').classList.remove('active');
+      document.getElementById('panel-overlay').classList.remove('active');
+    }
+
+    function startConsultation(petId, clientId) {
+      window.location.href = `consulta.html?petId=${petId}&clientId=${clientId}`;
+    }
+  </script>
+</body>
+</html>

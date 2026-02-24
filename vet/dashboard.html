@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare VET - Dashboard</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vet-styles.css">
+</head>
+<body>
+  <div class="vet-layout">
+    <!-- Sidebar -->
+    <aside class="vet-sidebar">
+      <div class="vet-sidebar-logo">
+        <i class="fas fa-heartbeat"></i>
+        <span>PetCare VET</span>
+      </div>
+      <nav id="vet-sidebar-nav" class="vet-sidebar-nav"></nav>
+      <div class="vet-sidebar-footer">
+        <span id="clinic-name-footer"></span>
+      </div>
+    </aside>
+
+    <!-- Main -->
+    <main class="vet-main">
+      <header class="vet-header">
+        <div class="vet-header-left">
+          <button class="vet-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h1 id="vet-header-title" class="vet-header-title">Dashboard</h1>
+        </div>
+        <div id="vet-header-right" class="vet-header-right"></div>
+      </header>
+
+      <div class="vet-content">
+        <!-- Loading -->
+        <div id="dash-loading" class="vet-loading"><div class="vet-spinner"></div></div>
+
+        <!-- Stats -->
+        <div id="dash-stats" class="vet-stats-grid" style="display:none">
+          <div class="vet-stat-card">
+            <div class="vet-stat-icon blue"><i class="fas fa-calendar-check"></i></div>
+            <div class="vet-stat-info">
+              <h4 id="stat-appointments">0</h4>
+              <p>Citas hoy</p>
+            </div>
+          </div>
+          <div class="vet-stat-card">
+            <div class="vet-stat-icon green"><i class="fas fa-check-circle"></i></div>
+            <div class="vet-stat-info">
+              <h4 id="stat-completed">0</h4>
+              <p>Completadas hoy</p>
+            </div>
+          </div>
+          <div class="vet-stat-card">
+            <div class="vet-stat-icon orange"><i class="fas fa-users"></i></div>
+            <div class="vet-stat-info">
+              <h4 id="stat-clients">0</h4>
+              <p>Clientes activos</p>
+            </div>
+          </div>
+          <div class="vet-stat-card">
+            <div class="vet-stat-icon red"><i class="fas fa-paw"></i></div>
+            <div class="vet-stat-info">
+              <h4 id="stat-patients">0</h4>
+              <p>Pacientes activos</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Dashboard Grid -->
+        <div id="dash-grid" class="vet-dashboard-grid" style="display:none">
+          <!-- Próximas citas -->
+          <div class="vet-card">
+            <div class="vet-card-header">
+              <h3><i class="fas fa-clock" style="color:var(--vet-primary)"></i> Citas de hoy</h3>
+              <a href="agenda.html" class="vet-btn vet-btn-sm vet-btn-outline">Ver agenda</a>
+            </div>
+            <div class="vet-card-body" id="dash-appointments">
+              <div class="vet-empty">
+                <i class="fas fa-calendar"></i>
+                <h4>Sin citas hoy</h4>
+                <p>No hay citas programadas para hoy</p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Acciones rápidas -->
+          <div class="vet-card">
+            <div class="vet-card-header">
+              <h3><i class="fas fa-bolt" style="color:var(--vet-warning)"></i> Acciones rápidas</h3>
+            </div>
+            <div class="vet-card-body">
+              <div style="display:flex;flex-direction:column;gap:0.75rem">
+                <a href="pacientes.html?action=new" class="vet-btn vet-btn-primary vet-btn-lg" style="justify-content:flex-start;text-decoration:none">
+                  <i class="fas fa-plus"></i> Nuevo paciente
+                </a>
+                <a href="clientes.html?action=new" class="vet-btn vet-btn-outline vet-btn-lg" style="justify-content:flex-start;text-decoration:none">
+                  <i class="fas fa-user-plus"></i> Nuevo cliente
+                </a>
+                <a href="agenda.html?action=new" class="vet-btn vet-btn-outline vet-btn-lg" style="justify-content:flex-start;text-decoration:none">
+                  <i class="fas fa-calendar-plus"></i> Agendar cita
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- Pacientes recientes -->
+          <div class="vet-card" style="grid-column: 1 / -1">
+            <div class="vet-card-header">
+              <h3><i class="fas fa-history" style="color:var(--vet-info)"></i> Pacientes recientes</h3>
+              <a href="pacientes.html" class="vet-btn vet-btn-sm vet-btn-outline">Ver todos</a>
+            </div>
+            <div class="vet-card-body" id="dash-recent-patients">
+              <div class="vet-empty">
+                <i class="fas fa-paw"></i>
+                <h4>Sin pacientes aún</h4>
+                <p>Registra tu primer paciente para comenzar</p>
+                <a href="pacientes.html?action=new" class="vet-btn vet-btn-primary">
+                  <i class="fas fa-plus"></i> Registrar paciente
+                </a>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-storage-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="vet-firestore.js"></script>
+  <script src="vet-app.js"></script>
+
+  <script>
+    (async () => {
+      await vetAuthGuard();
+      renderVetSidebar('dashboard');
+      renderVetHeader('Dashboard');
+
+      // Load clinic name in footer
+      const clinic = await getClinic();
+      const footerEl = document.getElementById('clinic-name-footer');
+      if (footerEl && clinic) footerEl.textContent = clinic.name;
+
+      // Load stats
+      try {
+        const stats = await getDashboardStats();
+        document.getElementById('stat-appointments').textContent = stats.appointmentsToday;
+        document.getElementById('stat-completed').textContent = stats.completedToday;
+        document.getElementById('stat-clients').textContent = stats.totalClients;
+        document.getElementById('stat-patients').textContent = stats.totalPatients;
+
+        // Render today's appointments
+        if (stats.appointments.length > 0) {
+          const container = document.getElementById('dash-appointments');
+          // Need to resolve pet/client names
+          const items = [];
+          for (const apt of stats.appointments.sort((a, b) => a.startTime.seconds - b.startTime.seconds)) {
+            const pet = apt.petId ? await getPatient(apt.petId) : null;
+            items.push(`
+              <div class="vet-appointment-item">
+                <div class="vet-appointment-time">${formatTime(apt.startTime)}</div>
+                <div class="vet-appointment-info">
+                  <strong>${pet ? escapeHtml(pet.name) : 'Paciente'}</strong>
+                  <span>${escapeHtml(apt.reason || apt.type || 'Consulta')}</span>
+                </div>
+                <span class="vet-badge vet-badge-${apt.status === 'confirmed' ? 'green' : apt.status === 'cancelled' ? 'red' : 'orange'}">${apt.status || 'pendiente'}</span>
+              </div>
+            `);
+          }
+          container.innerHTML = items.join('');
+        }
+
+        // Load recent patients
+        const patients = await getPatients();
+        if (patients.length > 0) {
+          const recent = patients.slice(0, 5);
+          const clientIds = [...new Set(recent.map(p => p.clientId).filter(Boolean))];
+          const clientMap = {};
+          for (const cid of clientIds) {
+            const cl = await getClient(cid);
+            if (cl) clientMap[cid] = cl;
+          }
+
+          document.getElementById('dash-recent-patients').innerHTML = `
+            <div class="vet-table-wrapper">
+              <table class="vet-table">
+                <thead>
+                  <tr>
+                    <th>Paciente</th>
+                    <th>Especie</th>
+                    <th>Raza</th>
+                    <th>Edad</th>
+                    <th>Dueño</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${recent.map(p => {
+                    const client = clientMap[p.clientId];
+                    const ownerName = client ? `${client.firstName} ${client.lastName}` : '—';
+                    return `
+                      <tr onclick="window.location.href='pacientes.html?id=${p.id}'">
+                        <td>
+                          <div style="display:flex;align-items:center;gap:0.5rem">
+                            <div class="vet-avatar-placeholder"><i class="fas ${speciesIcon(p.species)}"></i></div>
+                            <strong>${escapeHtml(p.name)}</strong>
+                          </div>
+                        </td>
+                        <td>${speciesLabel(p.species)}</td>
+                        <td>${escapeHtml(p.breed) || '—'}</td>
+                        <td>${calcAge(p.birthDate)}</td>
+                        <td>${escapeHtml(ownerName)}</td>
+                      </tr>
+                    `;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Error loading dashboard:', err);
+      }
+
+      // Show content
+      document.getElementById('dash-loading').style.display = 'none';
+      document.getElementById('dash-stats').style.display = '';
+      document.getElementById('dash-grid').style.display = '';
+    })();
+  </script>
+</body>
+</html>

@@ -33,11 +33,91 @@ async function registrarUsuario(email, password, nombre) {
     await db.collection('users').doc(cred.user.uid).set({
       nombre,
       email,
+      role: 'owner',
       fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
     });
     return { success: true, user: cred.user };
   } catch (error) {
     return { success: false, error: traducirErrorFirebase(error.code) };
+  }
+}
+
+// Registrar veterinario (crea User + Clinic en transacción)
+async function registrarVeterinario(email, password, nombre, datosClinica) {
+  try {
+    const cred = await auth.createUserWithEmailAndPassword(email, password);
+    await cred.user.updateProfile({ displayName: nombre });
+
+    const clinicRef = db.collection('clinics').doc();
+    const batch = db.batch();
+
+    batch.set(clinicRef, {
+      name: datosClinica.clinicName,
+      address: '',
+      city: datosClinica.city || '',
+      country: 'Colombia',
+      phone: '',
+      email: email,
+      whatsapp: '',
+      businessHours: {
+        monday: { open: '08:00', close: '18:00', closed: false },
+        tuesday: { open: '08:00', close: '18:00', closed: false },
+        wednesday: { open: '08:00', close: '18:00', closed: false },
+        thursday: { open: '08:00', close: '18:00', closed: false },
+        friday: { open: '08:00', close: '18:00', closed: false },
+        saturday: { open: '08:00', close: '13:00', closed: false },
+        sunday: { open: '00:00', close: '00:00', closed: true }
+      },
+      settings: {
+        defaultAppointmentDuration: 30,
+        timezone: 'America/Bogota',
+        currency: 'COP',
+        allowOnlineBooking: false
+      },
+      subscription: {
+        plan: 'starter',
+        status: 'trial',
+        startDate: firebase.firestore.FieldValue.serverTimestamp(),
+        expiresAt: null
+      },
+      features: {
+        inventory: false,
+        invoicing: false,
+        whatsappReminders: false,
+        aiAssistant: false
+      },
+      createdAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    batch.set(db.collection('users').doc(cred.user.uid), {
+      nombre,
+      email,
+      role: 'clinic_admin',
+      clinicId: clinicRef.id,
+      vetLicense: datosClinica.license || '',
+      specialization: datosClinica.specialization || '',
+      fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
+    });
+
+    await batch.commit();
+    return { success: true, user: cred.user, clinicId: clinicRef.id };
+  } catch (error) {
+    return { success: false, error: traducirErrorFirebase(error.code) };
+  }
+}
+
+// Obtener rol del usuario actual desde Firestore
+async function obtenerRolUsuario(uid) {
+  try {
+    const doc = await db.collection('users').doc(uid).get();
+    if (doc.exists) {
+      const data = doc.data();
+      return { role: data.role || 'owner', clinicId: data.clinicId || null };
+    }
+    return { role: 'owner', clinicId: null };
+  } catch (error) {
+    console.error('Error obteniendo rol:', error);
+    return { role: 'owner', clinicId: null };
   }
 }
 

@@ -146,6 +146,30 @@
       color: var(--text-secondary);
       margin-top: 0.25rem;
     }
+    .role-selector {
+      display: flex;
+      gap: 0.75rem;
+      margin-bottom: 1.25rem;
+    }
+    .role-option {
+      flex: 1;
+      padding: 1rem 0.5rem;
+      border: 2px solid var(--border-color);
+      border-radius: 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s;
+      background: var(--bg-input);
+    }
+    .role-option:hover { border-color: var(--primary); }
+    .role-option.selected { border-color: var(--primary); background: rgba(74,144,226,0.08); }
+    .role-option i { font-size: 1.5rem; margin-bottom: 0.4rem; display: block; }
+    .role-option span { font-size: 0.85rem; font-weight: 600; }
+    .vet-fields { display: none; }
+    .vet-fields.visible { display: block; }
+    .vet-fields .form-group input {
+      padding-left: 2.75rem;
+    }
   </style>
 </head>
 <body>
@@ -163,6 +187,17 @@
         </div>
 
         <form id="signup-form" novalidate>
+          <input type="hidden" id="signup-role" value="owner">
+          <div class="role-selector">
+            <div class="role-option selected" data-role="owner" onclick="selectRole('owner')">
+              <i class="fas fa-paw" style="color:#7ED321"></i>
+              <span>Dueño de mascota</span>
+            </div>
+            <div class="role-option" data-role="vet" onclick="selectRole('vet')">
+              <i class="fas fa-stethoscope" style="color:#4A90E2"></i>
+              <span>Veterinario</span>
+            </div>
+          </div>
           <div class="form-group">
             <label>Nombre completo</label>
             <div class="input-wrapper">
@@ -193,6 +228,29 @@
               <i class="fas fa-lock"></i>
             </div>
           </div>
+          <div id="vet-fields" class="vet-fields">
+            <div class="form-group">
+              <label>Nombre de la clínica / consultorio</label>
+              <div class="input-wrapper">
+                <input type="text" id="signup-clinic" placeholder="Ej: Clínica Veterinaria San Roque" maxlength="100">
+                <i class="fas fa-hospital"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Licencia profesional (opcional)</label>
+              <div class="input-wrapper">
+                <input type="text" id="signup-license" placeholder="Número de tarjeta profesional" maxlength="50">
+                <i class="fas fa-id-card"></i>
+              </div>
+            </div>
+            <div class="form-group">
+              <label>Especialización (opcional)</label>
+              <div class="input-wrapper">
+                <input type="text" id="signup-specialization" placeholder="Ej: Medicina interna, Cirugía">
+                <i class="fas fa-graduation-cap"></i>
+              </div>
+            </div>
+          </div>
           <button type="submit" class="btn-auth" id="signup-btn">
             <span class="btn-text"><i class="fas fa-user-plus"></i> Crear Cuenta</span>
             <i class="fas fa-spinner fa-spin spinner"></i>
@@ -214,9 +272,21 @@
 
   <script>
     // Verificar si ya está autenticado
-    auth.onAuthStateChanged(user => {
-      if (user) window.location.href = 'index.html';
+    auth.onAuthStateChanged(async (user) => {
+      if (user) {
+        const { role } = await obtenerRolUsuario(user.uid);
+        const VET_ROLES = ['vet', 'clinic_admin', 'clinic_vet', 'clinic_receptionist'];
+        window.location.href = VET_ROLES.includes(role) ? 'vet/dashboard.html' : 'index.html';
+      }
     });
+
+    // Selector de rol
+    function selectRole(role) {
+      document.getElementById('signup-role').value = role;
+      document.querySelectorAll('.role-option').forEach(el => el.classList.remove('selected'));
+      document.querySelector(`.role-option[data-role="${role}"]`).classList.add('selected');
+      document.getElementById('vet-fields').classList.toggle('visible', role === 'vet');
+    }
 
     // Indicador de fortaleza de contraseña
     document.getElementById('signup-password').addEventListener('input', (e) => {
@@ -264,6 +334,7 @@
       const email = document.getElementById('signup-email').value.trim();
       const password = document.getElementById('signup-password').value;
       const confirm = document.getElementById('signup-confirm').value;
+      const role = document.getElementById('signup-role').value;
 
       // Validaciones
       if (!nombre || !email || !password || !confirm) {
@@ -281,20 +352,42 @@
         errorDiv.classList.add('visible');
         return;
       }
+      if (role === 'vet') {
+        const clinicName = document.getElementById('signup-clinic').value.trim();
+        if (!clinicName) {
+          document.getElementById('error-text').textContent = 'Ingresa el nombre de tu clínica o consultorio.';
+          errorDiv.classList.add('visible');
+          return;
+        }
+      }
 
       btn.classList.add('loading');
       btn.disabled = true;
       errorDiv.classList.remove('visible');
 
-      const result = await registrarUsuario(email, password, nombre);
-      if (result.success) {
-        window.location.href = 'index.html';
+      let result;
+      if (role === 'vet') {
+        result = await registrarVeterinario(email, password, nombre, {
+          clinicName: document.getElementById('signup-clinic').value.trim(),
+          license: document.getElementById('signup-license').value.trim(),
+          specialization: document.getElementById('signup-specialization').value.trim()
+        });
+        if (result.success) {
+          window.location.href = 'vet/dashboard.html';
+          return;
+        }
       } else {
-        document.getElementById('error-text').textContent = result.error;
-        errorDiv.classList.add('visible');
-        btn.classList.remove('loading');
-        btn.disabled = false;
+        result = await registrarUsuario(email, password, nombre);
+        if (result.success) {
+          window.location.href = 'index.html';
+          return;
+        }
       }
+
+      document.getElementById('error-text').textContent = result.error;
+      errorDiv.classList.add('visible');
+      btn.classList.remove('loading');
+      btn.disabled = false;
     });
   </script>
 </body>
