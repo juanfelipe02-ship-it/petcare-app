@@ -69,6 +69,9 @@
           </div>
         </div>
 
+        <!-- Pending link requests alert -->
+        <div id="dash-link-requests" style="display:none;margin-bottom:1rem"></div>
+
         <!-- Dashboard Grid -->
         <div id="dash-grid" class="vet-dashboard-grid" style="display:none">
           <!-- Próximas citas -->
@@ -227,6 +230,26 @@
       } catch (err) {
         console.error('Error loading dashboard:', err);
       }
+
+      // Load pending link requests
+      try {
+        const pendingReqs = await getPendingLinkRequests();
+        if (pendingReqs.length > 0) {
+          const container = document.getElementById('dash-link-requests');
+          container.style.display = '';
+          container.innerHTML = `
+            <div class="vet-card" style="border-left:4px solid var(--vet-warning)">
+              <div class="vet-card-body" style="display:flex;align-items:center;justify-content:space-between">
+                <div>
+                  <strong style="font-size:0.95rem"><i class="fas fa-bell" style="color:var(--vet-warning)"></i> ${pendingReqs.length} solicitud${pendingReqs.length > 1 ? 'es' : ''} de vinculación pendiente${pendingReqs.length > 1 ? 's' : ''}</strong>
+                  <p style="font-size:0.8rem;color:var(--vet-text-secondary);margin-top:0.2rem">Dueños de mascotas quieren vincular su cuenta con tu clínica</p>
+                </div>
+                <a href="clientes.html" class="vet-btn vet-btn-sm vet-btn-primary">Revisar</a>
+              </div>
+            </div>
+          `;
+        }
+      } catch (e) { /* ownerLinks may not exist yet */ }
 
       // Show content
       document.getElementById('dash-loading').style.display = 'none';

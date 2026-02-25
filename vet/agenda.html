@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PetCare VET - Agenda</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <link rel="stylesheet" href="vet-styles.css">
+  <!-- FullCalendar -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.css" rel="stylesheet">
+  <style>
+    .agenda-layout { display: grid; grid-template-columns: 1fr 320px; gap: 1rem; }
+    @media(max-width:1024px) { .agenda-layout { grid-template-columns: 1fr; } }
+
+    /* FullCalendar overrides */
+    .fc { font-family: inherit; font-size: 0.85rem; }
+    .fc .fc-toolbar-title { font-size: 1.1rem; font-weight: 600; }
+    .fc .fc-button { font-size: 0.8rem; padding: 0.35rem 0.75rem; border-radius: 6px; }
+    .fc .fc-button-primary { background: var(--vet-primary); border-color: var(--vet-primary); }
+    .fc .fc-button-primary:hover { background: var(--vet-primary-dark); border-color: var(--vet-primary-dark); }
+    .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--vet-primary-dark); border-color: var(--vet-primary-dark); }
+    .fc .fc-daygrid-day-number { font-size: 0.8rem; }
+    .fc .fc-event { border-radius: 4px; padding: 1px 4px; font-size: 0.78rem; cursor: pointer; border: none; }
+    .fc .fc-timegrid-slot { height: 2.5em; }
+    .fc .fc-col-header-cell-cushion { font-weight: 600; font-size: 0.8rem; text-transform: uppercase; }
+
+    /* Event colors by type */
+    .fc-event.type-consultation { background: #3B82F6; }
+    .fc-event.type-vaccination { background: #059669; }
+    .fc-event.type-surgery { background: #DC2626; }
+    .fc-event.type-emergency { background: #EA580C; }
+    .fc-event.type-grooming { background: #7C3AED; }
+    .fc-event.type-checkup { background: #0891B2; }
+
+    .sidebar-list-title {
+      font-size: 0.8rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.04em;
+      color: var(--vet-text-secondary); margin-bottom: 0.75rem;
+    }
+    .sidebar-apt-item {
+      display: flex; align-items: center; gap: 0.75rem;
+      padding: 0.6rem 0.75rem; border-radius: var(--vet-radius); margin-bottom: 0.4rem;
+      cursor: pointer; transition: background 0.15s; border: 1px solid var(--vet-border);
+    }
+    .sidebar-apt-item:hover { background: var(--vet-primary-bg); }
+    .sidebar-apt-time { font-size: 0.8rem; font-weight: 600; color: var(--vet-primary); min-width: 55px; }
+    .sidebar-apt-info { flex: 1; }
+    .sidebar-apt-info strong { font-size: 0.85rem; display: block; }
+    .sidebar-apt-info span { font-size: 0.75rem; color: var(--vet-text-secondary); }
+    .sidebar-apt-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+
+    .apt-status-actions { display: flex; gap: 0.4rem; margin-top: 0.75rem; flex-wrap: wrap; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid var(--vet-border); }
+    .legend-item { display: flex; align-items: center; gap: 0.3rem; font-size: 0.75rem; color: var(--vet-text-secondary); }
+    .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <div class="vet-layout">
+    <aside class="vet-sidebar">
+      <div class="vet-sidebar-logo"><i class="fas fa-heartbeat"></i><span>PetCare VET</span></div>
+      <nav id="vet-sidebar-nav" class="vet-sidebar-nav"></nav>
+      <div class="vet-sidebar-footer"><span id="clinic-name-footer"></span></div>
+    </aside>
+
+    <main class="vet-main">
+      <header class="vet-header">
+        <div class="vet-header-left">
+          <button class="vet-menu-toggle" onclick="toggleSidebar()"><i class="fas fa-bars"></i></button>
+          <h1 id="vet-header-title" class="vet-header-title">Agenda</h1>
+        </div>
+        <div id="vet-header-right" class="vet-header-right"></div>
+      </header>
+
+      <div class="vet-content">
+        <div id="agenda-loading" class="vet-loading"><div class="vet-spinner"></div></div>
+
+        <div id="agenda-content" style="display:none">
+          <div class="agenda-layout">
+            <!-- Calendar -->
+            <div class="vet-card">
+              <div class="vet-card-body" style="padding:1rem">
+                <div id="calendar"></div>
+                <div class="legend">
+                  <div class="legend-item"><div class="legend-dot" style="background:#3B82F6"></div> Consulta</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#059669"></div> Vacunación</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#DC2626"></div> Cirugía</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#EA580C"></div> Emergencia</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#7C3AED"></div> Grooming</div>
+                  <div class="legend-item"><div class="legend-dot" style="background:#0891B2"></div> Control</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sidebar: day's appointments -->
+            <div>
+              <div class="vet-card" style="margin-bottom:1rem">
+                <div class="vet-card-header">
+                  <h3><i class="fas fa-list" style="color:var(--vet-primary)"></i> <span id="sidebar-date-label">Hoy</span></h3>
+                  <button class="vet-btn vet-btn-sm vet-btn-primary" onclick="openAppointmentModal()"><i class="fas fa-plus"></i> Nueva</button>
+                </div>
+                <div class="vet-card-body" id="sidebar-appointments">
+                  <p style="font-size:0.85rem;color:var(--vet-text-secondary)">Selecciona un día en el calendario</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Crear/Editar Cita -->
+  <div id="apt-modal" class="vet-modal-overlay">
+    <div class="vet-modal">
+      <div class="vet-modal-header">
+        <h3 id="apt-modal-title"><i class="fas fa-calendar-plus" style="color:var(--vet-primary)"></i> Nueva cita</h3>
+        <button class="vet-modal-close" onclick="closeAppointmentModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body">
+        <input type="hidden" id="edit-apt-id">
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Fecha *</label>
+            <input type="date" class="vet-input" id="apt-date" required>
+          </div>
+          <div class="vet-form-group">
+            <label>Hora *</label>
+            <input type="time" class="vet-input" id="apt-time" required>
+          </div>
+        </div>
+        <div class="vet-form-row">
+          <div class="vet-form-group">
+            <label>Duración</label>
+            <select class="vet-select" id="apt-duration">
+              <option value="30">30 minutos</option>
+              <option value="60">1 hora</option>
+              <option value="90">1.5 horas</option>
+              <option value="120">2 horas</option>
+            </select>
+          </div>
+          <div class="vet-form-group">
+            <label>Tipo *</label>
+            <select class="vet-select" id="apt-type">
+              <option value="consultation">Consulta</option>
+              <option value="vaccination">Vacunación</option>
+              <option value="surgery">Cirugía</option>
+              <option value="emergency">Emergencia</option>
+              <option value="grooming">Grooming</option>
+              <option value="checkup">Control</option>
+            </select>
+          </div>
+        </div>
+        <div class="vet-form-group">
+          <label>Paciente *</label>
+          <select class="vet-select" id="apt-patient" required onchange="onPatientSelect()">
+            <option value="">Seleccionar paciente...</option>
+          </select>
+        </div>
+        <div class="vet-form-group">
+          <label>Cliente</label>
+          <input type="text" class="vet-input" id="apt-client-name" readonly placeholder="Se autocompleta al seleccionar paciente">
+          <input type="hidden" id="apt-clientId">
+        </div>
+        <div class="vet-form-group">
+          <label>Motivo</label>
+          <input type="text" class="vet-input" id="apt-reason" placeholder="Motivo de la cita">
+        </div>
+        <div class="vet-form-group">
+          <label>Notas</label>
+          <textarea class="vet-textarea" id="apt-notes" rows="2" placeholder="Notas adicionales"></textarea>
+        </div>
+      </div>
+      <div class="vet-modal-footer">
+        <button class="vet-btn vet-btn-outline" onclick="closeAppointmentModal()">Cancelar</button>
+        <button class="vet-btn vet-btn-primary" id="save-apt-btn" onclick="saveAppointment()"><i class="fas fa-save"></i> Guardar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Appointment Detail Modal -->
+  <div id="apt-detail-modal" class="vet-modal-overlay">
+    <div class="vet-modal" style="max-width:480px">
+      <div class="vet-modal-header">
+        <h3><i class="fas fa-calendar-check" style="color:var(--vet-primary)"></i> Detalle de cita</h3>
+        <button class="vet-modal-close" onclick="closeDetailModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body" id="apt-detail-body"></div>
+      <div class="vet-modal-footer" id="apt-detail-footer"></div>
+    </div>
+  </div>
+
+  <!-- Firebase SDKs -->
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="../firebase-config.js"></script>
+  <script src="vet-firestore.js"></script>
+  <script src="vet-app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.9/index.global.min.js"></script>
+
+  <script>
+    let calendar = null;
+    let allPatientsMap = {};
+    let allClientsMap = {};
+    let selectedDate = new Date().toISOString().split('T')[0];
+
+    const TYPE_COLORS = {
+      consultation: '#3B82F6', vaccination: '#059669', surgery: '#DC2626',
+      emergency: '#EA580C', grooming: '#7C3AED', checkup: '#0891B2'
+    };
+    const TYPE_LABELS = {
+      consultation: 'Consulta', vaccination: 'Vacunación', surgery: 'Cirugía',
+      emergency: 'Emergencia', grooming: 'Grooming', checkup: 'Control'
+    };
+
+    (async () => {
+      await vetAuthGuard();
+      renderVetSidebar('agenda');
+      renderVetHeader('Agenda');
+
+      const clinic = await getClinic();
+      if (clinic) document.getElementById('clinic-name-footer').textContent = clinic.name;
+
+      // Load patients & clients for dropdown
+      const patients = await getPatients();
+      const clients = await getAllClients(false);
+      patients.forEach(p => { allPatientsMap[p.id] = p; });
+      clients.forEach(c => { allClientsMap[c.id] = c; });
+
+      initCalendar();
+      loadSidebarAppointments(selectedDate);
+
+      document.getElementById('agenda-loading').style.display = 'none';
+      document.getElementById('agenda-content').style.display = '';
+
+      // Auto-open modal if ?action=new
+      if (new URLSearchParams(window.location.search).get('action') === 'new') openAppointmentModal();
+    })();
+
+    function initCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      calendar = new FullCalendar.Calendar(calendarEl, {
+        locale: 'es',
+        initialView: 'dayGridMonth',
+        headerToolbar: {
+          left: 'prev,next today',
+          center: 'title',
+          right: 'dayGridMonth,timeGridWeek,timeGridDay'
+        },
+        height: 'auto',
+        navLinks: true,
+        editable: true,
+        selectable: true,
+        nowIndicator: true,
+        slotMinTime: '07:00:00',
+        slotMaxTime: '20:00:00',
+        businessHours: { daysOfWeek: [1,2,3,4,5,6], startTime: '08:00', endTime: '18:00' },
+        eventClassNames: function(arg) {
+          return ['type-' + (arg.event.extendedProps.type || 'consultation')];
+        },
+
+        // Load events dynamically
+        events: async function(fetchInfo, successCallback) {
+          try {
+            const snap = await db.collection('appointments')
+              .where('clinicId', '==', getClinicId())
+              .where('startTime', '>=', firebase.firestore.Timestamp.fromDate(fetchInfo.start))
+              .where('startTime', '<=', firebase.firestore.Timestamp.fromDate(fetchInfo.end))
+              .get();
+
+            const events = snap.docs.map(doc => {
+              const d = doc.data();
+              const pet = allPatientsMap[d.petId];
+              const start = d.startTime.toDate();
+              const end = d.endTime ? d.endTime.toDate() : new Date(start.getTime() + (d.duration || 30) * 60000);
+              return {
+                id: doc.id,
+                title: pet ? pet.name : 'Cita',
+                start,
+                end,
+                color: TYPE_COLORS[d.type] || TYPE_COLORS.consultation,
+                extendedProps: { ...d, docId: doc.id }
+              };
+            });
+            successCallback(events);
+          } catch (err) {
+            console.error('Error loading events:', err);
+            successCallback([]);
+          }
+        },
+
+        // Click on date
+        dateClick: function(info) {
+          selectedDate = info.dateStr;
+          loadSidebarAppointments(selectedDate);
+        },
+
+        // Click on event
+        eventClick: function(info) {
+          showAppointmentDetail(info.event.extendedProps.docId || info.event.id, info.event.extendedProps);
+        },
+
+        // Drag event to new time
+        eventDrop: async function(info) {
+          const aptId = info.event.extendedProps.docId || info.event.id;
+          const newStart = info.event.start;
+          const newEnd = info.event.end || new Date(newStart.getTime() + 30 * 60000);
+          try {
+            await updateAppointment(aptId, {
+              startTime: firebase.firestore.Timestamp.fromDate(newStart),
+              endTime: firebase.firestore.Timestamp.fromDate(newEnd)
+            });
+            vetToast('Cita reprogramada', 'success');
+            loadSidebarAppointments(selectedDate);
+          } catch (err) {
+            info.revert();
+            vetToast('Error moviendo cita', 'error');
+          }
+        },
+
+        // Resize event
+        eventResize: async function(info) {
+          const aptId = info.event.extendedProps.docId || info.event.id;
+          const newEnd = info.event.end;
+          const duration = Math.round((newEnd - info.event.start) / 60000);
+          try {
+            await updateAppointment(aptId, {
+              endTime: firebase.firestore.Timestamp.fromDate(newEnd),
+              duration
+            });
+            vetToast('Duración actualizada', 'success');
+          } catch (err) {
+            info.revert();
+            vetToast('Error actualizando', 'error');
+          }
+        }
+      });
+      calendar.render();
+    }
+
+    async function loadSidebarAppointments(dateStr) {
+      const label = document.getElementById('sidebar-date-label');
+      const container = document.getElementById('sidebar-appointments');
+      const d = new Date(dateStr + 'T12:00:00');
+      label.textContent = d.toLocaleDateString('es-CO', { weekday: 'long', day: 'numeric', month: 'long' });
+
+      try {
+        const apts = await getAppointmentsByDate(dateStr);
+        apts.sort((a, b) => a.startTime.seconds - b.startTime.seconds);
+
+        if (apts.length === 0) {
+          container.innerHTML = '<div class="vet-empty" style="padding:1.5rem"><i class="fas fa-calendar"></i><p>Sin citas este día</p></div>';
+          return;
+        }
+
+        container.innerHTML = apts.map(apt => {
+          const pet = allPatientsMap[apt.petId];
+          const petName = pet ? pet.name : 'Paciente';
+          const typeLabel = TYPE_LABELS[apt.type] || apt.type;
+          const color = TYPE_COLORS[apt.type] || '#3B82F6';
+          const statusBadge = apt.status === 'confirmed' ? 'vet-badge-green' :
+                              apt.status === 'cancelled' ? 'vet-badge-red' :
+                              apt.status === 'completed' ? 'vet-badge-blue' : 'vet-badge-orange';
+          return `
+            <div class="sidebar-apt-item" onclick="showAppointmentDetail('${apt.id}',null)">
+              <div class="sidebar-apt-dot" style="background:${color}"></div>
+              <div class="sidebar-apt-time">${formatTime(apt.startTime)}</div>
+              <div class="sidebar-apt-info">
+                <strong>${escapeHtml(petName)}</strong>
+                <span>${typeLabel} ${apt.reason ? '· ' + escapeHtml(apt.reason) : ''}</span>
+              </div>
+              <span class="vet-badge ${statusBadge}" style="font-size:0.65rem">${apt.status || 'pendiente'}</span>
+            </div>
+          `;
+        }).join('');
+      } catch (err) {
+        container.innerHTML = '<p style="color:var(--vet-danger);font-size:0.85rem">Error cargando citas</p>';
+      }
+    }
+
+    // ==================== APPOINTMENT MODAL ====================
+
+    function openAppointmentModal(aptData) {
+      const title = document.getElementById('apt-modal-title');
+      const select = document.getElementById('apt-patient');
+
+      // Populate patient dropdown
+      const patientsList = Object.values(allPatientsMap);
+      select.innerHTML = '<option value="">Seleccionar paciente...</option>' +
+        patientsList.map(p => `<option value="${p.id}" data-client="${p.clientId || ''}">${escapeHtml(p.name)} (${speciesLabel(p.species)})</option>`).join('');
+
+      if (aptData) {
+        title.innerHTML = '<i class="fas fa-calendar-check" style="color:var(--vet-primary)"></i> Editar cita';
+        document.getElementById('edit-apt-id').value = aptData.id || '';
+        const start = aptData.startTime?.toDate ? aptData.startTime.toDate() : new Date(aptData.startTime);
+        document.getElementById('apt-date').value = start.toISOString().split('T')[0];
+        document.getElementById('apt-time').value = start.toTimeString().substring(0, 5);
+        document.getElementById('apt-duration').value = aptData.duration || 30;
+        document.getElementById('apt-type').value = aptData.type || 'consultation';
+        document.getElementById('apt-patient').value = aptData.petId || '';
+        document.getElementById('apt-reason').value = aptData.reason || '';
+        document.getElementById('apt-notes').value = aptData.notes || '';
+        onPatientSelect();
+      } else {
+        title.innerHTML = '<i class="fas fa-calendar-plus" style="color:var(--vet-primary)"></i> Nueva cita';
+        document.getElementById('edit-apt-id').value = '';
+        document.getElementById('apt-date').value = selectedDate;
+        document.getElementById('apt-time').value = '09:00';
+        document.getElementById('apt-duration').value = '30';
+        document.getElementById('apt-type').value = 'consultation';
+        document.getElementById('apt-patient').value = '';
+        document.getElementById('apt-clientId').value = '';
+        document.getElementById('apt-client-name').value = '';
+        document.getElementById('apt-reason').value = '';
+        document.getElementById('apt-notes').value = '';
+      }
+
+      document.getElementById('apt-modal').classList.add('active');
+    }
+
+    function closeAppointmentModal() {
+      document.getElementById('apt-modal').classList.remove('active');
+    }
+
+    function onPatientSelect() {
+      const opt = document.getElementById('apt-patient').selectedOptions[0];
+      const clientId = opt?.dataset.client || '';
+      document.getElementById('apt-clientId').value = clientId;
+      const client = allClientsMap[clientId];
+      document.getElementById('apt-client-name').value = client ? `${client.firstName} ${client.lastName}` : '';
+    }
+
+    async function saveAppointment() {
+      const petId = document.getElementById('apt-patient').value;
+      const date = document.getElementById('apt-date').value;
+      const time = document.getElementById('apt-time').value;
+
+      if (!petId || !date || !time) { vetToast('Completa paciente, fecha y hora', 'error'); return; }
+
+      const startTime = new Date(`${date}T${time}:00`);
+      const duration = parseInt(document.getElementById('apt-duration').value) || 30;
+      const endTime = new Date(startTime.getTime() + duration * 60000);
+
+      const data = {
+        petId,
+        clientId: document.getElementById('apt-clientId').value,
+        startTime,
+        endTime,
+        duration,
+        type: document.getElementById('apt-type').value,
+        reason: document.getElementById('apt-reason').value.trim(),
+        notes: document.getElementById('apt-notes').value.trim()
+      };
+
+      const btn = document.getElementById('save-apt-btn');
+      btn.disabled = true;
+
+      try {
+        const editId = document.getElementById('edit-apt-id').value;
+        if (editId) {
+          await updateAppointment(editId, {
+            ...data,
+            startTime: firebase.firestore.Timestamp.fromDate(data.startTime),
+            endTime: firebase.firestore.Timestamp.fromDate(data.endTime)
+          });
+          vetToast('Cita actualizada', 'success');
+        } else {
+          await createAppointment(data);
+          vetToast('Cita agendada', 'success');
+        }
+        closeAppointmentModal();
+        calendar.refetchEvents();
+        loadSidebarAppointments(selectedDate);
+      } catch (err) {
+        console.error(err);
+        vetToast('Error guardando cita', 'error');
+      }
+
+      btn.disabled = false;
+    }
+
+    // ==================== APPOINTMENT DETAIL ====================
+
+    async function showAppointmentDetail(aptId, cachedData) {
+      const body = document.getElementById('apt-detail-body');
+      const footer = document.getElementById('apt-detail-footer');
+      body.innerHTML = '<div class="vet-loading"><div class="vet-spinner"></div></div>';
+      footer.innerHTML = '';
+      document.getElementById('apt-detail-modal').classList.add('active');
+
+      let apt = cachedData;
+      if (!apt || !apt.petId) {
+        const doc = await db.collection('appointments').doc(aptId).get();
+        if (!doc.exists) { body.innerHTML = '<p>Cita no encontrada</p>'; return; }
+        apt = { id: doc.id, ...doc.data() };
+      }
+
+      const pet = allPatientsMap[apt.petId] || await getPatient(apt.petId);
+      const client = apt.clientId ? (allClientsMap[apt.clientId] || await getClient(apt.clientId)) : null;
+      const start = apt.startTime?.toDate ? apt.startTime.toDate() : new Date(apt.startTime);
+      const typeLabel = TYPE_LABELS[apt.type] || apt.type;
+      const statusLabel = { scheduled: 'Programada', confirmed: 'Confirmada', in_progress: 'En curso', completed: 'Completada', cancelled: 'Cancelada', no_show: 'No asistió' };
+
+      body.innerHTML = `
+        <div style="display:flex;align-items:center;gap:0.75rem;margin-bottom:1.25rem">
+          <div class="vet-avatar-placeholder" style="width:48px;height:48px;font-size:1.3rem">
+            <i class="fas ${pet ? speciesIcon(pet.species) : 'fa-paw'}"></i>
+          </div>
+          <div>
+            <h3 style="font-size:1.05rem;margin-bottom:0.1rem">${pet ? escapeHtml(pet.name) : 'Paciente'}</h3>
+            <p style="font-size:0.8rem;color:var(--vet-text-secondary)">${client ? escapeHtml(client.firstName + ' ' + client.lastName) : ''} ${client?.phone ? '· ' + client.phone : ''}</p>
+          </div>
+        </div>
+        <div class="panel-info-grid" style="gap:0.75rem">
+          <div class="panel-info-item"><label>Fecha</label><span>${start.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric', month: 'short' })}</span></div>
+          <div class="panel-info-item"><label>Hora</label><span>${formatTime(apt.startTime)}</span></div>
+          <div class="panel-info-item"><label>Tipo</label><span class="vet-badge vet-badge-blue">${typeLabel}</span></div>
+          <div class="panel-info-item"><label>Estado</label><span class="vet-badge vet-badge-${apt.status === 'confirmed' ? 'green' : apt.status === 'cancelled' ? 'red' : 'orange'}">${statusLabel[apt.status] || apt.status}</span></div>
+          <div class="panel-info-item"><label>Duración</label><span>${apt.duration || 30} min</span></div>
+        </div>
+        ${apt.reason ? `<div style="margin-top:0.75rem"><label style="font-size:0.7rem;text-transform:uppercase;color:var(--vet-text-light)">Motivo</label><p style="font-size:0.9rem">${escapeHtml(apt.reason)}</p></div>` : ''}
+        ${apt.notes ? `<div style="margin-top:0.5rem"><label style="font-size:0.7rem;text-transform:uppercase;color:var(--vet-text-light)">Notas</label><p style="font-size:0.85rem;color:var(--vet-text-secondary)">${escapeHtml(apt.notes)}</p></div>` : ''}
+      `;
+
+      const id = apt.id || aptId;
+      let footerHtml = '';
+      if (apt.status !== 'completed' && apt.status !== 'cancelled') {
+        footerHtml += `<button class="vet-btn vet-btn-outline" onclick="changeAptStatus('${id}','cancelled')"><i class="fas fa-times"></i> Cancelar</button>`;
+        if (apt.status !== 'confirmed') {
+          footerHtml += `<button class="vet-btn vet-btn-success" onclick="changeAptStatus('${id}','confirmed')"><i class="fas fa-check"></i> Confirmar</button>`;
+        }
+        footerHtml += `<button class="vet-btn vet-btn-primary" onclick="startFromApt('${id}','${apt.petId}','${apt.clientId || ''}')"><i class="fas fa-stethoscope"></i> Iniciar consulta</button>`;
+      }
+      footer.innerHTML = footerHtml;
+    }
+
+    function closeDetailModal() {
+      document.getElementById('apt-detail-modal').classList.remove('active');
+    }
+
+    async function changeAptStatus(aptId, status) {
+      try {
+        await updateAppointment(aptId, { status });
+        vetToast('Estado actualizado', 'success');
+        closeDetailModal();
+        calendar.refetchEvents();
+        loadSidebarAppointments(selectedDate);
+      } catch (err) {
+        vetToast('Error actualizando estado', 'error');
+      }
+    }
+
+    function startFromApt(aptId, petId, clientId) {
+      window.location.href = `consulta.html?petId=${petId}&clientId=${clientId}&appointmentId=${aptId}`;
+    }
+  </script>
+</body>
+</html>

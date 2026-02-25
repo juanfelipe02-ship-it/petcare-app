@@ -63,6 +63,7 @@
                   <th>Teléfono</th>
                   <th>Ciudad</th>
                   <th># Mascotas</th>
+                  <th>Vinculación</th>
                   <th>Acciones</th>
                 </tr>
               </thead>
@@ -139,6 +140,34 @@
     </div>
   </div>
 
+  <!-- Modal Invitar a PetCare -->
+  <div id="invite-modal" class="vet-modal-overlay">
+    <div class="vet-modal" style="max-width:480px">
+      <div class="vet-modal-header">
+        <h3><i class="fas fa-link" style="color:var(--vet-primary)"></i> Invitar a PetCare App</h3>
+        <button class="vet-modal-close" onclick="closeInviteModal()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="vet-modal-body">
+        <p style="font-size:0.9rem;margin-bottom:1rem" id="invite-desc"></p>
+        <input type="hidden" id="invite-client-id">
+        <div id="invite-pets-list" style="margin-bottom:1rem"></div>
+        <div class="vet-form-group">
+          <label>Permisos para el dueño</label>
+          <div style="display:flex;flex-direction:column;gap:0.5rem;font-size:0.85rem">
+            <label><input type="checkbox" id="perm-history" checked> Ver historia clínica</label>
+            <label><input type="checkbox" id="perm-invoices"> Ver facturas</label>
+            <label><input type="checkbox" id="perm-book" checked> Agendar citas online</label>
+            <label><input type="checkbox" id="perm-reminders" checked> Recibir recordatorios</label>
+          </div>
+        </div>
+      </div>
+      <div class="vet-modal-footer">
+        <button class="vet-btn vet-btn-outline" onclick="closeInviteModal()">Cancelar</button>
+        <button class="vet-btn vet-btn-primary" id="send-invite-btn" onclick="sendInvite()"><i class="fas fa-paper-plane"></i> Enviar invitación</button>
+      </div>
+    </div>
+  </div>
+
   <!-- Firebase SDKs -->
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
@@ -150,6 +179,8 @@
   <script>
     let allClients = [];
     let petCounts = {};
+    let linkStatusMap = {};
+    let clientPetsMap = {};
 
     (async () => {
       await vetAuthGuard();
@@ -162,7 +193,6 @@
 
       await loadClients();
 
-      // Auto-open modal if ?action=new
       if (new URLSearchParams(window.location.search).get('action') === 'new') {
         openClientModal();
       }
@@ -173,12 +203,23 @@
       try {
         allClients = await getAllClients(includeInactive);
 
-        // Count pets per client
         const patients = await getPatients();
         petCounts = {};
+        clientPetsMap = {};
         patients.forEach(p => {
-          if (p.clientId) petCounts[p.clientId] = (petCounts[p.clientId] || 0) + 1;
+          if (p.clientId) {
+            petCounts[p.clientId] = (petCounts[p.clientId] || 0) + 1;
+            if (!clientPetsMap[p.clientId]) clientPetsMap[p.clientId] = [];
+            clientPetsMap[p.clientId].push(p);
+          }
         });
+
+        // Load link statuses
+        try {
+          const links = await getOwnerLinksByClinic();
+          linkStatusMap = {};
+          links.forEach(l => { linkStatusMap[l.clientId] = l; });
+        } catch (e) { /* ownerLinks collection may not exist yet */ }
 
         renderClients(allClients);
       } catch (err) {
@@ -201,7 +242,17 @@
       }
 
       empty.style.display = 'none';
-      tbody.innerHTML = clients.map(c => `
+      tbody.innerHTML = clients.map(c => {
+        const link = linkStatusMap[c.id];
+        let linkBadge = '<span class="vet-badge vet-badge-gray">Sin vincular</span>';
+        if (link) {
+          if (link.status === 'active') linkBadge = '<span class="vet-badge vet-badge-green"><i class="fas fa-check" style="font-size:0.6rem"></i> Vinculado</span>';
+          else if (link.status === 'pending_owner') linkBadge = '<span class="vet-badge vet-badge-orange">Invitación enviada</span>';
+          else if (link.status === 'pending_clinic') linkBadge = '<span class="vet-badge vet-badge-blue">Solicitud pendiente</span>';
+          else if (link.status === 'revoked') linkBadge = '<span class="vet-badge vet-badge-red">Revocado</span>';
+        }
+        const canInvite = c.email && (!link || link.status === 'revoked');
+        return `
         <tr>
           <td>
             <div style="display:flex;align-items:center;gap:0.5rem">
@@ -216,6 +267,7 @@
           <td>${escapeHtml(c.phone) || '—'}</td>
           <td>${escapeHtml(c.city) || '—'}</td>
           <td>${petCounts[c.id] || 0}</td>
+          <td>${linkBadge}</td>
           <td>
             <div style="display:flex;gap:0.4rem">
               <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="event.stopPropagation();editClient('${c.id}')" title="Editar">
@@ -224,10 +276,12 @@
               <button class="vet-btn vet-btn-sm vet-btn-outline" onclick="event.stopPropagation();viewClientPets('${c.id}')" title="Ver mascotas">
                 <i class="fas fa-paw"></i>
               </button>
+              ${canInvite ? `<button class="vet-btn vet-btn-sm vet-btn-primary" onclick="event.stopPropagation();openInviteModal('${c.id}')" title="Invitar a PetCare App"><i class="fas fa-link"></i></button>` : ''}
+              ${link && link.status === 'pending_clinic' ? `<button class="vet-btn vet-btn-sm vet-btn-success" onclick="event.stopPropagation();approveLink('${link.id}')" title="Aprobar solicitud"><i class="fas fa-check"></i></button>` : ''}
             </div>
           </td>
         </tr>
-      `).join('');
+      `}).join('');
     }
 
     function filterClients() {
@@ -319,6 +373,68 @@
       }
 
       btn.disabled = false;
+    }
+
+    // ==================== INVITE / LINK ====================
+
+    function openInviteModal(clientId) {
+      const client = allClients.find(c => c.id === clientId);
+      if (!client) return;
+      document.getElementById('invite-client-id').value = clientId;
+      document.getElementById('invite-desc').textContent =
+        `Enviar invitación a ${client.firstName} ${client.lastName} (${client.email}) para que vincule su cuenta de PetCare con tu clínica.`;
+
+      const pets = clientPetsMap[clientId] || [];
+      document.getElementById('invite-pets-list').innerHTML = pets.length > 0 ? `
+        <label style="font-size:0.8rem;font-weight:600;text-transform:uppercase;color:var(--vet-text-secondary);display:block;margin-bottom:0.4rem">Mascotas a compartir</label>
+        ${pets.map(p => `<label style="display:flex;align-items:center;gap:0.5rem;font-size:0.85rem;margin-bottom:0.3rem">
+          <input type="checkbox" class="invite-pet-check" value="${p.id}" checked> <i class="fas ${speciesIcon(p.species)}" style="color:var(--vet-primary)"></i> ${escapeHtml(p.name)}
+        </label>`).join('')}
+      ` : '<p style="font-size:0.85rem;color:var(--vet-text-secondary)">Este cliente no tiene mascotas registradas aún.</p>';
+
+      document.getElementById('invite-modal').classList.add('active');
+    }
+
+    function closeInviteModal() {
+      document.getElementById('invite-modal').classList.remove('active');
+    }
+
+    async function sendInvite() {
+      const clientId = document.getElementById('invite-client-id').value;
+      const client = allClients.find(c => c.id === clientId);
+      if (!client || !client.email) { vetToast('El cliente necesita un email', 'error'); return; }
+
+      const petIds = [...document.querySelectorAll('.invite-pet-check:checked')].map(cb => cb.value);
+      const permissions = {
+        viewMedicalHistory: document.getElementById('perm-history').checked,
+        viewInvoices: document.getElementById('perm-invoices').checked,
+        bookAppointments: document.getElementById('perm-book').checked,
+        receiveReminders: document.getElementById('perm-reminders').checked
+      };
+
+      const btn = document.getElementById('send-invite-btn');
+      btn.disabled = true;
+
+      try {
+        await inviteOwnerToApp(clientId, client.email, petIds, permissions);
+        vetToast('Invitación enviada a ' + client.email, 'success');
+        closeInviteModal();
+        await loadClients();
+      } catch (err) {
+        console.error(err);
+        vetToast('Error enviando invitación', 'error');
+      }
+      btn.disabled = false;
+    }
+
+    async function approveLink(linkId) {
+      try {
+        await approveOwnerLink(linkId);
+        vetToast('Solicitud aprobada', 'success');
+        await loadClients();
+      } catch (err) {
+        vetToast('Error aprobando solicitud', 'error');
+      }
     }
   </script>
 </body>

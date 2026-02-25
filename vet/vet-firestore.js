@@ -244,6 +244,76 @@ async function updateAppointment(appointmentId, data) {
 
 // ==================== DASHBOARD STATS ====================
 
+// ==================== OWNER LINKS ====================
+
+async function inviteOwnerToApp(clientId, clientEmail, petIds, permissions) {
+  const token = crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + Math.random().toString(36).slice(2);
+  const ref = await db.collection('ownerLinks').add({
+    ownerId: '',
+    ownerEmail: clientEmail,
+    clinicId: _vetClinicId,
+    clientId,
+    petIds: petIds || [],
+    permissions: permissions || {
+      viewMedicalHistory: true,
+      viewInvoices: false,
+      bookAppointments: true,
+      receiveReminders: true
+    },
+    status: 'pending_owner',
+    invitationToken: token,
+    invitedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    invitedBy: _vetUserId,
+    acceptedAt: null,
+    revokedAt: null,
+    revokedBy: null,
+    consentGivenAt: null,
+    consentIpAddress: ''
+  });
+  return { id: ref.id, token };
+}
+
+async function getOwnerLinksByClinic() {
+  const snap = await db.collection('ownerLinks')
+    .where('clinicId', '==', _vetClinicId)
+    .get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+async function getOwnerLinkByClient(clientId) {
+  const snap = await db.collection('ownerLinks')
+    .where('clinicId', '==', _vetClinicId)
+    .where('clientId', '==', clientId)
+    .limit(1)
+    .get();
+  return snap.empty ? null : { id: snap.docs[0].id, ...snap.docs[0].data() };
+}
+
+async function approveOwnerLink(linkId) {
+  await db.collection('ownerLinks').doc(linkId).update({
+    status: 'active',
+    acceptedAt: firebase.firestore.FieldValue.serverTimestamp()
+  });
+}
+
+async function revokeOwnerLink(linkId) {
+  await db.collection('ownerLinks').doc(linkId).update({
+    status: 'revoked',
+    revokedAt: firebase.firestore.FieldValue.serverTimestamp(),
+    revokedBy: _vetUserId
+  });
+}
+
+async function getPendingLinkRequests() {
+  const snap = await db.collection('ownerLinks')
+    .where('clinicId', '==', _vetClinicId)
+    .where('status', '==', 'pending_clinic')
+    .get();
+  return snap.docs.map(d => ({ id: d.id, ...d.data() }));
+}
+
+// ==================== DASHBOARD STATS ====================
+
 async function getDashboardStats() {
   const today = new Date();
   today.setHours(0, 0, 0, 0);

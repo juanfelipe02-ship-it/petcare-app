@@ -379,6 +379,7 @@ function navegarA(seccion) {
     case 'calendario': renderizarCalendario(); break;
     case 'veterinarias': renderizarVeterinariasLocal(); renderizarFavoritos(); break;
     case 'checklists': renderizarChecklists(); break;
+    case 'misveterinarios': renderizarMisVeterinarios(); break;
     case 'cuenta': renderizarCuenta(); break;
   }
 
@@ -3737,4 +3738,228 @@ function mostrarInfoRaza(raza) {
       <i class="fas fa-graduation-cap"></i> Ver guía completa
     </a>
   `;
+}
+
+// ==================== MIS VETERINARIOS (Vinculación Owner ↔ Clínica) ====================
+
+async function renderizarMisVeterinarios() {
+  const user = auth.currentUser;
+  if (!user) return;
+
+  const linkedContainer = document.getElementById('linked-clinics-container');
+  const pendingContainer = document.getElementById('pending-invites-container');
+
+  // Cargar links activos y pendientes del owner
+  try {
+    const snap = await db.collection('ownerLinks')
+      .where('ownerEmail', '==', user.email)
+      .get();
+
+    const links = snap.docs.map(d => ({ id: d.id, ...d.data() }));
+    const activeLinks = links.filter(l => l.status === 'active');
+    const pendingLinks = links.filter(l => l.status === 'pending_owner');
+
+    // Render clínicas vinculadas
+    if (activeLinks.length > 0) {
+      let html = '<h3 style="font-size:1rem;margin-bottom:0.75rem"><i class="fas fa-check-circle" style="color:var(--success)"></i> Clínicas vinculadas</h3>';
+      for (const link of activeLinks) {
+        const clinicDoc = await db.collection('clinics').doc(link.clinicId).get();
+        const clinic = clinicDoc.exists ? clinicDoc.data() : {};
+        html += `
+          <div class="card" style="margin-bottom:0.75rem">
+            <div class="card-body" style="display:flex;align-items:center;justify-content:space-between">
+              <div>
+                <strong style="font-size:1rem">${clinic.name || 'Clínica'}</strong>
+                <p style="font-size:0.85rem;color:var(--text-secondary)">${clinic.address || ''} ${clinic.city || ''}</p>
+                <p style="font-size:0.8rem;color:var(--text-secondary)"><i class="fas fa-phone"></i> ${clinic.phone || '—'} &nbsp; <i class="fas fa-envelope"></i> ${clinic.email || '—'}</p>
+                <div style="margin-top:0.5rem;display:flex;gap:0.4rem;flex-wrap:wrap">
+                  ${link.permissions?.viewMedicalHistory ? '<span class="badge" style="background:rgba(74,144,226,0.1);color:var(--primary);padding:0.2rem 0.5rem;border-radius:100px;font-size:0.7rem">Historia clínica</span>' : ''}
+                  ${link.permissions?.bookAppointments ? '<span class="badge" style="background:rgba(126,211,33,0.1);color:var(--success);padding:0.2rem 0.5rem;border-radius:100px;font-size:0.7rem">Agendar citas</span>' : ''}
+                  ${link.permissions?.receiveReminders ? '<span class="badge" style="background:rgba(245,166,35,0.1);color:var(--warning);padding:0.2rem 0.5rem;border-radius:100px;font-size:0.7rem">Recordatorios</span>' : ''}
+                </div>
+              </div>
+              <button class="btn btn-outline btn-sm" onclick="revocarVinculacion('${link.id}')" style="color:var(--danger);border-color:var(--danger)">
+                <i class="fas fa-unlink"></i> Revocar
+              </button>
+            </div>
+          </div>
+        `;
+      }
+      linkedContainer.innerHTML = html;
+    } else {
+      linkedContainer.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem">No tienes clínicas vinculadas aún.</p>';
+    }
+
+    // Render invitaciones pendientes
+    if (pendingLinks.length > 0) {
+      let html = '<h3 style="font-size:1rem;margin-bottom:0.75rem"><i class="fas fa-envelope-open" style="color:var(--warning)"></i> Invitaciones pendientes</h3>';
+      for (const link of pendingLinks) {
+        const clinicDoc = await db.collection('clinics').doc(link.clinicId).get();
+        const clinic = clinicDoc.exists ? clinicDoc.data() : {};
+        html += `
+          <div class="card" style="margin-bottom:0.75rem;border-left:4px solid var(--warning)">
+            <div class="card-body">
+              <strong>${clinic.name || 'Clínica veterinaria'}</strong>
+              <p style="font-size:0.85rem;color:var(--text-secondary);margin:0.25rem 0">${clinic.city || ''}</p>
+              <p style="font-size:0.85rem;margin-bottom:0.75rem">Te invita a vincular tu cuenta para compartir información de tus mascotas.</p>
+              <div style="display:flex;gap:0.5rem">
+                <button class="btn btn-primary btn-sm" onclick="aceptarInvitacion('${link.id}')"><i class="fas fa-check"></i> Aceptar</button>
+                <button class="btn btn-outline btn-sm" onclick="rechazarInvitacion('${link.id}')"><i class="fas fa-times"></i> Rechazar</button>
+              </div>
+            </div>
+          </div>
+        `;
+      }
+      pendingContainer.innerHTML = html;
+    } else {
+      pendingContainer.innerHTML = '';
+    }
+  } catch (err) {
+    console.error('Error cargando vinculaciones:', err);
+    linkedContainer.innerHTML = '<p style="color:var(--text-secondary)">Error cargando vinculaciones.</p>';
+  }
+}
+
+async function aceptarInvitacion(linkId) {
+  const user = auth.currentUser;
+  if (!user) return;
+  try {
+    await db.collection('ownerLinks').doc(linkId).update({
+      ownerId: user.uid,
+      status: 'active',
+      acceptedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      consentGivenAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    mostrarToast('Vinculación aceptada', 'success');
+    renderizarMisVeterinarios();
+  } catch (err) {
+    console.error(err);
+    mostrarToast('Error aceptando invitación', 'error');
+  }
+}
+
+async function rechazarInvitacion(linkId) {
+  try {
+    await db.collection('ownerLinks').doc(linkId).update({
+      status: 'revoked',
+      revokedAt: firebase.firestore.FieldValue.serverTimestamp()
+    });
+    mostrarToast('Invitación rechazada', 'info');
+    renderizarMisVeterinarios();
+  } catch (err) {
+    mostrarToast('Error rechazando invitación', 'error');
+  }
+}
+
+async function revocarVinculacion(linkId) {
+  if (!confirm('¿Estás seguro de revocar el acceso de esta clínica a tu información?')) return;
+  try {
+    await db.collection('ownerLinks').doc(linkId).update({
+      status: 'revoked',
+      revokedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      revokedBy: auth.currentUser.uid
+    });
+    mostrarToast('Acceso revocado', 'info');
+    renderizarMisVeterinarios();
+  } catch (err) {
+    mostrarToast('Error revocando acceso', 'error');
+  }
+}
+
+async function buscarClinicas() {
+  const q = document.getElementById('buscar-clinica-input').value.trim().toLowerCase();
+  const container = document.getElementById('clinica-search-results');
+  if (!q) { container.innerHTML = ''; return; }
+
+  container.innerHTML = '<p style="color:var(--text-secondary)"><i class="fas fa-spinner fa-spin"></i> Buscando...</p>';
+
+  try {
+    // Buscar en todas las clínicas (limitado, sin index complejo)
+    const snap = await db.collection('clinics').get();
+    const results = snap.docs
+      .map(d => ({ id: d.id, ...d.data() }))
+      .filter(c => c.name && c.name.toLowerCase().includes(q));
+
+    if (results.length === 0) {
+      container.innerHTML = '<p style="color:var(--text-secondary);font-size:0.9rem">No se encontraron clínicas con ese nombre.</p>';
+      return;
+    }
+
+    container.innerHTML = results.map(c => `
+      <div class="card" style="margin-top:0.75rem">
+        <div class="card-body" style="display:flex;align-items:center;justify-content:space-between">
+          <div>
+            <strong>${c.name}</strong>
+            <p style="font-size:0.85rem;color:var(--text-secondary)">${c.city || ''} ${c.country || ''}</p>
+          </div>
+          <button class="btn btn-primary btn-sm" onclick="abrirSolicitudVinculacion('${c.id}','${(c.name || '').replace(/'/g, '')}')">
+            <i class="fas fa-link"></i> Vincular
+          </button>
+        </div>
+      </div>
+    `).join('');
+  } catch (err) {
+    container.innerHTML = '<p style="color:var(--danger)">Error buscando clínicas.</p>';
+  }
+}
+
+function abrirSolicitudVinculacion(clinicId, clinicName) {
+  document.getElementById('solicitar-clinic-id').value = clinicId;
+  document.getElementById('solicitar-link-desc').textContent =
+    `Solicitar vinculación con ${clinicName}. Selecciona las mascotas que deseas compartir:`;
+
+  const petsList = document.getElementById('solicitar-pets-list');
+  petsList.innerHTML = estado.mascotas.map(m => `
+    <label style="display:flex;align-items:center;gap:0.5rem;margin-bottom:0.3rem">
+      <input type="checkbox" class="solicitar-pet-check" value="${m.id}" checked> ${m.nombre} (${m.especie === 'gato' ? 'Gato' : 'Perro'})
+    </label>
+  `).join('');
+
+  document.getElementById('modal-solicitar-link').style.display = 'flex';
+}
+
+async function enviarSolicitudVinculacion() {
+  const user = auth.currentUser;
+  if (!user) return;
+  const clinicId = document.getElementById('solicitar-clinic-id').value;
+  const petIds = [...document.querySelectorAll('.solicitar-pet-check:checked')].map(cb => cb.value);
+
+  if (petIds.length === 0) {
+    mostrarToast('Selecciona al menos una mascota', 'error');
+    return;
+  }
+
+  const btn = document.getElementById('btn-enviar-solicitud');
+  btn.disabled = true;
+
+  try {
+    await db.collection('ownerLinks').add({
+      ownerId: user.uid,
+      ownerEmail: user.email,
+      clinicId,
+      clientId: '',
+      petIds,
+      permissions: {
+        viewMedicalHistory: true,
+        viewInvoices: false,
+        bookAppointments: true,
+        receiveReminders: true
+      },
+      status: 'pending_clinic',
+      invitationToken: '',
+      invitedAt: firebase.firestore.FieldValue.serverTimestamp(),
+      invitedBy: user.uid,
+      acceptedAt: null,
+      message: document.getElementById('solicitar-link-msg').value.trim()
+    });
+
+    document.getElementById('modal-solicitar-link').style.display = 'none';
+    mostrarToast('Solicitud enviada. Tu veterinario la recibirá pronto.', 'success');
+    renderizarMisVeterinarios();
+  } catch (err) {
+    console.error(err);
+    mostrarToast('Error enviando solicitud', 'error');
+  }
+
+  btn.disabled = false;
 }
