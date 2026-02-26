@@ -36,6 +36,15 @@ document.addEventListener('DOMContentLoaded', () => {
         window.location.href = 'login.html';
         return;
       }
+      // Redirigir veterinarios a su dashboard
+      if (typeof obtenerRolUsuario === 'function') {
+        const { role } = await obtenerRolUsuario(user.uid);
+        const VET_ROLES = ['vet', 'clinic_admin', 'clinic_vet', 'clinic_receptionist'];
+        if (VET_ROLES.includes(role)) {
+          window.location.href = 'vet/dashboard.html';
+          return;
+        }
+      }
       // Mostrar nombre del usuario
       const nameEl = document.getElementById('user-display-name');
       if (nameEl) nameEl.textContent = user.displayName || user.email;
