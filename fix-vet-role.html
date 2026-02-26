@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Fix Vet Role</title>
+</head>
+<body>
+  <h2>Fix: Asignar rol veterinaria a yajandragalvanballesteros@gmail.com</h2>
+  <div id="status">Cargando...</div>
+  <button id="fix-btn" style="display:none;padding:1rem 2rem;font-size:1.2rem;cursor:pointer" onclick="fixRole()">Ejecutar corrección</button>
+  <pre id="log" style="background:#222;color:#0f0;padding:1rem;margin-top:1rem;white-space:pre-wrap"></pre>
+
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+  <script src="firebase-config.js"></script>
+  <script>
+    const logEl = document.getElementById('log');
+    function log(msg) { logEl.textContent += msg + '\n'; }
+
+    const TARGET_EMAIL = 'yajandragalvanballesteros@gmail.com';
+
+    auth.onAuthStateChanged(async (user) => {
+      if (!user) {
+        document.getElementById('status').textContent = 'Debes iniciar sesión primero. Ve a login.html';
+        return;
+      }
+      log('Usuario autenticado: ' + user.email + ' (UID: ' + user.uid + ')');
+
+      // Buscar el documento actual
+      const doc = await db.collection('users').doc(user.uid).get();
+      if (doc.exists) {
+        const data = doc.data();
+        log('Datos actuales del usuario:');
+        log('  nombre: ' + (data.nombre || 'N/A'));
+        log('  email: ' + (data.email || 'N/A'));
+        log('  role: ' + (data.role || 'NO TIENE'));
+        log('  clinicId: ' + (data.clinicId || 'NO TIENE'));
+      } else {
+        log('No existe documento en users/');
+      }
+
+      document.getElementById('status').textContent = 'Listo. Si el email coincide, presiona el botón.';
+      document.getElementById('fix-btn').style.display = '';
+    });
+
+    async function fixRole() {
+      const user = auth.currentUser;
+      if (!user) { log('ERROR: No autenticado'); return; }
+
+      log('\n--- Iniciando corrección ---');
+
+      try {
+        // Crear clínica
+        const clinicRef = db.collection('clinics').doc();
+        const batch = db.batch();
+
+        batch.set(clinicRef, {
+          name: 'Clínica Veterinaria',
+          address: '',
+          city: 'Bucaramanga',
+          country: 'Colombia',
+          phone: '',
+          email: user.email,
+          whatsapp: '',
+          businessHours: {
+            monday: { open: '08:00', close: '18:00', closed: false },
+            tuesday: { open: '08:00', close: '18:00', closed: false },
+            wednesday: { open: '08:00', close: '18:00', closed: false },
+            thursday: { open: '08:00', close: '18:00', closed: false },
+            friday: { open: '08:00', close: '18:00', closed: false },
+            saturday: { open: '08:00', close: '13:00', closed: false },
+            sunday: { open: '00:00', close: '00:00', closed: true }
+          },
+          settings: { defaultAppointmentDuration: 30, timezone: 'America/Bogota', currency: 'COP', allowOnlineBooking: false },
+          subscription: { plan: 'starter', status: 'trial', startDate: firebase.firestore.FieldValue.serverTimestamp(), expiresAt: null },
+          features: { inventory: false, invoicing: false, whatsappReminders: false, aiAssistant: false },
+          createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        });
+
+        // Actualizar usuario con rol y clinicId
+        batch.set(db.collection('users').doc(user.uid), {
+          nombre: user.displayName || 'Yajandra Galvan',
+          email: user.email,
+          role: 'clinic_admin',
+          clinicId: clinicRef.id,
+          vetLicense: '',
+          specialization: '',
+          fechaRegistro: firebase.firestore.FieldValue.serverTimestamp()
+        }, { merge: true });
+
+        await batch.commit();
+
+        log('Clínica creada con ID: ' + clinicRef.id);
+        log('Usuario actualizado: role=clinic_admin, clinicId=' + clinicRef.id);
+        log('\n✅ CORRECCIÓN EXITOSA');
+        log('Redirigiendo al dashboard VET en 3 segundos...');
+
+        setTimeout(() => { window.location.href = 'vet/dashboard.html'; }, 3000);
+      } catch (error) {
+        log('ERROR: ' + error.message);
+      }
+    }
+  </script>
+</body>
+</html>
