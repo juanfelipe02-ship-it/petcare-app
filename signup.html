@@ -280,6 +280,10 @@
       }
     });
 
+    // Auto-seleccionar rol si viene en URL
+    const urlRole = new URLSearchParams(window.location.search).get('role');
+    if (urlRole === 'vet') selectRole('vet');
+
     // Selector de rol
     function selectRole(role) {
       document.getElementById('signup-role').value = role;
